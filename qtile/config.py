@@ -24,6 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
+import asyncio
 import json
 import subprocess
 
@@ -32,7 +33,7 @@ from typing import List  # noqa: F401
 import time
 import requests
 
-from libqtile import hook
+from libqtile import hook, qtile
 from libqtile.widget import base
 class GraphQLBatteryWidget(base.InLoopPollText):
     defaults = [
@@ -199,6 +200,9 @@ workspaces = [
     {"name": " ₁", "key": "1", "matches": [], "layout": "stack"},
     {"name": " ₂", "key": "2", "matches": [], "layout": "stack"},
     {"name": " ₃", "key": "3", "matches": [], "layout": "stack"},
+    {"name": " ₄", "key": "4", "matches": [], "layout": "stack"},
+    {"name": " ₅", "key": "5", "matches": [], "layout": "stack"},
+    {"name": " ₆", "key": "6", "matches": [], "layout": "stack"},
 ]
 
 groups = []
@@ -208,6 +212,43 @@ for workspace in workspaces:
     groups.append(Group(workspace["name"], matches=matches, layout=layouts))
     keys.append(Key([mod], workspace["key"], lazy.group[workspace["name"]].toscreen()))
     keys.append(Key([mod, "shift"], workspace["key"], lazy.window.togroup(workspace["name"])))
+
+groupbox_config = {
+    #'active': foreground,
+    'highlight_method': 'line',
+    #'this_current_screen_border': colour_focussed,
+    #'other_current_screen_border': colours[5],
+    #'highlight_color': [background, colours[5]],
+    'disable_drag': True,
+    #'padding': 4,
+    'font': 'SauceCodePro Nerd Font',
+    'fontsize': 32,
+}
+
+groupboxes = [
+    widget.GroupBox(**groupbox_config, visible_groups=[' ₁', ' ₂', ' ₃']),
+    widget.GroupBox(**groupbox_config, visible_groups=[' ₄', ' ₅', ' ₆']),
+]
+
+@hook.subscribe.startup
+def _():
+    # Set up initial GroupBox visible groups
+    if len(qtile.screens) > 1:
+        groupboxes[0].visible_groups = [' ₁', ' ₂', ' ₃']
+    else:
+        groupboxes[0].visible_groups = [' ₁', ' ₂', ' ₃', ' ₄', ' ₅', ' ₆']
+
+@hook.subscribe.screen_change
+async def _(_):
+    # Reconfigure GroupBox visible groups
+    await asyncio.sleep(1)  # Am I gonna fix this?
+    if len(qtile.screens) > 1:
+        groupboxes[0].visible_groups = [' ₁', ' ₂', ' ₃']
+    else:
+        groupboxes[0].visible_groups = [' ₁', ' ₂', ' ₃', ' ₄', ' ₅', ' ₆']
+    if hasattr(groupboxes[0], 'bar'):
+        groupboxes[0].bar.draw()
+
 
 layout_theme = {"border_width": 8,
                 "margin": 8,
@@ -243,8 +284,7 @@ screens = [
         top=bar.Bar(
             [
                 widget.Spacer(length=16),
-                widget.CurrentLayout(),
-                widget.GroupBox(),
+                groupboxes[0],
                 widget.Prompt(),
                 widget.WindowName(),
                 widget.Chord(
@@ -253,6 +293,7 @@ screens = [
                     },
                     name_transform=lambda name: name.upper(),
                 ),
+                widget.KeyboardLayout(fmt=' {}', configured_keyboards=['de']),
                 widget.Clock(format='%Y-%m-%d %a %H:%M:%S'),
                 widget.Spacer(length=16),
                 GraphQLAudioWidget(),
@@ -261,13 +302,16 @@ screens = [
                 widget.Spacer(length=16),
             ],
             64, margin=[8, 8, 0, 8], background='#000000',
+            wallpaper="~/Pictures/Wallpapers/wallpaper.jpg",
+            wallpaper_mode='fill',
         ),
     ),
 
     Screen(
         top=bar.Bar(
             [
-                widget.Spacer(length=16),               
+                widget.Spacer(length=16),   
+                groupboxes[1],            
                 widget.WindowName(),
                 widget.Chord(
                     chords_colors={
@@ -278,6 +322,8 @@ screens = [
                 widget.Spacer(length=16),
             ],
             64, margin=[8, 8, 0, 8], background='#000000',
+            wallpaper="~/Pictures/Wallpapers/wallpaper.jpg",
+            wallpaper_mode='fill',
         ),
     ),
 ]
