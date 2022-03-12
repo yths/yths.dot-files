@@ -35,6 +35,11 @@ import requests
 
 from libqtile import hook, qtile
 from libqtile.widget import base
+
+import yths_services.widgets
+a = yths_services.widgets.GraphQLDatetimeWidget()
+
+
 class GraphQLBatteryWidget(base.InLoopPollText):
     defaults = [
         ('update_interval', 60., 'Update interval for the battery widget.')
@@ -117,6 +122,9 @@ class GraphQLAudioWidget(base.InLoopPollText):
             audio_level = str(subprocess.check_output(['pamixer', '--get-volume']).decode('utf-8')).rstrip() + ' %'
 
         return f"{audio_icon} {audio_level}"
+
+
+
 
 
 from libqtile import bar, layout, widget
@@ -294,7 +302,8 @@ screens = [
                     name_transform=lambda name: name.upper(),
                 ),
                 widget.KeyboardLayout(fmt=' {}', configured_keyboards=['de']),
-                widget.Clock(format='%Y-%m-%d %a %H:%M:%S'),
+                # widget.Clock(format='%Y-%m-%d %a %H:%M:%S'),
+                yths_services.widgets.GraphQLDatetimeWidget(),
                 widget.Spacer(length=16),
                 GraphQLAudioWidget(),
                 widget.Spacer(length=16),
