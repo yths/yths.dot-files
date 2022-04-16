@@ -29,3 +29,10 @@ in /etc/iwd/main.conf (might need to be created)
 layout.css.devPixelsPerPx = 1.75
 ```
 in about:config
+
+## Xorg Warnings and Errors
+- (WW) acpi problem
+startx -- -noacpi
+
+- (WW) missing font directories
+create directory and create file "fonts.dir" with content "0"
