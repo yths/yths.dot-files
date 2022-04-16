@@ -282,7 +282,7 @@ layouts = [
 ]
 
 widget_defaults = dict(
-    font='SauceCodePro Nerd Font',
+    font = 'Inconsolata Nerd Font Mono',#'SauceCodePro Nerd Font',
     fontsize=32,
 )
 extension_defaults = widget_defaults.copy()
@@ -304,6 +304,7 @@ screens = [
                 widget.KeyboardLayout(fmt=' {}', configured_keyboards=['de']),
                 # widget.Clock(format='%Y-%m-%d %a %H:%M:%S'),
                 yths_services.widgets.GraphQLDatetimeWidget(),
+                yths_services.widgets.GraphQLBluetoothWidget(),
                 widget.Spacer(length=16),
                 GraphQLAudioWidget(),
                 widget.Spacer(length=16),
