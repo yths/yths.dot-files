@@ -1,0 +1,3 @@
+[global]
+    offset = 8x80
+    frame_width = 0
