@@ -30,6 +30,7 @@ reflector --country DE --sort rate --save /etc/pacman.d/mirrorlist
 # enable services
 systemctl enable systemd-boot-update.service
 systemctl enable systemd-timesyncd.service
+systemctl enable systemd-resolved.service
 systemctl enable iwd
 systemctl enable dhcpcd
 systemctl enable sshd

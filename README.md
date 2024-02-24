@@ -81,5 +81,16 @@ yay -S zramd
 sudo systemctl enable --now zramd.service
 ```
 Encrypt swap by following the official [guide](https://wiki.archlinux.org/title/Dm-crypt/Swap_encryption).
+
+### Window Manager
+To install [qtile](https://www.qtile.org/) install the following packages:
+```
+yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh
+```
+Do not forget to symlink `~/.xinitrc` and `~/.confg/qtile` to their respective counterparts in this repository.
+### Shell and Terminal Emulator
+```
+yay -S kitty
+``` 
 ## Acknowledgements
 The initial version of this script is heavily inspired by [eflinux](https://gitlab.com/eflinux/arch-basic).
