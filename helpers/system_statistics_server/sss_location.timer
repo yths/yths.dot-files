@@ -1,0 +1,9 @@
+[Unit]
+Description=Runs sss_location.py every day.
+
+[Timer]
+OnBootSec=0min
+OnUnitActiveSec=24h
+
+[Install]
+WantedBy=timers.target
