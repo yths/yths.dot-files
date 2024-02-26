@@ -1,3 +1,7 @@
+### Project ###
+helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/*
+!helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/PKGBUILD
+
 ### Linux ###
 *~
 
