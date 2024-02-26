@@ -6,15 +6,14 @@ import schema
 
 app = flask.Flask(__name__)
 app.add_url_rule(
-    '/graphql',
+    "/graphql",
     view_func=GraphQLView.as_view(
-        'graphql',
+        "graphql",
         schema=schema.schema,
         graphiql=True,
-    )
+    ),
 )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
-
