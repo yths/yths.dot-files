@@ -1,0 +1,41 @@
+# Maintainer: Yannik Schelske <aur@yths.de>
+
+pkgname=python-graphql-server-core-pre-release
+pkgver=3.0.0b7
+pkgrel=1
+pkgdesc='Core package for using GraphQL in a custom server easily (pre)'
+url=https://github.com/graphql-python/graphql-server-core
+arch=(any)
+license=(MIT)
+depends=(
+  python-graphql-core
+  python-promise
+)
+makedepends=(
+  git
+  python-setuptools
+)
+conflicts=(
+    python-graphql-server-core
+)
+source=(git+https://github.com/graphql-python/graphql-server-core.git#tag=8af13c026a6a5d3c235be4e6a5cdda5fc32ab67a)
+sha256sums=(SKIP)
+
+pkgver() {
+  cd graphql-server-core
+
+  git describe --tags | sed 's/^v//'
+}
+
+build() {
+  cd graphql-server-core
+
+  python setup.py build
+}
+
+package() {
+  cd graphql-server-core
+
+  python setup.py install --prefix=/usr --root="${pkgdir}" --optimize=1
+  install -Dm 644 LICENSE -t "${pkgdir}"/usr/share/licenses/python-graphql-server-core/
+}
