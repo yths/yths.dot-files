@@ -7,7 +7,7 @@
 ## Dependencies
 The InlfucDB service and client need to be installed, configured and running on the system.
 ```
-yay -S influxdb python-influxdb-client
+yay -S influxdb python-influxdb-client python-requests
 ```
 
 ## Installation
