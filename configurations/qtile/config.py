@@ -25,11 +25,16 @@
 # SOFTWARE.
 import os
 import subprocess
+import json
 
 from libqtile import bar, layout, qtile, widget, hook
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+
+
+with open(os.path.join(os.path.expanduser("~"), ".config", "qtile", "configuration.json"), "r") as input_handle:
+    configuration_data = json.load(input_handle)
 
 
 @hook.subscribe.startup
@@ -40,7 +45,7 @@ def _():
             "--bg-center",
             os.path.expanduser(
                 os.path.join(
-                    "~", ".config", "qtile", "themes", "minimal", "wallpaper.png"
+                    "~", ".config", "qtile", "themes", "minimal", f"wallpaper_{configuration_data['theme-mode']}.png"
                 )
             ),
         ]
