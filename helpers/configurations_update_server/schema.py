@@ -7,9 +7,11 @@ import scheduler
 
 class Query(graphene.ObjectType):
     class Meta:
-        description = 'The API for the configuration update server.'
+        description = "The API for the configuration update server."
 
-    reload_qtile = graphene.Boolean(name="reload_qtile", description='Reload the qtile configuration.')
+    reload_qtile = graphene.Boolean(
+        name="reload_qtile", description="Reload the qtile configuration."
+    )
 
     def resolve_reload_qtile(root, info):
         scheduler.schedule()
@@ -20,5 +22,5 @@ class Query(graphene.ObjectType):
 schema = graphene.Schema(query=Query)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
