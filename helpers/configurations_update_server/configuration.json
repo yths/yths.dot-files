@@ -1,1 +1,1 @@
-{"credentials": {"influxdb_token": "GxWjwSWCubHqjyn6UU7lBBlSHr_a7iQcOT89m0462uewBq3WKuCLbJSVshAGI6y3M_sle6o6A1TDUXhiLtM05A=="}, "influxdb": {"url": "http://localhost:8086", "org": "assur", "bucket": "sss_location"}, "server": {"port": 2106}}
+{"credentials": {"influxdb_token": ""}, "influxdb": {"url": "http://localhost:8086", "org": "assur", "bucket": "sss_location"}, "server": {"port": 2106}}

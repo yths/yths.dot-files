@@ -1,0 +1,12 @@
+[Unit]
+Description=Starts the GraphQL-based configuration update server.
+
+[Service]
+ExecStart=/usr/bin/python /usr/local/bin/configurations_update_server/server.py
+Restart=on-failure
+RestartSec=16
+StartLimitBurst=8
+StartLimitInterval=196s
+
+[Install]
+WantedBy=multi-user.target

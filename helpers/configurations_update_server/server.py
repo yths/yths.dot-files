@@ -8,7 +8,7 @@ import scheduler
 
 
 if __name__ == '__main__':
-    with open(os.path.join('configuration.json'), 'r') as f:
+    with open(os.path.join('/usr/local/bin/configurations_update_server/configuration.json'), 'r') as f:
         configuration_data = json.load(f)
     server_port = configuration_data['server']['port']
 
