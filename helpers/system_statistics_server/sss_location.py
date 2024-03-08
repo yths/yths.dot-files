@@ -44,6 +44,6 @@ if __name__ == "__main__":
             .field("sunset", sun_set)
         )
 
-        write_api.write(bucket=influxdb_bucket, org="assur", record=point)
+        write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=point)
     except:
         sys.exit(1)

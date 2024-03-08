@@ -1,0 +1,19 @@
+{
+    "font-family": "LiterationMono Nerd Font Mono",
+    "colors": {
+        "dark": {
+            "foreground": "#FFFFFF",
+            "background": "#111111",
+            "urgent": "#FF0000",
+            "inactive": "#494949",
+            "active": "#BBBBBB"
+        },
+        "light": {
+            "foreground": "#000000",
+            "background": "#FFFFFF",
+            "urgent": "#FF0000",
+            "inactive": "#BFBFBF",
+            "active": "#777777"
+        }
+    }
+}

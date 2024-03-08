@@ -32,8 +32,12 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
+import widgets.power
 
-with open(os.path.join(os.path.expanduser("~"), ".config", "qtile", "configuration.json"), "r") as input_handle:
+
+with open(
+    os.path.join(os.path.expanduser("~"), ".config", "qtile", "configuration.json"), "r"
+) as input_handle:
     configuration_data = json.load(input_handle)
 
 
@@ -45,7 +49,10 @@ def _():
             "--bg-center",
             os.path.expanduser(
                 os.path.join(
-                    "~", ".config", "qtile", "themes", "minimal", f"wallpaper_{configuration_data['theme-mode']}.png"
+                    "~",
+                    ".config",
+                    "theme",
+                    f"wallpaper_{configuration_data['theme-mode']}.png",
                 )
             ),
         ]
@@ -114,7 +121,12 @@ keys = [
     ),
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
-    Key([mod], "r", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
+    Key(
+        [mod],
+        "r",
+        lazy.spawn("rofi -show run"),
+        desc="Spawns the rofi window switcher.",
+    ),
 ]
 
 groups = [Group(i, label=l) for i, l in zip("1234", ["+", "+", "+", "+"])]
@@ -151,7 +163,7 @@ layouts = [
         border_width=1,
         margin=[0, 64, 64, 64],
     ),
-    layout.Max(),
+    layout.Max(margin=[0, 64, 64, 64]),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
     # layout.Bsp(),
@@ -166,12 +178,26 @@ layouts = [
 ]
 
 widget_defaults = dict(
-        font="LiterationMono Nerd Font Mono",
+    font="LiterationMono Nerd Font Mono",
     fontsize=30,
     padding=8,
-    foreground="#000000",
+    foreground=configuration_data[
+        f"color_{configuration_data['theme-mode']}_foreground"
+    ],
 )
 extension_defaults = widget_defaults.copy()
+
+
+@lazy.function
+def toggle_theme_mode(qtile):
+    theme_mode = "light"
+    if configuration_data["theme-mode"] == "light":
+        theme_mode = "dark"
+
+    command = f"curl 'http://localhost:2106/graphql' -X POST -H 'content-type: application/json' --data '{{\"query\":\"query {{ reload_qtile(theme_mode: \\\"{theme_mode}\\\") }}\"}}'"
+
+    subprocess.Popen(command, shell=True, universal_newlines=True)
+
 
 screens = [
     Screen(
@@ -180,21 +206,42 @@ screens = [
                 widget.Spacer(length=64),
                 widget.GroupBox(
                     highlight_method="text",
-                    active="#444444",
+                    urgent_alert_method="text",
+                    active=configuration_data[
+                        f"color_{configuration_data['theme-mode']}_groupbox_active"
+                    ],
                     highlight_color=["#FFFFFF", "#FFFFFF"],
                     block_highlight_text_color="#FFFFFF",
                     foreground="#0F0F0F",
-                    inactive="#9F9F9F",
-                    this_current_screen_border="#000000",
+                    inactive=configuration_data[
+                        f"color_{configuration_data['theme-mode']}_groupbox_inactive"
+                    ],
+                    this_current_screen_border=configuration_data[
+                        f"color_{configuration_data['theme-mode']}_foreground"
+                    ],
                 ),
-                widget.Prompt(),
                 widget.Spacer(length=64),
                 widget.WindowName(),
+                widgets.power.PowerGraphQLTextBox(update_interval=60),
                 widget.Clock(format="%H:%M"),
+                widget.Image(
+                    filename=os.path.expanduser(
+                        os.path.join(
+                            "~",
+                            ".config",
+                            "theme",
+                            f'theme-mode_{configuration_data["theme-mode"]}.svg',
+                        )
+                    ),
+                    margin=36,
+                    mouse_callbacks={"Button1": toggle_theme_mode},
+                ),
                 widget.Spacer(length=64),
             ],
             128,
-            background="#FFFFFF",
+            background=configuration_data[
+                f"color_{configuration_data['theme-mode']}_background"
+            ],
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
         ),
