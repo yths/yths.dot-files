@@ -1,0 +1,44 @@
+* {
+    font: "LiterationMono Nerd Font Mono 24";
+    background-color: #111111;
+    text-color: #FFFFFF;
+}
+
+window {
+    transparency: "real";
+    location: north;
+    anchor: north;
+    width: 100%;
+    y-offset: 128px;
+    padding: 64px;
+
+    children: [horibox];
+}
+
+horibox {
+    orientation: horizontal;
+    children: ["prompt", "entry", "listview"];
+}
+
+textbox-prompt-colon {
+    expand: false;
+    str: ":: ";
+    text-color: inherit;
+}
+
+entry {
+    expand: false;
+    enabled: true;
+    width: 20em;
+}
+
+listview {
+    layout: horizontal;
+    cycle: true;
+    dynamic: true;
+    scrollbar: false;
+    reverse: false;
+    enabled: true;
+    columns: 1;
+    spacing: 32px;
+}

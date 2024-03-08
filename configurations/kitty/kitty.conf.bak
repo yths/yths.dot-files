@@ -2,9 +2,3 @@ allow_remote_control yes
 enable_audio_bell no
 font_family LiterationMono Nerd Font Mono
 font_size 7
-
-
-# BEGIN_KITTY_THEME
-# Yths
-include current-theme.conf
-# END_KITTY_THEME

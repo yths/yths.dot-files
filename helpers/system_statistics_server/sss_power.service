@@ -1,0 +1,13 @@
+[Unit]
+Description=Reads the battery state information if present; stores this information in an InfluxDB bucket.
+After=infuxdb.service
+
+[Service]
+ExecStart=/usr/bin/python /usr/local/bin/sss_power.py
+Restart=on-failure
+RestartSec=16
+StartLimitBurst=8
+StartLimitInterval=196s
+
+[Install]
+WantedBy=multi-user.target

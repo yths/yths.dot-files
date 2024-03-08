@@ -1,0 +1,9 @@
+[Unit]
+Description=Runs sss_power.py every minute.
+
+[Timer]
+OnUnitActiveSec=60s
+OnBootSec=0min
+
+[Install]
+WantedBy=timers.target

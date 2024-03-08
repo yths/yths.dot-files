@@ -85,12 +85,28 @@ Encrypt swap by following the official [guide](https://wiki.archlinux.org/title/
 ### Window Manager
 To install [qtile](https://www.qtile.org/) install the following packages:
 ```
-yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh
+yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh python-dbus-next python-grequests
 ```
 Do not forget to symlink `~/.xinitrc` and `~/.confg/qtile` to their respective counterparts in this repository.
+### Display Manager
+```
+yay -S lightdm lightdm-gtk-greeter
+```
+### Dedicated Graphics Card (optional)
+```
+yay -S nvidia optimus-manager
+```
 ### Shell and Terminal Emulator
 ```
 yay -S kitty
-``` 
+```
+### Window Switcher
+```
+yay -S rofi
+```
+### Notification Daemon
+```
+yay -S dunst
+```
 ## Acknowledgements
 The initial version of this script is heavily inspired by [eflinux](https://gitlab.com/eflinux/arch-basic).

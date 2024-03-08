@@ -1,1 +1,1 @@
-{"theme-mode": "light"}
+{"theme-mode": "dark", "color_dark_background": "#111111", "color_light_background": "#FFFFFF", "color_dark_foreground": "#FFFFFF", "color_light_foreground": "#000000", "color_light_groupbox_foreground": "#0F0F0F", "color_light_groupbox_inactive": "#BFBFBF", "color_dark_groupbox_inactive": "#494949", "color_light_groupbox_active": "#777777", "color_dark_groupbox_active": "#BBBBBB"}
