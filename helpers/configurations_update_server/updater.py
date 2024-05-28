@@ -80,19 +80,25 @@ def get_theme_mode():
         for record in table.records:
             unpacked_result[record.get_field()] = record.get_value()
 
-    now = datetime.datetime.now(ZoneInfo(unpacked_result["timezone"]))
-    sunrise = datetime.datetime.fromisoformat(unpacked_result["sunrise"])
-    sunset = datetime.datetime.fromisoformat(unpacked_result["sunset"])
-    if sunrise < now:
-        if sunset > now:
-            theme_mode = "light"
+    if unpacked_result:
+        now = datetime.datetime.now(ZoneInfo(unpacked_result["timezone"]))
+        sunrise = datetime.datetime.fromisoformat(unpacked_result["sunrise"])
+        sunset = datetime.datetime.fromisoformat(unpacked_result["sunset"])
+        if sunrise < now:
+            if sunset > now:
+                theme_mode = "light"
+            else:
+                theme_mode = "dark"
         else:
-            theme_mode = "dark"
+            if sunset > now:
+                theme_mode = "light"
+            else:
+                theme_mode = "dark"
     else:
-        if sunset > now:
-            theme_mode = "light"
-        else:
-            theme_mode = "dark"
+        now = datetime.datetime.now()
+        sunrise = datetime.datetime.now()
+        sunset = datetime.datetime.now()
+        theme_mode = "light"
 
     return sunrise, sunset, now, theme_mode
 
