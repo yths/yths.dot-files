@@ -4,6 +4,7 @@ import tempfile
 import datetime
 from zoneinfo import ZoneInfo
 import subprocess
+import configparser
 
 import influxdb_client
 
@@ -50,51 +51,23 @@ def symlink(target, link_name, overwrite=False):
         raise
 
 
-def change_theme(theme_name=None):
-    if theme_name is None:
-        theme_name = os.environ.get("theme")
-
-    symlink(
-        os.path.expanduser(
-            os.path.join("~", "repositories", "yths.dot-files", "themes", theme_name)
-        ),
-        os.path.expanduser(os.path.join("~", ".config", "theme")),
-        overwrite=True,
-    )
-
-
-def update_qtile(diff):
-    with open(
-        os.path.expanduser(os.path.join("~", ".config", "qtile", "configuration.json")),
-        "r",
-    ) as input_handle:
-        configuration = json.load(input_handle)
-    for k in diff:
-        configuration[k] = diff[k]
-    with open(
-        os.path.expanduser(os.path.join("~", ".config", "qtile", "configuration.json")),
-        "w",
-    ) as output_handle:
-        json.dump(configuration, output_handle)
-
-
 def get_theme_mode():
-    query = """from(bucket: "sss_location")
-|> range(start: 0)
-|> filter(fn: (r) => r["_measurement"] == "location")
-|> filter(fn: (r) => r["_field"] == "sunset" or r["_field"] == "sunrise" or r["_field"] == "timezone")
-|> group()
-|> sort(columns: ["_time"])"""
     with open(
         os.path.join("/usr/local/bin/configurations_update_server/configuration.json"),
         "r",
     ) as f:
         configuration_data = json.load(f)
-
     influxdb_token = configuration_data["credentials"]["influxdb_token"]
     influxdb_url = configuration_data["influxdb"]["url"]
     influxdb_org = configuration_data["influxdb"]["org"]
     influxdb_bucket = configuration_data["influxdb"]["bucket"]
+
+    query = f"""from(bucket: "{influxdb_bucket}")
+|> range(start: 0)
+|> filter(fn: (r) => r["_measurement"] == "location")
+|> filter(fn: (r) => r["_field"] == "sunset" or r["_field"] == "sunrise" or r["_field"] == "timezone")
+|> group()
+|> sort(columns: ["_time"])"""
 
     read_client = influxdb_client.InfluxDBClient(
         url=influxdb_url, token=influxdb_token, org=influxdb_org
@@ -120,15 +93,50 @@ def get_theme_mode():
             theme_mode = "light"
         else:
             theme_mode = "dark"
-        
+
     return sunrise, sunset, now, theme_mode
+
+
+def change_theme(theme_name=None):
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "theme.conf")), "r"
+    ) as input_handle:
+        configuration = json.load(input_handle)
+
+    if theme_name is None:
+        theme_name = configuration["name"]
+
+    symlink(
+        os.path.expanduser(
+            os.path.join("~", "repositories", "yths.dot-files", "themes", theme_name)
+        ),
+        os.path.expanduser(os.path.join("~", ".config", "theme")),
+        overwrite=True,
+    )
+
+
+def update_qtile(template=None, theme_mode=None):
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "qtile", "configuration.json")),
+        "r",
+    ) as input_handle:
+        configuration = json.load(input_handle)
+    configuration["colors"] = template["colors"][theme_mode]
+    configuration["theme-mode"] = theme_mode
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "qtile", "configuration.json")),
+        "w",
+    ) as output_handle:
+        json.dump(configuration, output_handle)
 
 
 def update_kitty(template, theme_mode):
     configuration = dict()
-    with open(os.path.expanduser(os.path.join('~', '.config', 'kitty', 'kitty.conf')), 'r') as input_handle:
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "kitty", "kitty.conf")), "r"
+    ) as input_handle:
         for line in input_handle:
-            if line.startswith('#'):
+            if line.startswith("#"):
                 continue
             line_pieces = line.rstrip().split()
             if len(line_pieces) > 1:
@@ -140,29 +148,139 @@ def update_kitty(template, theme_mode):
 
     theme = {
         "background": template["colors"][theme_mode]["background"],
-        "foreground": template["colors"][theme_mode]["foreground"]
+        "foreground": template["colors"][theme_mode]["foreground"],
     }
 
-    with open(os.path.expanduser(os.path.join('~', '.config', 'kitty', 'kitty.conf')), 'w') as output_handle:
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "kitty", "kitty.conf")), "w"
+    ) as output_handle:
         for key in configuration:
-            output_handle.write(' '.join([key, configuration[key]]) + '\n')
+            output_handle.write(" ".join([key, configuration[key]]) + "\n")
 
-    with open(os.path.expanduser(os.path.join('~', '.config', 'kitty', 'themes', 'yths.conf')), 'w') as output_handle:
+    with open(
+        os.path.expanduser(
+            os.path.join("~", ".config", "kitty", "themes", "yths.conf")
+        ),
+        "w",
+    ) as output_handle:
         for key in theme:
-            output_handle.write(' '.join([key, theme[key]]) + '\n')
-    
+            output_handle.write(" ".join([key, theme[key]]) + "\n")
+
     subprocess.Popen(args=["kitty", "+kitten", "themes", "--reload-in=all", "yths"])
 
 
+def update_dunst(template, theme_mode):
+    configuration_path = os.path.expanduser(
+        os.path.join("~", ".config", "dunst", "dunstrc")
+    )
+    configuration = configparser.ConfigParser()
+    configuration.read(configuration_path)
+
+    configuration["global"][
+        "frame_color"
+    ] = f'"{template["colors"][theme_mode]["inactive"]}"'
+
+    configuration["urgency_critical"][
+        "foreground"
+    ] = f'"{template["colors"][theme_mode]["foreground"]}"'
+    configuration["urgency_critical"][
+        "background"
+    ] = f'"{template["colors"][theme_mode]["background"]}"'
+
+    configuration["urgency_normal"][
+        "foreground"
+    ] = f'"{template["colors"][theme_mode]["active"]}"'
+    configuration["urgency_normal"][
+        "background"
+    ] = f'"{template["colors"][theme_mode]["background"]}"'
+
+    configuration["urgency_low"][
+        "foreground"
+    ] = f'"{template["colors"][theme_mode]["inactive"]}"'
+    configuration["urgency_low"][
+        "background"
+    ] = f'"{template["colors"][theme_mode]["background"]}"'
+
+    with open(configuration_path, "w") as output_handle:
+        configuration.write(output_handle)
+    subprocess.run(["killall", "dunst"])
 
 
-def update_all():
-    _, _, _, theme_mode = get_theme_mode()
+def update_rofi(template, theme_mode):
+    configuration_path = os.path.expanduser(
+        os.path.join("~", ".config", "rofi", "theme.rasi")
+    )
+    configuration = dict()
+    with open(configuration_path, "r") as input_handle:
+        state = "element"
+        element = None
+        for line in input_handle:
+            raw_line = line.strip()
+            if raw_line == "":
+                continue
+            elif raw_line.startswith("/*"):
+                state = f"comment_{state}"
 
-    with open(os.path.expanduser(os.path.join('~', '.config', 'theme', 'template.json')), 'r') as input_handle:
+            if state.startswith("comment"):
+                if raw_line.endswith("*/"):
+                    state = state.split("_")[1]
+                continue
+
+            if state == "element":
+                line_pieces = raw_line.split()
+                element = " ".join(line_pieces[:-1])
+                configuration[element] = dict()
+                state = "property"
+            elif state == "property":
+                if raw_line == "}":
+                    element = None
+                    state = "element"
+                    continue
+                try:
+                    property_name, property_value = raw_line.split(":")
+                    configuration[element][
+                        property_name.strip()
+                    ] = property_value.strip()
+                except ValueError:
+                    continue
+
+        configuration['*']['background-color'] = f'{template["colors"][theme_mode]["background"]};'
+        configuration['*']['text-color'] = f'{template["colors"][theme_mode]["foreground"]};'
+
+        with open(configuration_path, "w") as output_handle:
+            for element in configuration:
+                output_handle.write(f"{element} {{\n")
+                for property_name in configuration[element]:
+                    output_handle.write(
+                        f"  {property_name}: {configuration[element][property_name]}\n"
+                    )
+                output_handle.write(f"}}\n")
+
+
+def update_gtk(template, theme_mode):
+    configuration_path = os.path.expanduser(os.path.join("~", ".config", "gtk-3.0", "settings.ini"))
+    configuration = configparser.ConfigParser()
+    configuration.read(configuration_path)
+
+    configuration["Settings"]["gtk-application-prefer-dark-theme"] = "true" if theme_mode == "dark" else "false"
+
+    with open(configuration_path, 'w') as output_handle:
+        configuration.write(output_handle)
+
+
+def update_all(theme_mode=None):
+    if theme_mode is None:
+        _, _, _, theme_mode = get_theme_mode()
+
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "theme", "template.json")), "r"
+    ) as input_handle:
         template = json.load(input_handle)
     update_kitty(template, theme_mode)
-    # update_qtile(diff)
+    update_dunst(template, theme_mode)
+    update_rofi(template, theme_mode)
+    update_gtk(template, theme_mode)
+    update_qtile(template, theme_mode)
 
 
 if __name__ == "__main__":

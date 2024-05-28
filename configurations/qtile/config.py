@@ -157,9 +157,9 @@ for i in groups:
 
 layouts = [
     layout.Columns(
-        border_normal="#FFFFFF",
-        border_focus="#FFFFFF",
-        border_focus_stack=["#FFFFFF", "#FFFFFF"],
+        border_normal=configuration_data["colors"]["inactive"],
+        border_focus=configuration_data["colors"]["active"],
+        border_focus_stack=configuration_data["colors"]["active"],
         border_width=1,
         margin=[0, 64, 64, 64],
     ),
@@ -181,9 +181,7 @@ widget_defaults = dict(
     font="LiterationMono Nerd Font Mono",
     fontsize=30,
     padding=8,
-    foreground=configuration_data[
-        f"color_{configuration_data['theme-mode']}_foreground"
-    ],
+    foreground=configuration_data["colors"]["foreground"],
 )
 extension_defaults = widget_defaults.copy()
 
@@ -207,18 +205,9 @@ screens = [
                 widget.GroupBox(
                     highlight_method="text",
                     urgent_alert_method="text",
-                    active=configuration_data[
-                        f"color_{configuration_data['theme-mode']}_groupbox_active"
-                    ],
-                    highlight_color=["#FFFFFF", "#FFFFFF"],
-                    block_highlight_text_color="#FFFFFF",
-                    foreground="#0F0F0F",
-                    inactive=configuration_data[
-                        f"color_{configuration_data['theme-mode']}_groupbox_inactive"
-                    ],
-                    this_current_screen_border=configuration_data[
-                        f"color_{configuration_data['theme-mode']}_foreground"
-                    ],
+                    active=configuration_data["colors"]["active"],
+                    inactive=configuration_data["colors"]["inactive"],
+                    this_current_screen_border=configuration_data["colors"]["foreground"],
                 ),
                 widget.Spacer(length=64),
                 widget.WindowName(),
@@ -239,9 +228,7 @@ screens = [
                 widget.Spacer(length=64),
             ],
             128,
-            background=configuration_data[
-                f"color_{configuration_data['theme-mode']}_background"
-            ],
+            background=configuration_data["colors"]["background"],
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
         ),

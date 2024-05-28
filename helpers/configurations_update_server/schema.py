@@ -50,7 +50,7 @@ class Query(graphene.ObjectType):
         )
         read_api = read_client.query_api()
 
-        query = """from(bucket: "sss_location")
+        query = f"""from(bucket: "{influxdb_bucket}")
 |> range(start: 0)
 |> filter(fn: (r) => r["_measurement"] == "power")
 |> filter(fn: (r) => r["_field"] == "status" or r["_field"] == "charge" or r["_field"] == "charge_full")
@@ -71,10 +71,7 @@ class Query(graphene.ObjectType):
 
     def resolve_reload_qtile(root, info, theme_mode):
         scheduler.schedule()
-        diff = {
-            "theme-mode": theme_mode,
-        }
-        updater.update_qtile(diff)
+        updater.update_all(theme_mode)
         subprocess.run(["qtile", "cmd-obj", "-o", "cmd", "-f", "reload_config"])
         return True
 

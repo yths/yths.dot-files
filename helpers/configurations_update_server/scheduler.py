@@ -30,7 +30,14 @@ def schedule():
 
     if schedule is not None:
         command = f'systemd-run --on-calendar "{schedule}" --no-ask-password --user -u {unit_name} curl \'http://localhost:{server_port}/graphql\' -X POST -H \'content-type: application/json\' --data \'{{"query":"query {{ reload_qtile(theme_mode: \\"{theme_mode}\\") }}"}}\''
-        subprocess.run(command, shell=True, universal_newlines=True)
+        print(command)
+        subprocess.run(
+            command,
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
 
 if __name__ == "__main__":

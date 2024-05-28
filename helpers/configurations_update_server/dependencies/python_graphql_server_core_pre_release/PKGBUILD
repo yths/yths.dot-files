@@ -2,7 +2,7 @@
 
 pkgname=python-graphql-server-core-pre-release
 pkgver=3.0.0b7
-pkgrel=1
+pkgrel=2
 pkgdesc='Core package for using GraphQL in a custom server easily (pre)'
 url=https://github.com/graphql-python/graphql-server-core
 arch=(any)
@@ -36,6 +36,6 @@ build() {
 package() {
   cd graphql-server-core
 
-  python setup.py install --prefix=/usr --root="${pkgdir}" --optimize=1
+  python setup.py install --root="${pkgdir}" --optimize=1 --skip-build
   install -Dm 644 LICENSE -t "${pkgdir}"/usr/share/licenses/python-graphql-server-core/
 }

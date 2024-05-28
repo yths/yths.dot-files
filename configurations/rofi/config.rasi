@@ -10,4 +10,4 @@ configuration {
     display-run: "󰍉 ";
 }
 
-@theme "minimal"
+@theme "theme"
