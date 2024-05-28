@@ -2,6 +2,14 @@
 ## Description
 
 ## Installation
+### Creating Installation Medium (USB Drive)
+Create a primary partition on the USB drive (partition type ef02) with `gdisk`. Format the partition to FAT32 and extract the Arch Linux ISO to this parition:
+```
+mkfs.fat -F 32 /dev/disk/by-id/{usb-drive-partition}
+mount /dev/disk/by-id/{usb-drive-partition} /mnt
+bsdtar -x -f archlinux-{version}-x86_64.iso -C /mnt
+umount /mnt
+```
 Boot into the most recent Arch Linux ISO and set the correct keyboard layout:
 ```
 loadkeys de
@@ -46,7 +54,7 @@ genfstab -U /mnt >> /mnt/etc/fstab
 Chroot into the new system, download, modify and execute the installation script:
 ```
 arch-chroot /mnt
-wget https://raw.githubusercontent.com/yths/dotfiles/main/arch-install-base.sh
+wget https://raw.githubusercontent.com/yths/yths.dot-files/main/scripts/arch-install-base.sh
 chmod +x arch-install-base.sh
 ./arch-install-base.sh
 ```
@@ -55,7 +63,7 @@ Configure mkinitcpio by adding `btrfs` to the MODULES array and `encrypt` to the
 vim /etc/mkinitcpio.conf
 mkincpio -p linux
 ```
-Configure the bootloader `/boot/loader/loader.conf` and create the following boot entry (replace the microcode image according to your architecture):
+Configure the bootloader `/boot/loader/loader.conf` and create the following boot entry (replace the microcode image according to your architecture); use `blkid` to get the relevant UUIDs:
 ```
 vim /boot/loader/entries/arch.conf
 ```
@@ -64,7 +72,7 @@ title Arch Linux
 linux /vmlinuz-linux
 initrd /intel-ucode.img
 initrd /initramfs-linux.img
-options cryptdevice=UUID=<UUID>:root root=UUID=<MAPPER-UUID> rootflags=subvol=@ rw video=3830x2160
+options cryptdevice=UUID=<UUID>:root root=UUID=<MAPPER-UUID> rootflags=subvol=@ rw video=3840x2160
 ```
 If desired, create also a fallback boot entry. Reboot the system and rejoice.
 ## Configuration
@@ -74,11 +82,6 @@ mkdir repositories
 git clone https://aur.archlinux.org/yay.git
 cd yay
 makepkg -si
-```
-Install `zramd`:
-```
-yay -S zramd
-sudo systemctl enable --now zramd.service
 ```
 Encrypt swap by following the official [guide](https://wiki.archlinux.org/title/Dm-crypt/Swap_encryption).
 
@@ -96,6 +99,7 @@ yay -S lightdm lightdm-gtk-greeter
 ```
 yay -S nvidia optimus-manager
 ```
+Do not forget to create the pacman hook as described [here](https://wiki.archlinux.org/title/NVIDIA#pacman_hook).
 ### Shell and Terminal Emulator
 ```
 yay -S kitty
