@@ -1,2 +1,2 @@
-setxkbmap de
+setxkbmap -layout us -variant intl
 export theme="minimal"

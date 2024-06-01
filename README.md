@@ -88,7 +88,7 @@ Encrypt swap by following the official [guide](https://wiki.archlinux.org/title/
 ### Window Manager
 To install [qtile](https://www.qtile.org/) install the following packages:
 ```
-yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh python-dbus-next python-grequests
+yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh python-dbus-next python-grequests ttf-liberation-mono-nerd python-screeninfo
 ```
 Do not forget to symlink `~/.xinitrc` and `~/.confg/qtile` to their respective counterparts in this repository.
 ### Display Manager
@@ -112,5 +112,9 @@ yay -S rofi
 ```
 yay -S dunst
 ```
+## Bug Fixes
+### Bluetooth Headset Does Not Connect
+Restart wireplumber service:
+```systemctl --user restart wireplumber.service```
 ## Acknowledgements
 The initial version of this script is heavily inspired by [eflinux](https://gitlab.com/eflinux/arch-basic).

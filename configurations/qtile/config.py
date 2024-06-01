@@ -26,11 +26,15 @@
 import os
 import subprocess
 import json
+import math
+import collections
 
 from libqtile import bar, layout, qtile, widget, hook
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+import screeninfo
+monitors = screeninfo.get_monitors()[::-1]
 
 import widgets.power
 
@@ -129,27 +133,44 @@ keys = [
     ),
 ]
 
-groups = [Group(i, label=l) for i, l in zip("1234", ["+", "+", "+", "+"])]
+def divide_chunks(l, n):
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
+
+group_names = "12345678"[:len(monitors) * 4]
+chunks = divide_chunks(group_names, math.ceil(len(group_names) / len(monitors)))
+groups_by_screen = collections.defaultdict(list)
+for i, chunk in enumerate(chunks):
+    for name in chunk:
+        groups_by_screen[i].append(name)
+
+groups = []
+for j in groups_by_screen:
+    groups += [Group(i, label=l) for i, l in zip(groups_by_screen[j], ["+"] * len(groups_by_screen[j]))]
 
 for i in groups:
+    for screen in groups_by_screen:
+        if i.name in groups_by_screen[screen]:
+            break
+    lazy.group[i.name].toscreen(screen)
     keys.extend(
         [
-            # mod1 + group number = switch to group
+            # mod1 + letter of group = switch to group
             Key(
                 [mod],
                 i.name,
-                lazy.group[i.name].toscreen(),
+                lazy.group[i.name].toscreen(screen),
                 desc="Switch to group {}".format(i.name),
             ),
-            # mod1 + shift + group number = switch to & move focused window to group
+            # mod1 + shift + letter of group = switch to & move focused window to group
             Key(
                 [mod, "shift"],
                 i.name,
-                lazy.window.togroup(i.name, switch_group=True),
+                lazy.window.togroup(i.name, switch_group=False),
                 desc="Switch to & move focused window to group {}".format(i.name),
             ),
             # Or, use below if you prefer not to switch to that group.
-            # # mod1 + shift + group number = move focused window to group
+            # # mod1 + shift + letter of group = move focused window to group
             # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
             #     desc="move focused window to group {}".format(i.name)),
         ]
@@ -197,8 +218,9 @@ def toggle_theme_mode(qtile):
     subprocess.Popen(command, shell=True, universal_newlines=True)
 
 
-screens = [
-    Screen(
+screens = []
+for i, monitor in enumerate(monitors):
+    screen = Screen(
         top=bar.Bar(
             [
                 widget.Spacer(length=64),
@@ -208,6 +230,7 @@ screens = [
                     active=configuration_data["colors"]["active"],
                     inactive=configuration_data["colors"]["inactive"],
                     this_current_screen_border=configuration_data["colors"]["foreground"],
+                    visible_groups=groups_by_screen[i],
                 ),
                 widget.Spacer(length=64),
                 widget.WindowName(),
@@ -236,8 +259,8 @@ screens = [
         # By default we handle these events delayed to already improve performance, however your system might still be struggling
         # This variable is set to None (no cap) by default, but you can set it to 60 to indicate that you limit it to 60 events per second
         # x11_drag_polling_rate = 60,
-    ),
-]
+    )
+    screens.append(screen)
 
 # Drag floating layouts.
 mouse = [
