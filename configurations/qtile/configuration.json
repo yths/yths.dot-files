@@ -1,1 +1,1 @@
-{"theme-mode": "light", "colors": {"foreground": "#000000", "background": "#FFFFFF", "urgent": "#FF0000", "inactive": "#BFBFBF", "active": "#777777"}}
+{"theme-mode": "dark", "colors": {"foreground": "#FFFFFF", "background": "#111111", "urgent": "#FF0000", "inactive": "#494949", "active": "#BBBBBB"}}

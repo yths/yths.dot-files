@@ -5,5 +5,17 @@
     "editor.fontSize": 10,
     "[json]": {
         "editor.defaultFormatter": "mblode.pretty-formatter"
-    }
+    },
+    "zig.path": "zig",
+    "zig.initialSetupDone": true,
+    "[zig]": {
+        
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ziglang.vscode-zig",
+        "files.eol": "\n"
+    },
+    "files.associations": {
+        "*.zig": "zig"
+    },
+    "zig.zls.path": "zls"
 }

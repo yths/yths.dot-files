@@ -1,7 +1,7 @@
 * {
   font: "LiterationMono Nerd Font Mono 24";
-  background-color: #FFFFFF;
-  text-color: #000000;
+  background-color: #111111;
+  text-color: #FFFFFF;
 }
 window {
   transparency: "real";

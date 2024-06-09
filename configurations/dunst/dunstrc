@@ -56,23 +56,23 @@ mouse_left_click = close_current
 mouse_middle_click = do_action, close_current
 mouse_right_click = close_all
 font = "LiterationMono Nerd Font Mono 8"
-frame_color = "#BFBFBF"
+frame_color = "#494949"
 
 [experimental]
 per_monitor_dpi = false
 
 [urgency_low]
 timeout = 8
-background = "#FFFFFF"
-foreground = "#BFBFBF"
+background = "#111111"
+foreground = "#494949"
 
 [urgency_normal]
 timeout = 16
-background = "#FFFFFF"
-foreground = "#777777"
+background = "#111111"
+foreground = "#BBBBBB"
 
 [urgency_critical]
 timeout = 0
-background = "#FFFFFF"
-foreground = "#000000"
+background = "#111111"
+foreground = "#FFFFFF"
 
