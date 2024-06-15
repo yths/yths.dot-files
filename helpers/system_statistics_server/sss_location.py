@@ -8,8 +8,13 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 if __name__ == "__main__":
     try:
-        with open(os.path.join("/usr/local/bin/sss_location.json"), "r") as f:
-            configuration_data = json.load(f)
+        try:
+            with open(os.path.join("/usr/local/bin/sss_location.json"), "r") as f:
+                configuration_data = json.load(f)
+        except:
+            with open(os.path.join("sss_location.json"), "r") as f:
+                configuration_data = json.load(f)
+
 
         influxdb_token = configuration_data["credentials"]["influxdb_token"]
         ipinfo_token = configuration_data["credentials"]["ipinfo_token"]

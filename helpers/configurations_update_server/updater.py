@@ -290,7 +290,4 @@ def update_all(theme_mode=None):
 
 
 if __name__ == "__main__":
-    update_all()
-    quit()
-    diff = {"theme-mode": "dark"}
-    update_qtile(diff)
+    print(get_theme_mode())
