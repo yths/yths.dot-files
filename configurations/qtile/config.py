@@ -37,6 +37,7 @@ import screeninfo
 monitors = screeninfo.get_monitors()[::-1]
 
 import widgets.power
+import widgets.idle
 
 
 with open(
@@ -243,6 +244,7 @@ for i, monitor in enumerate(monitors):
                 widget.WindowName(),
                 widgets.power.PowerGraphQLTextBox(update_interval=60),
                 widget.Clock(format="%H:%M"),
+                widgets.idle.IdleTextBox(update_interval=1),
                 widget.Image(
                     filename=os.path.expanduser(
                         os.path.join(

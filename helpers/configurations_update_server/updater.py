@@ -7,6 +7,7 @@ import subprocess
 import configparser
 
 import influxdb_client
+import screeninfo
 
 
 # https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python/55742015#55742015
@@ -263,6 +264,36 @@ def update_rofi(template, theme_mode):
                 output_handle.write(f"}}\n")
 
 
+def update_xresources(template, theme_mode):
+    configuration = dict()
+    configuration_path = os.path.expanduser(os.path.join("~", ".Xresources"))
+    with open(configuration_path, "r") as input_handle:
+        for line in input_handle:
+            key, value = line.strip().split(":")
+            configuration[key.strip()] = value.strip()
+
+    dpi_diagonals = list()
+    monitors = screeninfo.get_monitors()
+    for monitor in monitors:
+        diagonal_mm = (monitor.width_mm**2 + monitor.height_mm**2) ** 0.5
+        diagonal = (monitor.width**2 + monitor.height**2) ** 0.5
+
+        diagonal_in = diagonal_mm / 25.4
+        try:
+            dpi_diagonal = int(round(diagonal / diagonal_in))
+        except ZeroDivisonError:
+            dpi_diagonal = 96
+        dpi_diagonals.append(dpi_diagonal)
+
+    configuration["Xft.dpi"] = str(max(dpi_diagonals)) 
+        
+    with open(configuration_path, "w") as output_handle:
+        for key in configuration:
+            l = "{}: {}\n".format(key, configuration[key])
+            print(l)
+            output_handle.write(l)
+
+
 def update_gtk(template, theme_mode):
     configuration_path = os.path.expanduser(os.path.join("~", ".config", "gtk-3.0", "settings.ini"))
     configuration = configparser.ConfigParser()
@@ -290,4 +321,5 @@ def update_all(theme_mode=None):
 
 
 if __name__ == "__main__":
-    print(get_theme_mode())
+    # print(get_theme_mode())
+    print(update_xresources(None, None))
