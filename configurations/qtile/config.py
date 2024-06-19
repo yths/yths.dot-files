@@ -244,6 +244,7 @@ for i, monitor in enumerate(monitors):
                 widget.WindowName(),
                 widgets.power.PowerGraphQLTextBox(update_interval=60),
                 widget.Clock(format="%H:%M"),
+                widget.Spacer(length=16),
                 widgets.idle.IdleTextBox(update_interval=1),
                 widget.Image(
                     filename=os.path.expanduser(

@@ -1,6 +1,14 @@
 # yths dot files
 ## Description
-
+The aim is to provide an environment that is minimal and cohesive yet provides all relevant information as clearly and conveniently as possible while not being distracting.
+### Details
+- Operating System: [Arch Linux](https://archlinux.org/)
+- AUR Helper: [yay](https://github.com/Jguer/yay)
+- Window Manager: [Qtile](https://qtile.org/)
+- Window Switcher: [rofi](https://github.com/davatorium/rofi/)
+- Font: Liberation Mono (Nerd Font Patch)
+- Terminal: [kitty](https://sw.kovidgoyal.net/kitty/)
+- Notification Daemon: [dunst](https://github.com/dunst-project/dunst/)
 ## Installation
 ### Creating Installation Medium (USB Drive)
 Create a primary partition on the USB drive (partition type ef02) with `gdisk`. Format the partition to FAT32 and extract the Arch Linux ISO to this parition:
@@ -10,6 +18,7 @@ mount /dev/disk/by-id/{usb-drive-partition} /mnt
 bsdtar -x -f archlinux-{version}-x86_64.iso -C /mnt
 umount /mnt
 ```
+### Setting Up Skeleton System
 Boot into the most recent Arch Linux ISO and set the correct keyboard layout:
 ```
 loadkeys de
@@ -88,7 +97,7 @@ Encrypt swap by following the official [guide](https://wiki.archlinux.org/title/
 ### Window Manager
 To install [qtile](https://www.qtile.org/) install the following packages:
 ```
-yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr qtile feh python-dbus-next python-grequests ttf-liberation-mono-nerd python-screeninfo
+yay -S xorg-server xorg-xinit xorg-xset xorg-xrandr xprintidle qtile feh python-dbus-next python-grequests ttf-liberation-mono-nerd python-screeninfo
 ```
 Do not forget to symlink `~/.xinitrc` and `~/.confg/qtile` to their respective counterparts in this repository.
 ### Display Manager
