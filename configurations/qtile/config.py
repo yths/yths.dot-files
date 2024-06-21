@@ -37,6 +37,7 @@ import screeninfo
 monitors = screeninfo.get_monitors()[::-1]
 
 import widgets.power
+import widgets.idle
 
 
 with open(
@@ -61,7 +62,6 @@ def _():
             ),
         ]
     )
-
 
 mod = "mod4"
 terminal = guess_terminal()
@@ -148,6 +148,13 @@ groups = []
 for j in groups_by_screen:
     groups += [Group(i, label=l) for i, l in zip(groups_by_screen[j], ["+"] * len(groups_by_screen[j]))]
 
+@hook.subscribe.startup_complete
+def send_to_second_screen():
+    chunks = divide_chunks(group_names, math.ceil(len(group_names) / len(monitors)))
+    for i, chunk in enumerate(chunks):
+        # qtile.groups_map[chunk[0]].cmd_toscreen(i, toggle=False)
+        qtile.groups_map[chunk[0]].toscreen(i)
+
 for i in groups:
     for screen in groups_by_screen:
         if i.name in groups_by_screen[screen]:
@@ -231,11 +238,14 @@ for i, monitor in enumerate(monitors):
                     inactive=configuration_data["colors"]["inactive"],
                     this_current_screen_border=configuration_data["colors"]["foreground"],
                     visible_groups=groups_by_screen[i],
+                    hide_unused=False,
                 ),
                 widget.Spacer(length=64),
                 widget.WindowName(),
                 widgets.power.PowerGraphQLTextBox(update_interval=60),
                 widget.Clock(format="%H:%M"),
+                widget.Spacer(length=16),
+                widgets.idle.IdleTextBox(update_interval=1),
                 widget.Image(
                     filename=os.path.expanduser(
                         os.path.join(

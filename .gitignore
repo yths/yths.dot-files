@@ -1,6 +1,9 @@
 ### Project ###
 helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/*
 !helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/PKGBUILD
+helpers/configurations_update_server/configuration.json
+helpers/system_statistics_server/sss_power.json
+helpers/system_statistics_server/sss_location.json
 
 ### Linux ###
 *~

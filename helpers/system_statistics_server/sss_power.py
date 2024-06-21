@@ -12,8 +12,12 @@ if __name__ == "__main__":
     charge = 100000000
     status = "Full"
     try:
-        with open(os.path.join("/usr/local/bin/sss_power.json"), "r") as f:
-            configuration_data = json.load(f)
+        try:
+            with open(os.path.join("/usr/local/bin/sss_power.json"), "r") as f:
+                configuration_data = json.load(f)
+        except:
+            with open(os.path.join("sss_power.json"), "r") as f:
+                configuration_data = json.load(f)
 
         influxdb_token = configuration_data["credentials"]["influxdb_token"]
         influxdb_url = configuration_data["influxdb"]["url"]

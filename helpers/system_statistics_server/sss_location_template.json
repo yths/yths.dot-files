@@ -1,0 +1,11 @@
+{
+    "credentials": {
+        "influxdb_token": "",
+        "ipinfo_token": ""
+    },
+    "influxdb": {
+        "url": "http://localhost:8086",
+        "org": "",
+        "bucket": "system_statistics_server"
+    }
+}
