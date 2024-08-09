@@ -140,7 +140,7 @@ def divide_chunks(l, n):
 group_names = "12345678"[:len(monitors) * 4]
 chunks = divide_chunks(group_names, math.ceil(len(group_names) / len(monitors)))
 groups_by_screen = collections.defaultdict(list)
-for i, chunk in enumerate(chunks):
+for i, chunk in enumerate(list(chunks)[::-1]):
     for name in chunk:
         groups_by_screen[i].append(name)
 

@@ -72,7 +72,7 @@ Configure mkinitcpio by adding `btrfs` to the MODULES array and `encrypt` to the
 vim /etc/mkinitcpio.conf
 mkincpio -p linux
 ```
-Configure the bootloader `/boot/loader/loader.conf` and create the following boot entry (replace the microcode image according to your architecture); use `blkid` to get the relevant UUIDs:
+Configure the bootloader `/boot/loader/loader.conf` and create the following boot entry (replace the microcode image according to your architecture; depending on your CPU you might want to add the kernel option `mds=full,nosmt` to migate vulnerabilities); use `blkid` to get the relevant UUIDs:
 ```
 vim /boot/loader/entries/arch.conf
 ```
