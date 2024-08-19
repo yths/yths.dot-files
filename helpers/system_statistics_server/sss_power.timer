@@ -2,8 +2,10 @@
 Description=Runs sss_power.py every minute.
 
 [Timer]
-OnUnitActiveSec=60s
-OnBootSec=0min
+Persistent=true
+OnBootSec=32
+OnCalendar=*:0/1
+Unit=sss_power.service
 
 [Install]
 WantedBy=timers.target

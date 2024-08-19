@@ -11,7 +11,7 @@ yay -S influxdb python-influxdb-client python-requests
 ```
 
 ## Installation
-Make the required changes to the configuration file. Copy the script and its configuration file to `/usr/local/bin` and make the script executable.
+Make the required changes to the configuration file. Copy the script and its configuration file to `/usr/local/bin` and make the script executable. Note: You need to copy the file, creating symbolic links does not work.
 ```
 cp /home/yths/repositories/yths.dot-files/helpers/system_statistics_server/sss_location.* /usr/local/bin/
 chmod +x /usr/local/bin/sss_location.py

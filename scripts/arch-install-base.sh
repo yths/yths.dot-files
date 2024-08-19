@@ -24,7 +24,7 @@ echo "default arch" >> /boot/loader/loader.conf
 # install essential packages
 pacman-key --init
 pacman-key --populate
-pacman -S --noconfirm efibootmgr reflector rsync
+pacman -S --noconfirm efibootmgr reflector rsync tmux git
 # change the country to the one you are in
 reflector --country DE --sort rate --save /etc/pacman.d/mirrorlist
 # enable services
