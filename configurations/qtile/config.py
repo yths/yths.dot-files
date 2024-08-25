@@ -34,7 +34,7 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 import screeninfo
-monitors = screeninfo.get_monitors()[::-1]
+monitors = screeninfo.get_monitors()
 
 import widgets.power
 import widgets.idle
@@ -140,7 +140,7 @@ def divide_chunks(l, n):
 group_names = "12345678"[:len(monitors) * 4]
 chunks = divide_chunks(group_names, math.ceil(len(group_names) / len(monitors)))
 groups_by_screen = collections.defaultdict(list)
-for i, chunk in enumerate(list(chunks)[::-1]):
+for i, chunk in enumerate(list(chunks)):
     for name in chunk:
         groups_by_screen[i].append(name)
 
@@ -174,7 +174,7 @@ for i in groups:
                 [mod, "shift"],
                 i.name,
                 lazy.window.togroup(i.name, switch_group=False),
-                desc="Switch to & move focused window to group {}".format(i.name),
+                desc="Switch to and move focused window to group {}".format(i.name),
             ),
             # Or, use below if you prefer not to switch to that group.
             # # mod1 + shift + letter of group = move focused window to group
