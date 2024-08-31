@@ -17,5 +17,12 @@
     "files.associations": {
         "*.zig": "zig"
     },
-    "zig.zls.path": "zls"
+    "zig.zls.path": "zls",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false,
+        "tex": false
+    }
 }
