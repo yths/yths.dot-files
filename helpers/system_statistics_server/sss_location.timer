@@ -2,8 +2,10 @@
 Description=Runs sss_location.py every day.
 
 [Timer]
-OnBootSec=0min
-OnUnitActiveSec=24h
+Persistent=true
+OnBootSec=0
+OnCalendar=0/12:00
+Unit=sss_location.service
 
 [Install]
 WantedBy=timers.target
