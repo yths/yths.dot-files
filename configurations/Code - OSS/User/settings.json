@@ -17,5 +17,6 @@
     "files.associations": {
         "*.zig": "zig"
     },
-    "zig.zls.path": "zls"
+    "zig.zls.path": "zls",
+    "git.enableSmartCommit": true
 }
