@@ -18,6 +18,7 @@
         "*.zig": "zig"
     },
     "zig.zls.path": "zls",
+    "git.enableSmartCommit": true,
     "github.copilot.enable": {
         "*": true,
         "plaintext": false,

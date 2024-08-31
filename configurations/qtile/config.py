@@ -136,7 +136,7 @@ keys = [
 def divide_chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i : i + n]
-
+        
 group_names = "12345678"[:len(monitors) * 4]
 chunks = divide_chunks(group_names, math.ceil(len(group_names) / len(monitors)))
 groups_by_screen = collections.defaultdict(list)

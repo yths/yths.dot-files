@@ -40,6 +40,7 @@ if [ "$HOSTNAME" = "assur" ]; then
 fi
 
 if [ "$HOSTNAME" = "nippur" ]; then
+    xrandr --output DP-2 --primary
     dispwin -d 1 -i ~/.config/icc_profiles/HP.icc
 fi
 
