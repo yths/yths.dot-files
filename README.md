@@ -81,9 +81,14 @@ title Arch Linux
 linux /vmlinuz-linux
 initrd /intel-ucode.img
 initrd /initramfs-linux.img
-options cryptdevice=UUID=<UUID>:root root=UUID=<MAPPER-UUID> rootflags=subvol=@ rw video=3840x2160
+options cryptdevice=UUID=<UUID>:root root=UUID=<MAPPER-UUID> rootflags=subvol=@ rw
 ```
 If desired, create also a fallback boot entry. Reboot the system and rejoice.
+### Additional Kernel Parameters
+Some useful kernel parameters are (adjust based on your system/hardware):
+```
+splash quiet loglevel=3 systemd.show_status=auto rd.udev.log_level=3 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 video=HDMI-1:3840x2160@30 video=HDMI-0:1920x1080@60
+```
 ## Configuration
 Install `yay`:
 ```

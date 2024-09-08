@@ -1,0 +1,61 @@
+[Plymouth Theme]
+Name=yths.minimal
+Description=A minimal theme designed by yths based on the spinner theme.
+ModuleName=two-step
+
+[two-step]
+Font=LiterationMono Nerd Font Mono 12
+TitleFont=LiterationMono Nerd Font Mono 30
+ImageDir=/usr/share/plymouth/themes//yths.minimal
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.382
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.382
+HorizontalAlignment=.5
+VerticalAlignment=.7
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x1111111
+BackgroundEndColor=0x111111
+ProgressBarBackgroundColor=0x606060
+ProgressBarForegroundColor=0xffffff
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Installing Updates...
+SubTitle=Do not turn off your computer
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading System...
+SubTitle=Do not turn off your computer
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading Firmware...
+SubTitle=Do not turn off your computer
+
+[system-reset]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Resetting System...
+SubTitle=Do not turn off your computer
