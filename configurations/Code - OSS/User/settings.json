@@ -25,5 +25,6 @@
         "markdown": false,
         "scminput": false,
         "tex": false
-    }
+    },
+    "python.defaultInterpreterPath": "/home/yths/repositories/yths.environment/venv"
 }
