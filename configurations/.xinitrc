@@ -40,10 +40,13 @@ if [ "$HOSTNAME" = "assur" ]; then
 fi
 
 if [ "$HOSTNAME" = "nippur" ]; then
-    xrandr --output DP-2 --primary
-    dispwin -d 1 -i ~/.config/icc_profiles/HP.icc
+    xrandr --output eDP-1 --mode 3840x2160
+    xrandr --output DP-1-6 --primary --right-of eDP-1 --mode 1920x1080 --filter bilinear --scale-from 3840x2160
+    xrandr --output DP-1-5 --right-of DP-1-6 --mode 1920x1080 --filter bilinear --scale-from 3840x2160
+    xrandr --output eDP-1 --pos 0x0 --output DP-1-6 --pos 3840x0 --output DP-1-5 --pos 7680x0
+    # dispwin -d 1 -i ~/.config/icc_profiles/HP.icc
 fi
 
-setxkbmap -layout us -variant intl
+setxkbmap -layout us -variant altgr-intl -option nodeadkeys
 theme=minimal
 qtile start
