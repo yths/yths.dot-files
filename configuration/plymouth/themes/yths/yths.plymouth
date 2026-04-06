@@ -1,0 +1,102 @@
+[Plymouth Theme]
+Name=yths
+Description=A plymouth theme for the yths desktop environment.
+ModuleName=two-step
+
+[two-step]
+Font=OverpassM Nerd Font 18
+TitleFont=OverpassM Nerd Font 18
+ImageDir=/usr/share/plymouth/themes/yths
+DialogHorizontalAlignment=0.05
+DialogVerticalAlignment=0.1
+TitleHorizontalAlignment=.05
+TitleVerticalAlignment=0.1
+HorizontalAlignment=.04
+VerticalAlignment=.1025
+WatermarkHorizontalAlignment=.95
+WatermarkVerticalAlignment=.95
+Transition=fade-over
+TransitionDuration=1.0
+BackgroundStartColor=0x322f2f
+BackgroundEndColor=0x322f2f
+ProgressBarBackgroundColor=0xafabab
+ProgressBarForegroundColor=0xd3d3d3
+ProgressBarWidth=512
+ProgressBarHeight=4
+ProgressBarHorizontalAlignment=0.05
+ProgressBarVerticalAlignment=0.15
+MessageBelowAnimation=true
+ScaleBackgroundImage=true
+MonospaceFont=OverpassM Nerd Font 12
+UseFirmwareBackground=false
+ConsoleLogTextColor=0xd5d1d1
+ConsoleLogBackgroundColor=0x322f2f
+SecureBootHorizontalAlignment=0.05
+SecureBootVerticalAlignment=0.1
+DialogClearsFirmwareBackground=false
+ShowAnimationPercent=false
+ProgressFunction=wwoods
+
+[boot-up]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Starting System ...
+SubTitle=Keep your face always towards the sunshine, and shadow will fall behind you.
+
+[shutdown]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Stopping System...
+SubTitle=Learn as if you will live forever, live like you will die tomorrow.
+
+[reboot]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Restarting System...
+SubTitle=Nature does not hurry, yet everything is accomplished.
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Installing Updates...
+SubTitle=Do not turn off your computer!
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Upgrading System...
+SubTitle=Do not turn off your computer!
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimation=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Upgrading Firmware...
+SubTitle=Do not turn off your computer!
+
+[system-reset]
+SuppressMessages=true
+ProgressBarShowPercentComplete=false
+UseEndAnimatdion=false
+UseFirmwareBackground=false
+UseProgressBar=false
+Title=Restarting System...
+SubTitle=If you are going through hell, keep going.
+

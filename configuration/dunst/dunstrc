@@ -1,0 +1,41 @@
+[global]
+monitor = 0
+background = "#322f2f"
+frame_width = 0
+font = "OverpassM Nerd Font 10"
+padding = 4
+horizontal_padding = 4
+format = " %s %b"
+offset = 0x67
+origin = top-left
+width = 4096
+foreground = "#d5d1d1"
+separator_height = 0
+gap_size = -2
+gaps = false
+separator_color = "#322f2f"
+ignore_newline = true
+stack_duplicates = false
+notification_limit = 0
+hide_duplicate_count = true
+startup_notification = false
+progress_bar_frame_width = 0
+
+[urgency_normal]
+gap_size = -2
+msg_urgency = "normal"
+foreground = "#d5d1d1"
+format = " <span foreground='#c07726'>%s</span>\n  %b"
+
+[urgency_critical]
+gap_size = -2
+msg_urgency = "critical"
+foreground = "#d5d1d1"
+format = " <span foreground='#958e28'>%s</span>\n  %b"
+
+[urgency_low]
+gap_size = -2
+msg_urgency = "low"
+foreground = "#d5d1d1"
+format = " <span foreground='#afabab'>%s</span>\n  %b"
+

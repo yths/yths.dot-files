@@ -1,24 +1,5 @@
-### Project ###
-helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/*
-!helpers/configurations_update_server/dependencies/python_graphql_server_core_pre_release/PKGBUILD
-helpers/configurations_update_server/configuration.json
-helpers/system_statistics_server/sss_power.json
-helpers/system_statistics_server/sss_location.json
-
-### Linux ###
-*~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
-.fuse_hidden*
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
-# .nfs files are created when an open file is removed but is still being accessed
-.nfs*
+### Repository ###
+backup/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

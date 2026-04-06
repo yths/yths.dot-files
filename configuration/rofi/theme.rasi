@@ -1,0 +1,41 @@
+@import "theme_config.rasi"
+
+* {
+  font: @FONT;
+  background-color: @COLOR0;
+  text-color: @COLOR1;
+}
+window {
+  transparency: "real";
+  location: north;
+  anchor: north;
+  width: @WIDTH;
+  y-offset: @YOFFSET;
+  padding: 8px 16px 8px 16px;
+  border: 0px;
+  children: [horibox];
+}
+horibox {
+  orientation: horizontal;
+  children: ["prompt", "entry", "listview"];
+}
+entry {
+  expand: true;
+  text-color: @COLOR3;
+  blink: true;
+}
+
+
+listview {
+  layout: horizontal;
+  cycle: true;
+  dynamic: true;
+  scrollbar: false;
+  reverse: false;
+  enabled: true;
+  columns: 1;
+  spacing: 1em;
+}
+element-text {
+    highlight: @COLOR4;
+}

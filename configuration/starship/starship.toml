@@ -1,0 +1,203 @@
+"$schema" = "https://starship.rs/config-schema.json"
+palette = "theme"
+add_newline = true
+format = "$username@$hostname$all"
+
+[os]
+disabled = true
+
+[username]
+show_always = true
+style_user = "fg:color0"
+style_root = "fg:color1"
+format = "[$user]($style)"
+disabled = false
+
+[character]
+success_symbol = "[\uea85](fg:color2)"
+error_symbol = "[\uea85](fg:color3)"
+
+[aws]
+symbol = "\ue33d  "
+
+[buf]
+symbol = "\uf49d "
+
+[c]
+symbol = "\ue61e "
+
+[conda]
+symbol = "\uf10c "
+
+[crystal]
+symbol = "\ue62f "
+
+[dart]
+symbol = "\ue798 "
+
+[directory]
+style = "fg:color1"
+read_only = " \U000f033e"
+read_only_style = "fg:color3"
+
+[docker_context]
+symbol = "\uf308 "
+
+[elixir]
+symbol = "\ue62d "
+
+[elm]
+symbol = "\ue62c "
+
+[fennel]
+symbol = "\ue6af "
+
+[fossil_branch]
+symbol = "\uf418 "
+
+[git_branch]
+symbol = "\ue0a0 "
+style = "color0"
+
+[git_status]
+style = "color1"
+
+[golang]
+symbol = "\ue627 "
+
+[guix_shell]
+symbol = "\uf325 "
+
+[haskell]
+symbol = "\ue777 "
+
+[haxe]
+symbol = "\ue666 "
+
+[hg_branch]
+symbol = "\uf418 "
+
+[hostname]
+style = ""
+ssh_symbol = "\ueb01 "
+ssh_only = false
+
+[java]
+symbol = "\ue256 "
+
+[julia]
+symbol = "\ue624 "
+
+[cmd_duration]
+style = "color0"
+show_milliseconds = false
+
+[kotlin]
+symbol = "\ue634 "
+
+[lua]
+symbol = "\ue620 "
+
+[memory_usage]
+symbol = "\U000f035b "
+
+[meson]
+symbol = "\U000f0537 "
+
+[nim]
+symbol = "\U000f01a5 "
+
+[nix_shell]
+symbol = "\uf313 "
+
+[nodejs]
+symbol = "\ue718 "
+
+[ocaml]
+symbol = "\ue67a "
+
+[package]
+symbol = "\U000f03d7 "
+
+[perl]
+symbol = "\ue67e "
+
+[php]
+symbol = "\ue608 "
+
+[pijul_channel]
+symbol = "\uf418 "
+
+[python]
+style = "color0"
+symbol = "\ue235 "
+
+[rlang]
+symbol = "\U000f07d4 "
+
+[ruby]
+symbol = "\ue791 "
+
+[rust]
+symbol = "\U000f1617 "
+
+[scala]
+symbol = "\ue737 "
+
+[swift]
+symbol = "\ue755 "
+
+[zig]
+symbol = "\ue6a9 "
+
+[os.symbols]
+Alpaquita = "\ueaa2 "
+Alpine = "\uf300 "
+AlmaLinux = "\uf31d "
+Amazon = "\uf270 "
+Android = "\uf17b "
+Arch = "\uf303 "
+Artix = "\uf31f "
+CentOS = "\uf304 "
+Debian = "\uf306 "
+DragonFly = "\ue28e "
+Emscripten = "\uf205 "
+EndeavourOS = "\uf197 "
+Fedora = "\uf30a "
+FreeBSD = "\uf30c "
+Garuda = "\U000f06d3 "
+Gentoo = "\uf30d "
+HardenedBSD = "\U000f078c "
+Illumos = "\U000f0238 "
+Kali = "\uf327 "
+Linux = "\uf31a "
+Mabox = "\ueb29 "
+Macos = "\uf302 "
+Manjaro = "\uf312 "
+Mariner = "\uf1cd "
+MidnightBSD = "\uf186 "
+Mint = "\uf30e "
+NetBSD = "\uf024 "
+NixOS = "\uf313 "
+OpenBSD = "\U000f023a "
+openSUSE = "\uf314 "
+OracleLinux = "\U000f0337 "
+Pop = "\uf32a "
+Raspbian = "\uf315 "
+Redhat = "\uf316 "
+RedHatEnterprise = "\uf316 "
+RockyLinux = "\uf32b "
+Redox = "\U000f0018 "
+Solus = "\U000f0833 "
+SUSE = "\uf314 "
+Ubuntu = "\uf31b "
+Unknown = "\uf22d "
+Void = "\uf32e "
+Windows = "\U000f0372 "
+
+[palettes.theme]
+color0 = "#d5d1d1"
+color1 = "#fffbfb"
+color2 = "#569c67"
+color3 = "#cd6869"
+color4 = "#4d91c7"
