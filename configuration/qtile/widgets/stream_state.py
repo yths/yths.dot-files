@@ -12,7 +12,7 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
         notification_color="#00ff00",
         warning_color="#ff0000",
         configuration_file_path=os.path.expanduser(
-            os.path.join("~", ".config", "nuunamnir.json")
+            os.path.join("~", ".config", "config.json")
         ),
         **config,
     ):
