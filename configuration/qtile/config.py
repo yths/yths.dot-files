@@ -80,6 +80,11 @@ theme = configuration["state"]["theme"]
 mod = "mod4"
 terminal = "kitty"  # guess_terminal()
 
+icons = {
+    "monitor": "󰍹 ",
+    "group": " "
+}
+
 keys = [
     # A list of available commands that can be bound to keys can be found
     # at https://docs.qtile.org/en/latest/manual/config/lazy.html
@@ -193,7 +198,7 @@ for m, _ in enumerate(configuration["monitors"]):
     groups += [
         Group(
             str(i),
-            label=f"⏺{subscript_characters[(i - 1) % len(subscript_characters)]}",
+            label=f"{icons['group']}{subscript_characters[(i - 1) % len(subscript_characters)]}",
         )
         for i in range(
             1 + m * len(subscript_characters),
@@ -389,7 +394,7 @@ screens = [
         top=bar.Bar(
             [
                 widget.TextBox(
-                    f"󰍹 {subscript_characters[m]}",
+                    f"{icons['monitor']}{subscript_characters[m]}",
                     fontsize=int(
                         round(
                             configuration["monitors"][monitor]["scaling_factor"]

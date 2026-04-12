@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     configuration["font"] = dict()
     configuration["font"]["size"] = 14
-    configuration["font"]["family"] = "OverpassM Nerd Font"
+    configuration["font"]["family"] = "Iosevka NF"
 
     configuration["state"] = dict()
     configuration["state"]["theme"] = "light"

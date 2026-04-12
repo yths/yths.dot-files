@@ -2,7 +2,7 @@
 monitor = 0
 background = "#322f2f"
 frame_width = 0
-font = "OverpassM Nerd Font 10"
+font = "Iosevka NF 10"
 padding = 4
 horizontal_padding = 4
 format = " %s %b"
