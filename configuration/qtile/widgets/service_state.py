@@ -29,6 +29,6 @@ class WidgetServiceState(libqtile.widget.base.InLoopPollText):
                 output = " "
             self.tick_visible = not self.tick_visible
         else:
-            output = f"<span color='{self.warning_color}'>💤</span>"
+            output = f"<span color='{self.warning_color}'󰒲 /span>"
 
         return f"{output}"
