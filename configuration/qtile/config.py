@@ -46,9 +46,9 @@ try:
     import redis
 
     pool = redis.ConnectionPool(
-        host=os.environ.get("NBS_REDIS_HOST", "localhost"),
-        port=int(os.environ.get("NBS_REDIS_PORT", 6379)),
-        db=int(os.environ.get("NBS_REDIS_DB", 1)),
+        host=os.environ.get("BACKEND_REDIS_HOST", "localhost"),
+        port=int(os.environ.get("BACKEND_REDIS_PORT", 6379)),
+        db=int(os.environ.get("BACKEND_REDIS_DB", 1)),
         socket_connect_timeout=0.5,  # connect phase
         socket_timeout=0.5,          # read/write phase
         health_check_interval=30,  
@@ -659,7 +659,7 @@ screens = [
                     )
                 ),
                 widgets.service_state.WidgetServiceState(
-                    service="nuunamnir.backend.service",
+                    service="backend.service",
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=int(
                         round(

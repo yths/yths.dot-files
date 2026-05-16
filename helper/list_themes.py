@@ -4,7 +4,7 @@ import pickle
 
 if __name__ == "__main__":
     repository_folder_path = os.environ.get(
-        "YTHS_REPOSITORY_PATH",
+        "DOTFILES_REPOSITORY_PATH",
         os.path.join("~", "repositories", "yths.dot-files"),
     )
     repository_folder_path = os.path.expanduser(repository_folder_path)

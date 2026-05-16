@@ -7,7 +7,7 @@ Copy to Plymouth theme folder and rebuild the boot image. Shows a preview after 
 ```bash
 cp -RL yths /usr/share/plymouth/themes/yths
 plymouth-set-default-theme yths -R
-plymouthd --debug-file=/home/yths/plymouth-test.log; plymouth --show-splash --debug; sleep 15; plymouth --quit
+plymouthd --debug-file=$HOME/plymouth-test.log; plymouth --show-splash --debug; sleep 15; plymouth --quit
 ```
 
 ## Configuration 

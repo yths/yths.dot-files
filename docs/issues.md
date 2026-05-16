@@ -10,6 +10,12 @@
 - [ ] Reference VM with dot files
 - [ ] Change color names to something meaningful, also show dark theme colors
 
+## Themes
+
+- [ ] Add a `yths` web-greeter theme directory (currently only `nuunamnir` ships under `configuration/web-greeter/themes/`)
+- [ ] Add a `nuunamnir` plymouth theme directory (currently only `yths` ships under `configuration/plymouth/themes/`)
+- [ ] Document the `yths` color scheme palette in `docs/notes.md` to match the `nuunamnir` entry
+
 ## Configurations
 
 - [ ] Map all colors for `qutebrowser`
