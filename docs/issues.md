@@ -4,12 +4,14 @@
 
 - [ ] Add representative screenshots to `README.md`
 - [x] Fix installation script
-- [ ] Add missing dependencies (OS packages) to installation instructions/dependencies list
+- [x] Add missing dependencies (OS packages) to installation instructions/dependencies list
+    - (2026-05-16) full inventory in `docs/dependencies.md`; `docs/install.md` references it
 - [ ] Integrate wallpaper generation script
 - [ ] Add screen lock feature
-- [ ] Reference VM with dot files
-- [ ] Change color names to something meaningful, also show dark theme colors
-
+- [x] Reference VM with dot files
+    - (2026-05-16) `docs/install.md` carries the QEMU walkthrough under "Setting Up the Virtual Machine"
+- [x] Change color names to something meaningful, also show dark theme colors
+    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; both `light` and `dark` modes covered
 
 ## Documentation
 
@@ -23,7 +25,8 @@
 - [ ] Remove stray non-widget files from `configuration/qtile/widgets/` (`patch_configurations.py` and `patch_vsc.py` are duplicates of `helper/`; `test_audio.py` is experimental)
 - [x] Drop legacy `colors` block from `~/.config/config.json`
     - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/color-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
-- [ ] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected — coordinate with yths.themes to add them
+- [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
+    - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`); follow-up in yths.themes still needed so future regenerations carry them too
 - [ ] Extend `helper/gendocs.py` with an import scanner that diffs the actual imports against `docs/dependencies.md`
 - [x] Replace misleading `requirements*.txt` files with `docs/dependencies.md`
     - (2026-05-16) removed both `requirements.txt` and `requirements-dev.txt`; dependency surface now lives in `docs/dependencies.md` mapping each Python import to its Arch package
@@ -39,14 +42,14 @@
 - [ ] Handle monitor plug/unplug events gracefully in `qtile`
 - [x] Add web-greeter to patch configuration
     - (2026-05-14) added `helper/patch_web_greeter.py`, wired into `patch_all`; themes parameterized via CSS variables generated into each theme's `theme.css`
-- [ ] Add plymouth to patch configuration
+- [x] Add plymouth to patch configuration
+    - (2026-05-16) `helper/patch_plymouth.py` is wired into `helper/patch_configurations.py:patch_all`
 - [ ] Automate installation of web-greeter
 - [ ] Automate installation of plymouth
 - [ ] Automatically patch README.md on color theme change
 - [x] Create VSC color theme
     - (2026-01-02) added crude VSC theme color mapping script (does not work well in light mode)
 - [ ] Improve VSC color mapping - currently selection is not visible
-
 
 ## Background Service
 

@@ -2,7 +2,7 @@
 
 The detailed color reference for the `nuunamnir` theme preset. Each PNG in this directory is a flat colour swatch named after its hex code, used by the table below for visual reference.
 
-For the conceptual model behind the named tokens — what `effect_*`, `pastel_*`, and the status colours are *for* — see [../../../docs/color-semantics.md](../../../docs/color-semantics.md). For the design philosophy behind this specific palette (correlation of lightness and colorfulness with perceptual saliency, photonegative dark mode), see [../../../docs/notes.md](../../../docs/notes.md#color-scheme-nuunamnir).
+For the palette contract that all presets must honour (the minimum required tokens and how consumers read them), see [../../../docs/color-semantics.md](../../../docs/color-semantics.md). For the design philosophy behind this specific palette (correlation of lightness and colorfulness with perceptual saliency, photonegative dark mode), see [../../../docs/notes.md](../../../docs/notes.md#color-scheme-nuunamnir).
 
 | Name | light sRGB String | light sRGB Numeric | light Patch | dark Patch | dark sRGB Numeric | dark sRGB String |
 | --------------- | -------------------- | --------------------- | -------------- | ------------- | -------------------- | -------------------- |
@@ -33,5 +33,8 @@ For the conceptual model behind the named tokens — what `effect_*`, `pastel_*`
 | pastel_red      | `#6b3e4d` | `(0.420, 0.243, 0.302)` | ![#6b3e4d](6b3e4d.png) | ![#e1b2c5](e1b2c5.png) | `(0.882, 0.698, 0.773)` | `#e1b2c5` |
 | negative        | `#83254c` | `(0.514, 0.145, 0.298)` | ![#83254c](83254c.png) | ![#ff9fca](ff9fca.png) | `(1.000, 0.624, 0.792)` | `#ff9fca` |
 | red             | `#83254c` | `(0.514, 0.145, 0.298)` | ![#83254c](83254c.png) | ![#ff9fca](ff9fca.png) | `(1.000, 0.624, 0.792)` | `#ff9fca` |
+| highlight       | `#00e4ff` | `(0.000, 0.894, 1.000)` | ![#00e4ff](00e4ff.png) | ![#006179](006179.png) | `(0.000, 0.380, 0.475)` | `#006179` |
+| notification    | `#83254c` | `(0.514, 0.145, 0.298)` | ![#83254c](83254c.png) | ![#ff9fca](ff9fca.png) | `(1.000, 0.624, 0.792)` | `#ff9fca` |
+| warning         | `#7c3800` | `(0.486, 0.220, 0.000)` | ![#7c3800](7c3800.png) | ![#ffb04c](ffb04c.png) | `(1.000, 0.690, 0.298)` | `#ffb04c` |
 
 The full derivation of this palette is documented at [nuunamnir.color-scheme](https://www.github.com/nuunamnir/nuunamnir.color-scheme).
