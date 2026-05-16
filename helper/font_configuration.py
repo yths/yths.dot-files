@@ -1,3 +1,6 @@
+"""Probe the local system for available font families via tkinter and print them to stdout.
+"""
+
 import tkinter
 
 if __name__ == '__main__':

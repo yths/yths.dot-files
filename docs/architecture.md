@@ -1,0 +1,86 @@
+# Architecture
+
+A whole-system overview of how a theme bundle, the installer, the per-app patchers, qtile, and the backend service compose into a running desktop. Read this once after the README; the other `docs/` files assume this picture.
+
+## The Theme-Bundle Lifecycle
+
+A *theme bundle* is the unit of theming. Bundles are produced by [yths.themes](https://github.com/yths/yths.themes) (an external orchestrator) and land in this repo as `assets/theme-<uuid>/`. Each bundle is self-describing.
+
+```text
+yths.themes (external)
+       │
+       ▼  emits a self-contained bundle
+assets/theme-<uuid>/
+  ├── config.json           # palette, font, wallpapers, state
+  ├── palette.pkl           # the semantic palette consumed by qtile + patchers
+  └── wallpapers/*.png      # 4 wallpapers (light/dark, plain/highlight)
+       │
+       ▼  user picks one at install time
+install.py
+       │
+       ├── prompts the user with the bundle list
+       ├── reads chosen bundle's config.json + palette.pkl
+       ├── merges in detected monitor geometry (helper/screen_configuration.py)
+       └── writes ~/.config/config.json + ~/.config/palette.pkl + wallpapers
+       │
+       ▼  per-app patchers run from helper/patch_configurations.py
+plymouth · web-greeter · vscode
+       │
+       ▼  qtile reads ~/.config/config.json at session start
+qtile + widgets
+       │
+       ▼  widgets subscribe to Redis streams
+yths.backend-service (external)
+```
+
+The user-visible artefact of every install is `~/.config/config.json` — the single configuration file that every downstream consumer reads. Its schema is documented in [config-schema.md](config-schema.md).
+
+## Currently Bundled Presets
+
+<!-- BEGIN: PRESETS -->
+- **nuunamnir** — `assets/theme-00a05bbc-754d-4123-8619-56bca60cd9a9`
+- **yths** — `assets/theme-c767bc2b-384f-428d-b4fe-1761d6b6e4a6`
+<!-- END: PRESETS -->
+
+Each preset's color palette is described in [color-semantics.md](color-semantics.md); the visual reference for the `nuunamnir` palette is at [assets/themes/nuunamnir/palette/](../assets/themes/nuunamnir/palette/).
+
+## Installer Flow (`install.py`)
+
+`install.py` runs the desktop install in two phases:
+
+1. **Static configuration**: every per-app config tree under `configuration/` is copied into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc. This is purely a file copy — no palette involvement.
+2. **Theme materialisation**: the user picks a bundle, and the bundle's `config.json` is merged with detected monitor geometry, then written to `~/.config/config.json`. `palette.pkl` and wallpapers are copied to their well-known paths.
+
+The installer is idempotent. Re-running it picks a (possibly different) theme without disturbing the static configuration; the existing `~/.config/config.json` is renamed to `…json.<timestamp>.bak` before being replaced.
+
+Theme selection is interactive. For provisioning, copy the desired bundle's `config.json` directly into `~/.config/config.json` (see `docs/tips.md`).
+
+## qtile's Configuration
+
+qtile starts with `configuration/qtile/config.py` (installed into `~/.config/qtile/`). At session start it reads `~/.config/config.json`, instantiates one Redis connection pool using the `BACKEND_REDIS_*` environment variables, and constructs the bar with the widgets under `configuration/qtile/widgets/`.
+
+The list of widgets is enumerated and described in [notes.md](notes.md). Each widget reads one Redis stream and renders a small status segment; widget-development conventions are in [../configuration/qtile/widgets/README.md](../configuration/qtile/widgets/README.md).
+
+## Per-App Patchers
+
+`helper/patch_configurations.py` exposes `patch_all`, an orchestrator that reads `~/.config/config.json` + `~/.config/palette.pkl` and pushes the active palette into per-app configs that cannot read JSON natively:
+
+- **Plymouth** — `helper/patch_plymouth.py` rewrites the target `.plymouth` INI and re-renders the boot background (PNG via PIL + cairo).
+- **Web-greeter** — `helper/patch_web_greeter.py` walks `configuration/web-greeter/themes/` and emits a `theme.css` per theme containing the palette as CSS variables, driven by the theme's own `theme.json#role_map` mapping.
+- **VSCode** — `helper/patch_vsc.py` maps the palette to VSCode editor and token colors using perceptual nearest-color matching.
+
+The full helper inventory is in [../helper/README.md](../helper/README.md); adding a new patcher is described there.
+
+## Backend Service Contract
+
+The widgets are decoupled from system-state polling: a separate process — the [yths.backend-service](https://github.com/yths/yths.backend-service) — collects metrics and publishes them to Redis streams. The widgets only subscribe; they have no side effects on the system.
+
+Stream names and schemas are documented in the backend service's [docs/notes.md](https://github.com/yths/yths.backend-service/blob/main/docs/notes.md). Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB`; the same variables apply to both the backend service and the qtile widgets. If Redis is unreachable at qtile startup the widgets fall back to empty values rather than failing the bar.
+
+## External Dependencies (Conceptual)
+
+- **yths.themes** — produces the bundles under `assets/`. Without it, the existing bundles still work; no new themes can be added.
+- **yths.backend-service** — populates Redis. Without it, the widgets show empty values.
+- **IPinfo** — geolocation token used by the backend's location job (drives sunrise/sunset for the dark/light switch).
+
+This split makes each component independently replaceable: a different theme generator, a different metrics collector, or no backend at all (the dot files still install cleanly).

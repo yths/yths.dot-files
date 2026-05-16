@@ -1,3 +1,10 @@
+"""Qtile widget: VPN connection state with country/city.
+
+Reads the latest entry from the ``vpn`` Redis stream (``connected``, ``country``, ``city``)
+and surfaces an indicator plus a short location label when a tunnel is up.
+``BackgroundPoll`` based.
+"""
+
 import json
 
 import libqtile.widget.base

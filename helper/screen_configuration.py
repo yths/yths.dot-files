@@ -1,3 +1,10 @@
+"""Detect connected monitors via ``screeninfo``.
+
+``get()`` returns a dict keyed by output name (e.g. ``HDMI-0``) with per-monitor geometry,
+physical dimensions, derived DPI, diagonal, scaling factor, and ``is_primary`` flag.
+Consumed by ``install.py`` to merge into the active theme bundle's ``config.json``.
+"""
+
 import screeninfo
 
 def get():

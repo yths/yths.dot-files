@@ -1,3 +1,10 @@
+"""Qtile widget: audio level visualisation.
+
+Renders a bar-style level meter sampled live from ``sounddevice`` and overlays a
+notification colour when the system mute state (read from the ``audio`` Redis stream)
+is active. Implements ``libqtile.widget.base.InLoopPollText``.
+"""
+
 import json
 
 import libqtile.widget.base

@@ -1,3 +1,10 @@
+"""Orchestrate patching of per-app configurations from the active theme.
+
+``patch_all`` reads ``~/.config/config.json`` (the active theme bundle's metadata) and
+calls the per-target patchers (plymouth, web-greeter, vscode) in order so every app picks
+up the current palette. Invoked when the theme is switched or the palette is regenerated.
+"""
+
 import json
 import os
 import subprocess

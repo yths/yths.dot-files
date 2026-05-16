@@ -1,3 +1,11 @@
+"""Qtile widget: outstanding pacman updates count.
+
+Reads the latest entry from the ``updates`` Redis stream (``outstanding_updates`` int) and
+renders it next to a package glyph. The count refreshes hourly under the backend service
+and immediately after every pacman transaction (via the post-transaction hook).
+``BackgroundPoll`` based.
+"""
+
 import json
 
 import libqtile.log_utils

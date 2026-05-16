@@ -1,3 +1,10 @@
+"""Qtile widget: IP-derived geolocation with current sunrise/sunset.
+
+Reads the latest entry from the ``location`` Redis stream (latitude, longitude, timezone,
+sunrise, sunset) and surfaces the day/night transition that drives the automatic theme
+switch. ``BackgroundPoll`` based.
+"""
+
 import datetime
 import json
 import os

@@ -10,11 +10,22 @@
 - [ ] Reference VM with dot files
 - [ ] Change color names to something meaningful, also show dark theme colors
 
+
+## Documentation
+
+- [ ] Manage backup/ directory — pre-refactor archive; consider deletion (git history preserves content)
+- [x] Add LICENSE.md at root
+    - (2026-05-16) added MIT license
+- [x] Standardize documentation style under `docs/style.md`
+    - (2026-05-16) all docs now follow the codified path/code-block/list-marker rules
+- [x] Document the `yths` color scheme palette in `docs/notes.md`
+    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; concrete palette table for `yths` still to be authored
+- [ ] Remove stray non-widget files from `configuration/qtile/widgets/` (`patch_configurations.py` and `patch_vsc.py` are duplicates of `helper/`; `test_audio.py` is experimental)
+
 ## Themes
 
 - [ ] Add a `yths` web-greeter theme directory (currently only `nuunamnir` ships under `configuration/web-greeter/themes/`)
 - [ ] Add a `nuunamnir` plymouth theme directory (currently only `yths` ships under `configuration/plymouth/themes/`)
-- [ ] Document the `yths` color scheme palette in `docs/notes.md` to match the `nuunamnir` entry
 
 ## Configurations
 

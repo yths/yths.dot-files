@@ -1,3 +1,10 @@
+"""Patch a plymouth theme.
+
+Reads the active palette and current ``state.theme`` (light/dark) from
+``~/.config/config.json`` and rewrites the target ``.plymouth`` INI, then renders the
+background asset (PNG via PIL + cairo) so the boot splash matches the active palette.
+"""
+
 import argparse
 import json
 import os

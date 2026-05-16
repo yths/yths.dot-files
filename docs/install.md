@@ -1,5 +1,7 @@
 # Installation
 
+> Last verified 2026-05-16 on Arch ISO 2026.04.01.
+
 ## Disclaimer
 
 This guide reproduces the yths.dot-files test system, also available as a VM. The goal is a minimal Arch Linux installation with broad hardware support and reasonable privacy defaults. That said, assume this guide can break your system, leak private data, or cause data loss. Proceed only if you understand the risks.
@@ -8,10 +10,10 @@ This guide reproduces the yths.dot-files test system, also available as a VM. Th
 
 Before starting, ensure you have:
 
-* A working computer or VM environment to perform the installation from
-* The most recent [Arch Linux ISO](https://archlinux.org/download/) with its verified signature (this guide uses `2026.04.01`, kernel `6.19.10`)
-* A USB drive for bare-metal installations
-* Network access (wired or wireless)
+- A working computer or VM environment to perform the installation from
+- The most recent [Arch Linux ISO](https://archlinux.org/download/) with its verified signature
+- A USB drive for bare-metal installations
+- Network access (wired or wireless)
 
 ## Conventions
 
@@ -51,7 +53,7 @@ Boot the image with the installation medium:
 
 ```bash
 qemu-system-x86_64 \
-  -cdrom Downloads/archlinux-2026.04.01-x86_64.iso \
+  -cdrom Downloads/archlinux-<iso-version>-x86_64.iso \
   -boot order=d \
   -drive file=yths-dot-files-base,format=raw \
   -enable-kvm \
@@ -328,12 +330,12 @@ EOF
 
 Edit `/etc/mkinitcpio.conf`:
 
-* Add `btrfs` to the `MODULES` array. For virtual machine installations, also add the virtio drivers so the kernel can access virtio devices during early boot:
+- Add `btrfs` to the `MODULES` array. For virtual machine installations, also add the virtio drivers so the kernel can access virtio devices during early boot:
   ```
   MODULES=(btrfs virtio virtio_blk virtio_pci virtio_net)
   ```
   For bare-metal installations, `btrfs` alone is sufficient.
-* Replace the default hooks with systemd-based hooks, placing `sd-encrypt` before `filesystems`:
+- Replace the default hooks with systemd-based hooks, placing `sd-encrypt` before `filesystems`:
   ```
   HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
   ```
@@ -435,7 +437,7 @@ yay -S plymouth
 
 Add the `plymouth` hook to `/etc/mkinitcpio.conf` between `systemd` and `sd-encrypt`:
 
-```
+```bash
 HOOKS=(... systemd ... plymouth sd-encrypt ...)
 ```
 

@@ -1,3 +1,10 @@
+"""List every theme bundle under ``assets/theme-*/``.
+
+Prints each bundle's path, its ``config.json``, and its unpickled ``palette.pkl`` to stdout.
+Useful for inspecting what ``install.py`` would offer at install time. Honours the
+``DOTFILES_REPOSITORY_PATH`` environment variable.
+"""
+
 import json
 import os
 import pickle

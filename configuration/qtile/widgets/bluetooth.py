@@ -1,3 +1,9 @@
+"""Qtile widget: connected bluetooth devices and their battery levels.
+
+Reads the latest entry from the ``bluetooth`` Redis stream and renders a per-device
+battery glyph. ``BackgroundPoll`` based.
+"""
+
 import json
 
 import libqtile.widget.base

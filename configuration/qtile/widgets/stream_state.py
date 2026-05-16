@@ -1,3 +1,9 @@
+"""Qtile widget: OBS streaming and recording state.
+
+Reads the latest entry from the ``stream`` Redis stream (``streaming``, ``obs`` booleans)
+and renders a recording dot when OBS is live. ``BackgroundPoll`` based.
+"""
+
 import json
 import os
 

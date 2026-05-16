@@ -1,3 +1,11 @@
+"""Install the dot files.
+
+Discovers theme bundles under ``assets/theme-*/``, prompts for one, writes the chosen bundle's
+``config.json`` (merged with detected monitor geometry, font, and the unpickled palette) to
+``~/.config/config.json``, and copies each per-app configuration tree from ``configuration/``
+into ``~/.config/``. See docs/architecture.md for the full theme-bundle lifecycle.
+"""
+
 import json
 import os
 import pickle

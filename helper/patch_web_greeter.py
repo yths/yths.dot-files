@@ -1,3 +1,11 @@
+"""Patch every web-greeter theme under ``configuration/web-greeter/themes/``.
+
+For each theme that defines a ``theme.json`` with a ``role_map``, generates a ``theme.css``
+holding the active palette values as CSS variables (`--<role>: <hex>`) plus a `--font-family`
+variable derived from the active theme bundle. Themes whose name starts with ``_`` are
+treated as shared assets and skipped.
+"""
+
 import json
 import os
 import shutil

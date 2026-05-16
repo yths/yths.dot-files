@@ -1,3 +1,10 @@
+"""Common installer helpers used by ``install.py`` (file/folder copy, credentials prompt).
+
+Exports ``install_file``, ``install_folder``, ``install_files``, ``install_folders``, and
+``install_credentials``. Each logs a one-line status via loguru (or stdlib logging if
+loguru is unavailable).
+"""
+
 import json
 import os
 import time

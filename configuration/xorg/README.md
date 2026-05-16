@@ -1,6 +1,6 @@
 # Patching EDID Files
 
-## Rational
+## Rationale
 
 Sometimes monitors are shipped with erroneous EDID information. For example, in my case, the horizontal dimension of my screen was wrong, leading to false calculation of the DPI.
 

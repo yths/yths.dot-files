@@ -1,3 +1,10 @@
+"""Patch the user's Visual Studio Code ``settings.json``.
+
+Maps the active palette's semantic tokens to VSCode editor colors and token colors using
+perceptual nearest-color matching (``colour`` library, sRGB → XYZ → ΔE). Handles both
+light and dark variants from the active theme bundle.
+"""
+
 import argparse
 import collections
 import json

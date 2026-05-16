@@ -1,3 +1,9 @@
+"""Qtile widget: AC/battery state.
+
+Reads the latest entry from the ``power_supply`` Redis stream and renders the grid/battery
+icon plus per-battery capacity and charging status. ``BackgroundPoll`` based.
+"""
+
 import json
 
 import libqtile.widget.base
