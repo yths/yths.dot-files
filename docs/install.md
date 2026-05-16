@@ -2,6 +2,8 @@
 
 > Last verified 2026-05-16 on Arch ISO 2026.04.01.
 
+All `yay -S` commands below quote rows from [dependencies.md](dependencies.md), which maps every Python import in the repo to the Arch package that provides it. When adding a dependency, update both this file and that one.
+
 ## Disclaimer
 
 This guide reproduces the yths.dot-files test system, also available as a VM. The goal is a minimal Arch Linux installation with broad hardware support and reasonable privacy defaults. That said, assume this guide can break your system, leak private data, or cause data loss. Proceed only if you understand the risks.
