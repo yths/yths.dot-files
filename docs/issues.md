@@ -26,7 +26,8 @@
 - [x] Drop legacy `colors` block from `~/.config/config.json`
     - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/color-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
 - [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
-    - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`); follow-up in yths.themes still needed so future regenerations carry them too
+    - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`)
+    - (2026-05-16) yths.themes domain `ColorToken` enum extended to 30 tokens with the same three additions; auto-seeding aliases them onto their semantic partners; tests, schema version, and downstream writer tests updated. **Partial only**: yths.themes' palette.pkl pipeline currently writes the raw chromalytica `_LibPalette` object rather than the `{mode: {token: hex}}` dict yths.dot-files consumes — so regenerated bundles still won't produce a working palette.pkl until that pipeline is completed
 - [ ] Extend `helper/gendocs.py` with an import scanner that diffs the actual imports against `docs/dependencies.md`
 - [x] Replace misleading `requirements*.txt` files with `docs/dependencies.md`
     - (2026-05-16) removed both `requirements.txt` and `requirements-dev.txt`; dependency surface now lives in `docs/dependencies.md` mapping each Python import to its Arch package
