@@ -1,0 +1,47 @@
+{
+    "wallpaper_key": "dark",
+    "role_map": {
+        "background": "background",
+        "foreground": "foreground",
+        "foreground-variant": "foreground_variant",
+        "neutral": "neutral",
+        "highlight": "highlight",
+        "failure": "failure",
+        "success": "success",
+        "notification": "notification",
+        "warning": "warning"
+    },
+    "layout": {},
+    "font_overrides": {
+        "size": 20
+    },
+    "symbols": {
+        "monitor": "\udb80\udf79",
+        "password_prompt": "\udb81\udff5",
+        "submit": "\u203a",
+        "shutdown": "\udb81\udc25",
+        "restart": "\udb81\udf09",
+        "suspend": "\udb81\udcb2",
+        "hibernate": "\uf186",
+        "brightness": "\udb80\udcde",
+        "battery_charging": "\udb80\udc84",
+        "battery_discharging": "\udb80\udc79",
+        "updates": "\udb81\udeb0",
+        "vpn_on": "\udb81\udef3",
+        "vpn_off": "\udb83\udc9d",
+        "summary_prefix": "\ueb10",
+        "user_prompt": "\uf007",
+        "session_prefix": "\ueea8",
+        "session_chevron": "\udb80\udd40",
+        "user_list_prefix": "\uf0c0"
+    },
+    "strings": {
+        "welcome": "username",
+        "session": "session",
+        "auth_failed": "authentication failed",
+        "shutdown_title": "shutdown",
+        "restart_title": "restart",
+        "suspend_title": "suspend",
+        "hibernate_title": "hibernate"
+    }
+}

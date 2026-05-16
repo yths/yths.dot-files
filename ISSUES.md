@@ -14,7 +14,8 @@
 
 - [ ] Map all colors for `qutebrowser`
 - [ ] Handle monitor plug/unplug events gracefully in `qtile`
-- [ ] Add web-greeter to patch configuration
+- [x] Add web-greeter to patch configuration
+    - (2026-05-14) added `helper/patch_web_greeter.py`, wired into `patch_all`; themes parameterized via CSS variables generated into each theme's `theme.css`
 - [ ] Add plymouth to patch configuration
 - [ ] Automate installation of web-greeter
 - [ ] Automate installation of plymouth

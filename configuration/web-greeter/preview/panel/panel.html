@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>web-greeter preview</title>
+    <link rel="stylesheet" href="/panel/panel.css">
+    <script src="/panel/panel.js" defer></script>
+</head>
+<body>
+    <aside id="panel">
+        <header>
+            <h1>web-greeter preview</h1>
+            <small id="ws_status">disconnected</small>
+        </header>
+
+        <section>
+            <h2>theme</h2>
+            <div id="theme_picker"></div>
+        </section>
+
+        <section>
+            <h2>greeter events</h2>
+            <div class="grid">
+                <button data-event="show_prompt:info">show_prompt (info)</button>
+                <button data-event="show_prompt:password">show_prompt (password)</button>
+                <button data-event="show_message:info">show_message (info)</button>
+                <button data-event="show_message:error">show_message (error)</button>
+                <button data-event="auth:success">auth_complete (success)</button>
+                <button data-event="auth:fail">auth_complete (fail)</button>
+                <button data-event="idle">idle</button>
+                <button data-event="reset">reset</button>
+            </div>
+            <label class="inline">
+                <input type="checkbox" id="force_fail_auth"> force-fail next auth
+            </label>
+        </section>
+
+        <section>
+            <h2>battery / brightness</h2>
+            <div class="grid">
+                <button data-event="battery:-10">battery -10%</button>
+                <button data-event="battery:+10">battery +10%</button>
+                <button data-event="brightness:-20">brightness -20</button>
+                <button data-event="brightness:+20">brightness +20</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>colors (preview-only)</h2>
+            <div id="color_overrides"></div>
+            <button id="copy_diff">copy diff</button>
+        </section>
+
+        <section>
+            <h2>wallpaper</h2>
+            <label class="inline">
+                key
+                <select id="wallpaper_key"></select>
+            </label>
+        </section>
+
+        <section>
+            <h2>layout (persists to theme.json)</h2>
+            <div id="layout_controls"></div>
+        </section>
+
+        <section>
+            <h2>font (persists to theme.json)</h2>
+            <label class="inline">
+                family
+                <input type="text" id="font_family" placeholder="(inherit from global)">
+            </label>
+            <label class="inline">
+                size (px)
+                <input type="number" id="font_size" min="8" max="48" step="1">
+            </label>
+            <button id="save_font">save</button>
+        </section>
+
+        <section>
+            <h2>symbols (persists to theme.json)</h2>
+            <div id="symbols_controls" class="kv"></div>
+            <button id="symbols_add">+ add symbol</button>
+        </section>
+
+        <section>
+            <h2>strings (persists to theme.json)</h2>
+            <div id="strings_controls" class="kv"></div>
+            <button id="strings_add">+ add string</button>
+        </section>
+
+        <section>
+            <h2>save as new theme</h2>
+            <label class="inline">
+                name
+                <input type="text" id="clone_name" placeholder="my-theme" pattern="[a-z][a-z0-9-]{0,30}">
+            </label>
+            <button id="clone_theme">clone active theme</button>
+            <small id="clone_msg"></small>
+        </section>
+
+        <section id="toast_section">
+            <h2>events</h2>
+            <ul id="toasts"></ul>
+        </section>
+    </aside>
+
+    <main id="stage_wrap">
+        <iframe id="stage" title="theme stage"></iframe>
+    </main>
+</body>
+</html>

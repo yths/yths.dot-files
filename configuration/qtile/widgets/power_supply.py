@@ -3,7 +3,7 @@ import json
 import libqtile.widget.base
 
 
-class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
+class WidgetPowerSupply(libqtile.widget.base.InLoopPollText):
     def __init__(self, r, warning_color="#ff0000", **config):
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
         self.r = r

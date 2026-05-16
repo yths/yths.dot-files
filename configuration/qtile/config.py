@@ -593,6 +593,7 @@ screens = [
                             * configuration["font"]["size"]
                         )
                     ),
+                    update_interval=1,
                 ),
                 widget.Spacer(
                     length=int(

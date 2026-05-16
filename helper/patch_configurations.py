@@ -6,6 +6,8 @@ import time
 
 import toml
 
+from helper.patch_web_greeter import patch_web_greeter
+
 
 def patch_rofi(configuration):
     theme = configuration["state"]["theme"]
@@ -187,6 +189,7 @@ def patch_all(configuration):
     patch_tmux(configuration)
     patch_starship(configuration)
     patch_dunst(configuration)
+    patch_web_greeter(configuration)
 
 
 with open(os.path.expanduser("~/.config/config.json"), "r") as input_handle:

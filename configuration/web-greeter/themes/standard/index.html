@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>LightDM Theme</title>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="_shared/logic.js" defer></script>
+  </head>
+  <body>
+    <header id="top_bar">
+      <span id="bar_left">
+        <span class="bar_icon" data-symbol="monitor"></span>
+        <span id="hostname"></span>
+      </span>
+      <span id="bar_right">
+        <span id="kb_layout"  class="indicator"></span>
+        <span id="battery"    class="indicator"></span>
+        <span id="brightness" class="indicator"></span>
+        <span id="clock"      class="indicator"></span>
+      </span>
+    </header>
+
+    <main id="stage">
+      <section id="login_card">
+        <ul id="user_list"></ul>
+
+        <form id="auth_form" action="javascript:handle_input()">
+          <input type="text" id="user_input" data-placeholder="welcome" placeholder="username" autocomplete="off" />
+          <button id="auth_submit" type="submit" data-symbol="submit">›</button>
+        </form>
+
+        <div id="session_row">
+          <label for="session_picker" data-string="session">session</label>
+          <div id="session_picker" tabindex="0">
+            <span class="session_current"></span>
+            <ul class="session_options"></ul>
+          </div>
+        </div>
+
+        <div id="message_bar">
+          <p id="message">&nbsp;</p>
+        </div>
+      </section>
+    </main>
+
+    <footer id="bottom_bar">
+      <div id="power_actions">
+        <button id="btn_suspend"   type="button" data-symbol="suspend"   data-title="suspend_title"   title="suspend">⏾</button>
+        <button id="btn_hibernate" type="button" data-symbol="hibernate" data-title="hibernate_title" title="hibernate">⏼</button>
+        <button id="btn_restart"   type="button" data-symbol="restart"   data-title="restart_title"   title="restart">↻</button>
+        <button id="btn_shutdown"  type="button" data-symbol="shutdown"  data-title="shutdown_title"  title="shutdown">⏻</button>
+      </div>
+      <div id="brightness_control">
+        <label for="brightness_slider" data-symbol="brightness">☀</label>
+        <input id="brightness_slider" type="range" min="0" max="100" step="5" />
+      </div>
+    </footer>
+  </body>
+</html>

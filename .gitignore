@@ -172,3 +172,13 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+### web-greeter generated artifacts ###
+# Produced by helper/patch_web_greeter.py — should not be committed.
+configuration/web-greeter/themes/*/theme.css
+configuration/web-greeter/themes/*/wallpaper.png
+configuration/web-greeter/themes/*/wallpaper.jpg
+configuration/web-greeter/themes/*/wallpaper.jpeg
+# Per-theme copy of themes/_shared/ — only the canonical source under
+# themes/_shared/ is tracked.
+configuration/web-greeter/themes/[!_]*/_shared/
