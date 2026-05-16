@@ -126,8 +126,9 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         return output
     
     
-    def __del__(self):
+    def finalize(self):
         if self.stream is not None:
-            self.stream.stop_stream()
+            self.stream.stop()
             self.stream.close()
-        self.p.terminate()
+            self.stream = None
+        libqtile.widget.base.InLoopPollText.finalize(self)
