@@ -21,7 +21,10 @@
 - [x] Document the `yths` color scheme palette in `docs/notes.md`
     - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; concrete palette table for `yths` still to be authored
 - [ ] Remove stray non-widget files from `configuration/qtile/widgets/` (`patch_configurations.py` and `patch_vsc.py` are duplicates of `helper/`; `test_audio.py` is experimental)
-- [ ] Extend `helper/gendocs.py` with an import scanner that diffs the actual imports against `docs/dependencies.md` (audit catches new third-party imports without manual greps)
+- [x] Drop legacy `colors` block from `~/.config/config.json`
+    - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/color-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
+- [ ] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected — coordinate with yths.themes to add them
+- [ ] Extend `helper/gendocs.py` with an import scanner that diffs the actual imports against `docs/dependencies.md`
 - [x] Replace misleading `requirements*.txt` files with `docs/dependencies.md`
     - (2026-05-16) removed both `requirements.txt` and `requirements-dev.txt`; dependency surface now lives in `docs/dependencies.md` mapping each Python import to its Arch package
 

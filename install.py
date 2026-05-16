@@ -172,6 +172,7 @@ if __name__ == "__main__":
     configuration = json.load(
         open(os.path.join(assets_folder_path, "config.json"), "r")
     )
+    configuration.pop("colors", None)
 
     monitors = helper.screen_configuration.get()
     configuration["monitors"] = monitors

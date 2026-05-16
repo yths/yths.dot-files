@@ -14,7 +14,7 @@ Presets share the semantic token names (see [color-semantics.md](color-semantics
 
 ```text
 assets/theme-<uuid>/
-  config.json                       # name, font, colors (light/dark), wallpapers, state
+  config.json                       # name, font, palette, wallpapers, state
   palette.pkl                       # pickled palette object consumed by qtile and the patch scripts
   wallpapers/
     wallpaper-light.png
@@ -51,7 +51,7 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 
 ## Color Scheme: nuunamnir
 
-The `nuunamnir` palette is designed to exploit the correlation between lightness and colorfulness with perceptual saliency, so the hue carries semantic meaning rather than arbitrary preference. Background and foreground colors stay desaturated; cues that need attention (positive, negative, neutral, effect) escalate toward the saturated and colorful end of the gamut.
+The `nuunamnir` palette is designed to exploit the correlation between lightness and colorfulness with perceptual saliency, so the hue carries semantic meaning rather than arbitrary preference. Background and foreground tokens stay desaturated; cues that need attention escalate toward the saturated and colorful end of the gamut.
 
 The dark variant is the photonegative reflection of the light variant: corresponding tokens swap hue/lightness rather than re-pick a new color. This keeps recognition consistent across mode switches.
 

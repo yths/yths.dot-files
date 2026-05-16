@@ -1,73 +1,61 @@
 # Color Semantics
 
-A reference for theme authors: what every semantic token *means*, and how to decide which token to reach for. Concrete colour values live in each preset's `config.json`; this document is about intent, not hex codes.
+A reference for theme authors: what the active palette is, which tokens consumers in this repo expect, and how to add to it. Concrete colour values live in each preset's `palette.pkl`; this document is about contract, not hex codes.
 
-Two vocabularies are in play; see [config-schema.md](config-schema.md#two-color-models) for the distinction. This page covers the **`palette`** (semantic, role-named) vocabulary — the one most patchers and widgets consume.
+## The Palette
 
-## Structural Tokens
+The palette is a dict of two keys, `light` and `dark`. Each key maps to another dict whose keys are *token names* (free-form strings) and whose values are hex colour strings:
 
-These describe surfaces and basic chrome. Every theme defines them; they carry no semantic weight beyond "where things sit."
+```python
+{
+  "light": {
+    "background":   "#ebebeb",
+    "foreground":   "#787878",
+    "neutral":      "#a5aa49",
+    "highlight":    "#4bb4b7",
+    "notification": "#fb8087",
+    "warning":      "#bfa06e",
+    ...
+  },
+  "dark":  { ...same keys, different hexes... },
+}
+```
 
-| Token | Role |
+`install.py` writes the active bundle's palette into `~/.config/config.json` under `"palette"`; qtile and the patchers read it via `configuration["palette"][theme][<token>]` where `theme` is `"light"` or `"dark"`. See [config-schema.md](config-schema.md) for the surrounding schema.
+
+## Minimum Required Tokens
+
+The qtile config and widgets in this repo currently read these six tokens. A bundle whose palette omits any of them will raise `KeyError` at qtile startup.
+
+| Token | Used for |
 |---|---|
-| `background` | The primary surface colour. Bar background, terminal background, web-greeter page background. |
-| `foreground` | The primary text/glyph colour against `background`. |
-| `cursor` | Caret colour in editors and terminals. Usually high-contrast against `background`. |
-| `grey` | A neutral mid-tone for borders, dividers, disabled state. |
-| `light_grey` | A lighter neutral, used for hover and secondary surfaces. |
-| `dark_grey` | A darker neutral, used for emphasised dividers and active state. |
-| `light_muted` | A near-`background` tone for tertiary surfaces. |
-| `dark_muted` | A near-`foreground` tone for de-emphasised text. |
+| `background` | bar background, surfaces |
+| `foreground` | primary text and glyphs |
+| `neutral` | borders, dividers, de-emphasised state |
+| `highlight` | focal accent (current group, active selection) |
+| `notification` | attention cue (urgent windows, notifications) |
+| `warning` | non-critical attention cue (e.g. a failing service in the bar) |
 
-## Status Tokens
+Adding new consumers (a new widget, a new patcher) widens this set; track changes here so theme authors know what to ship.
 
-These carry meaning. Use them to communicate state (good/bad/neutral/attention) consistently across every app.
+## Optional Tokens
 
-| Token | Role |
-|---|---|
-| `positive` | Success, OK, healthy state. (Confirm buttons, "succeeded" indicators, healthy widget glyphs.) |
-| `negative` | Failure, error, danger. (Failed builds, error toasts, low-battery warnings.) |
-| `neutral` | Informational, in-progress, no judgement. (Pending state, neutral notifications.) |
+Beyond the minimum, bundles are free to ship additional tokens for use by their own patchers, web-greeter themes, or future widgets. The current presets carry different supersets:
 
-The `nuunamnir` palette deliberately ties hue to perceptual salience: `positive` skews green (recognised at low attention cost), `negative` skews red (recognised even peripherally), `neutral` skews toward blue (low salience).
+- The `yths` preset adds `success`, `failure`, plus a `*_variant` family for softer hue versions (`red_variant`, `blue_variant`, `foreground_variant`, ...).
+- The `nuunamnir` preset adds `positive`, `negative`, `cursor`, `grey`, `pastel_*`, `effect_*` from its source colour scheme.
 
-## Effect Tokens
-
-The accent set — used for highlights, animations, transient emphasis. Reach for these when something needs to *catch* the eye without claiming "success" or "failure."
-
-| Token | Role |
-|---|---|
-| `effect_bright` | Highest-attention accent. Used sparingly for the focal cue. |
-| `effect_dark` | Inverse of `effect_bright` in the opposite mode (light/dark). |
-| `effect_muted` | A desaturated accent for less-emphasised highlights. |
-| `effect_pastel` | The softest accent variant, for ambient highlights. |
-
-## Pastel Variants
-
-Pastel tokens (`pastel_red`, `pastel_green`, `pastel_blue`, `pastel_yellow`, `pastel_magenta`, `pastel_cyan`) exist as desaturated companions to the named-hue colours. Use them for elements that need a hue identity but should not pull focus from `effect_*` or status tokens.
-
-## Named-Hue Tokens
-
-`red`, `green`, `blue`, `yellow`, `magenta`, `cyan` (and their `pastel_*` variants) are the lowest-level vocabulary. Reach for them only when:
-
-1. The target app's config uses hue names directly (e.g. ANSI 0–15 in a terminal).
-2. The semantic intent is genuinely "this thing should be visually identifiable as blue."
-
-For anything else, prefer a semantic token — palettes can be re-themed without breaking semantic usage; named hues lock you to the theme's specific hue choices.
+The two vocabularies do not perfectly overlap. A widget that needs a token outside the minimum set should fall back gracefully (read with `.get(token, default)`) so it can run against either preset.
 
 ## Light vs Dark Variants
 
-Every palette has a `light` and `dark` block with the same token names but different hex values. The active variant is selected by `state.theme` in `~/.config/config.json`.
-
-In the `nuunamnir` palette, the dark variant is the photonegative of the light variant: corresponding tokens swap lightness while keeping chroma and hue family stable, so muscle-memory transfers between modes. Other presets are free to choose their own light↔dark relationship.
+Both `light` and `dark` keys must be present with the same token set. The active variant is selected by `state.theme` in `~/.config/config.json`. The light/dark relationship is a per-preset design decision — `nuunamnir` uses a strict photonegative mapping; `yths` is tuned independently.
 
 ## Where Tokens Are Consumed
 
-Tokens are read by:
-
-- **qtile widgets** — via `configuration["palette"][theme][<token>]` (theme is the current state value). Widgets reach for status tokens (`positive`/`negative`/`neutral`) and `foreground`/`background`.
-- **`helper/patch_web_greeter.py`** — each web-greeter theme's `theme.json#role_map` maps web-greeter-internal role names (`highlight`, `failure`, `success`, `notification`) to palette tokens. CSS variables are generated as `--<role>: <hex>`.
-- **`helper/patch_vsc.py`** — perceptual mapping from VSCode's editor/token colour vocabulary onto the palette.
+- **qtile widgets** — `configuration["palette"][theme][<token>]`. The six minimum-required tokens above.
+- **`helper/patch_web_greeter.py`** — each web-greeter theme's `theme.json#role_map` maps web-greeter role names to palette tokens; the patcher writes CSS variables (`--<role>: <hex>`).
+- **`helper/patch_vsc.py`** — perceptual nearest-colour matching from VSCode's editor/token vocabulary into the palette.
 - **`helper/patch_plymouth.py`** — renders the boot background using selected palette tokens.
 
 For an authoritative usage map, grep:
@@ -76,10 +64,12 @@ For an authoritative usage map, grep:
 git grep -nE 'palette\[[^]]+\]\[[^]]+\]' configuration/ helper/
 ```
 
-## Adding a New Token
+## Adding a New Required Token
 
-1. Add the token (with concrete colour values for `light` and `dark`) to every preset's `palette.pkl` (i.e. in the `yths.themes` orchestrator).
-2. Document its role in the *Structural*, *Status*, *Effect*, *Pastel*, or *Named-hue* section above — pick whichever family it belongs to.
-3. Update the consumers that should reach for it (widget code, patchers, web-greeter `role_map`s).
+When a new consumer (widget, patcher) reads a palette token the minimum set doesn't yet contain:
 
-Do not add tokens whose role overlaps an existing one — pick a different role or refine the existing one. A bloated palette is harder to use consistently than a small one.
+1. Add the token to the *Minimum Required Tokens* table above, with a one-line description of what the consumer uses it for.
+2. Ensure every shipped bundle's `palette.pkl` defines the new token for both `light` and `dark`. (This is `yths.themes` work.)
+3. Open an issue in [issues.md](issues.md) tracking any bundle that still lacks the new token.
+
+Avoid adding required tokens lightly — each one is a constraint every preset must honour.

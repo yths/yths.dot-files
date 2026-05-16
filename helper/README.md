@@ -50,7 +50,6 @@ Conventions:
 - A patcher accepts the full configuration dict, not a path. The orchestrator loads `~/.config/config.json` once and passes it to every patcher.
 - A patcher writes the app's config file in place. It does not back up; the orchestrator's contract is that `~/.config/config.json` was freshly written by the installer or a previous patcher run.
 - A patcher swallows errors specific to the target app (e.g. a missing theme directory) by skipping rather than raising — one broken app must not block the others.
-- Prefer the **semantic palette** (`configuration["palette"][theme]`) over the **named palette** (`configuration["colors"][theme]`). See [../docs/color-semantics.md](../docs/color-semantics.md) for the distinction.
 
 ## Orchestrator
 
