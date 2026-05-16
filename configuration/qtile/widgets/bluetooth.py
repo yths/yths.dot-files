@@ -4,9 +4,9 @@ import libqtile.widget.base
 import libqtile.log_utils
 
 
-class WidgetBluetooth(libqtile.widget.base.InLoopPollText):
+class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
     def __init__(self, r, icons={}, warning_color="#ff0000", **config):
-        libqtile.widget.base.InLoopPollText.__init__(self, **config)
+        libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.icons = icons
@@ -20,22 +20,22 @@ class WidgetBluetooth(libqtile.widget.base.InLoopPollText):
     def poll(self):
         if self.r is None:
             return ""
-        data = self.r.xrevrange("bluetooth", count=1)
         try:
+            data = self.r.xrevrange("bluetooth", count=1)
             eid, payload = data[-1]
-        except IndexError:
-            return ""
-        measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
-        output = ""
-        for device in measurement:
-            if device in self.icons:
-                output += f"{self.icons[device]} "
-                if measurement[device]["capacity"] != "Unknown":
-                    capcity = float(measurement[device]["capacity"])
-                    idx = int(round(self._scale(capcity, 0, 100, 0, 7)))
-                    if idx < 2:
-                        output += f"<span color='{self.warning_color}'>{self.capcity_symbols[idx]}</span>"
-                    else:
-                        output += f"{self.capcity_symbols[idx]}"
+            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
+            output = ""
+            for device in measurement:
+                if device in self.icons:
+                    output += f"{self.icons[device]} "
+                    if measurement[device]["capacity"] != "Unknown":
+                        capcity = float(measurement[device]["capacity"])
+                        idx = int(round(self._scale(capcity, 0, 100, 0, 7)))
+                        if idx < 2:
+                            output += f"<span color='{self.warning_color}'>{self.capcity_symbols[idx]}</span>"
+                        else:
+                            output += f"{self.capcity_symbols[idx]}"
 
-        return f"{output}"
+            return f"{output}"
+        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError):
+            return ""

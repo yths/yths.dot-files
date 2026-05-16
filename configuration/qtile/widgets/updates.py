@@ -4,7 +4,7 @@ import libqtile.log_utils
 import libqtile.widget.base
 
 
-class WidgetUpdates(libqtile.widget.base.InLoopPollText):
+class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
     def __init__(
         self,
         r,
@@ -13,7 +13,7 @@ class WidgetUpdates(libqtile.widget.base.InLoopPollText):
         threshold=32,
         **config,
     ):
-        libqtile.widget.base.InLoopPollText.__init__(self, **config)
+        libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.warning_color = warning_color
@@ -23,12 +23,12 @@ class WidgetUpdates(libqtile.widget.base.InLoopPollText):
     def poll(self):
         if self.r is None:
             return ""
-        data = self.r.xrevrange("updates", count=1)
         try:
+            data = self.r.xrevrange("updates", count=1)
             eid, payload = data[-1]
-        except IndexError:
+            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
+        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError):
             return ""
-        measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
         outstanding_updates = measurement.get("outstanding_updates", 0)
 
         if outstanding_updates > self.threshold:
