@@ -16,6 +16,33 @@ import colour
 import utils
 
 
+HIGHLIGHT_KEY_MARKERS = (
+    "selection",
+    "highlight",
+    "hover",
+    "focus",
+    "drop",
+    "match",
+    "range",
+)
+HIGHLIGHT_EXCLUDED_LABELS = frozenset({"background"})
+
+
+def _excludes_background(key):
+    if not key:
+        return False
+    kl = key.lower()
+    if "background" not in kl:
+        return False
+    return any(marker in kl for marker in HIGHLIGHT_KEY_MARKERS)
+
+
+def _filter_candidates(key, colors):
+    if _excludes_background(key):
+        return [c for c in colors if c["label"] not in HIGHLIGHT_EXCLUDED_LABELS]
+    return colors
+
+
 def color_str_to_tuple(s):
     return tuple(int(s[i : i + 2], 16) / 255 for i in (1, 3, 5))
 
@@ -54,26 +81,34 @@ def dict_replace_value(d: dict, colors, lookup_colors=None) -> dict:
         if isinstance(v, dict):
             v = dict_replace_value(v, colors, lookup_colors)
         elif isinstance(v, list):
-            v = list_replace_value(v, colors, lookup_colors)
+            v = list_replace_value(v, colors, lookup_colors, parent_key=k)
         elif isinstance(v, str):
             if v.startswith("#") and (len(v) == 7 or len(v) == 9):
-                v = closest_color(v, colors, lookup_colors)
+                v = closest_color(
+                    v,
+                    _filter_candidates(k, colors),
+                    _filter_candidates(k, lookup_colors),
+                )
         x[k] = v
     return x
 
 
-def list_replace_value(l: list, colors, lookup_colors=None) -> list:
+def list_replace_value(l: list, colors, lookup_colors=None, parent_key=None) -> list:
     if lookup_colors is None:
         lookup_colors = colors
     x = []
     for e in l:
         if isinstance(e, list):
-            e = list_replace_value(e, colors, lookup_colors)
+            e = list_replace_value(e, colors, lookup_colors, parent_key=parent_key)
         elif isinstance(e, dict):
             e = dict_replace_value(e, colors, lookup_colors)
         elif isinstance(e, str):
             if e.startswith("#") and (len(e) == 7 or len(e) == 9):
-                e = closest_color(e, colors, lookup_colors)
+                e = closest_color(
+                    e,
+                    _filter_candidates(parent_key, colors),
+                    _filter_candidates(parent_key, lookup_colors),
+                )
         x.append(e)
     return x
 
