@@ -9,7 +9,16 @@ import json
 import os
 import subprocess
 import configparser
+import sys
 import time
+
+# Run from any cwd: as a script via `python helper/patch_configurations.py`
+# (sys.path[0] = helper/) or imported as `helper.patch_configurations` from
+# install.py at the repo root. Putting the repo root on sys.path makes the
+# absolute `helper.X` import below work in both shapes.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 import toml
 
