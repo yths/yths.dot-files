@@ -60,8 +60,11 @@ The single configuration file that every downstream consumer (qtile, the patcher
 | `theme` | `"light"` \| `"dark"` | which palette variant is currently active |
 | `condition` | `"normal"` \| `"urgent"` | secondary state used to pick highlight wallpapers and emphasis colours |
 | `mode` | `"automatic"` \| `"manual"` | whether `theme` is allowed to flip on its own (driven by the `location` stream's sunrise/sunset) |
+| `audio_mode` | `"auto"` \| `"manual"` | whether the audio widget tracks the system's active capture device automatically or stays on the device the user picked; defaults to `"auto"` if absent |
 
 When `mode` is `"automatic"`, qtile flips `theme` between `"light"` and `"dark"` on sunrise/sunset transitions. When `"manual"`, the user owns `theme` directly.
+
+When `audio_mode` is `"auto"`, the audio widget snaps to the ALSA `default` capture device (the alsa-pulse bridge that follows whichever sink PipeWire/Pulse currently routes) — flipped on by middle-click. Scrolling the widget cycles devices manually and persists the choice as `"manual"`.
 
 ## `monitors` Subfields
 

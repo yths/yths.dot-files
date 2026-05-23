@@ -6,6 +6,8 @@ is active. Implements ``libqtile.widget.base.InLoopPollText``.
 """
 
 import json
+import os
+import time
 
 import libqtile.widget.base
 import libqtile.log_utils
@@ -20,11 +22,22 @@ import numpy
 
 
 class WidgetAudio(libqtile.widget.base.InLoopPollText):
-    def __init__(self, r, num_bars=16, device_id=31, notification_color="#ff0000", **config):
+    def __init__(
+        self,
+        r,
+        num_bars=16,
+        device_id=31,
+        notification_color="#ff0000",
+        configuration_file_path=os.path.expanduser(
+            os.path.join("~", ".config", "config.json")
+        ),
+        **config,
+    ):
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
         self.r = r
 
         self.notification_color = notification_color
+        self.configuration_file_path = configuration_file_path
 
         self.device_id = 0
 
@@ -43,17 +56,104 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self.visualization = ' ' * self.NUM_BARS
         self.past_values = numpy.zeros(self.NUM_BARS, dtype=float)
 
-        self.add_callbacks({"Button4": self.device_up, "Button5": self.device_down})
+        self.mode = self._load_mode()
+        self.last_active_sink = None
+        self._last_reenum = 0.0
+        self.REENUM_INTERVAL = 5.0
+
+        self.add_callbacks({
+            "Button2": self.toggle_mode,
+            "Button4": self.device_up,
+            "Button5": self.device_down,
+        })
         self.decay = 0
+
+    def _load_mode(self):
+        try:
+            with open(self.configuration_file_path, "r") as f:
+                return json.load(f).get("state", {}).get("audio_mode", "auto")
+        except (OSError, ValueError):
+            return "auto"
+
+    def _save_mode(self, mode):
+        try:
+            with open(self.configuration_file_path, "r") as f:
+                configuration = json.load(f)
+        except (OSError, ValueError):
+            return
+        configuration.setdefault("state", {})["audio_mode"] = mode
+        try:
+            with open(self.configuration_file_path, "w") as f:
+                json.dump(configuration, f, indent=4)
+        except OSError:
+            pass
+
+    def _set_mode(self, mode):
+        if mode == self.mode:
+            return
+        self.mode = mode
+        self._save_mode(mode)
+
+    def toggle_mode(self):
+        self.decay = self.MAX_DECAY
+        target = "manual" if self.mode == "auto" else "auto"
+        self._set_mode(target)
+        self.last_active_sink = None
+        if target == "auto":
+            # User-initiated refresh — bypass throttle so a freshly connected
+            # bluetooth headset can be picked up immediately on middle-click.
+            self._reenumerate_devices(force=True)
+
+    def _auto_device_index(self):
+        # The ALSA 'default' device is the alsa-pulse bridge — PipeWire/Pulse
+        # routes whatever is currently playing through it, so capturing from
+        # it tracks the active sink without per-sink mapping. The pulse-hostapi
+        # entries for individual sinks (e.g. bluez_output monitors) often
+        # don't deliver a usable input stream.
+        if sounddevice is None:
+            return None
+        try:
+            devices = sounddevice.query_devices()
+        except Exception:
+            return None
+        for index, device in enumerate(devices):
+            if device.get("name") == "default" and device.get("max_input_channels", 0) > 0:
+                return index
+        return None
+
+    def _reenumerate_devices(self, force=False):
+        # PortAudio caches its device list at init; bluetooth headsets and
+        # other hot-plugged sinks aren't visible until we terminate and
+        # re-initialise. Throttled so a sink description that never resolves
+        # doesn't cause a re-init storm.
+        if sounddevice is None:
+            return
+        if not force and time.monotonic() - self._last_reenum < self.REENUM_INTERVAL:
+            return
+        self._last_reenum = time.monotonic()
+        if self.stream is not None:
+            try:
+                self.stream.stop()
+                self.stream.close()
+            except Exception:
+                pass
+            self.stream = None
+        try:
+            sounddevice._terminate()
+            sounddevice._initialize()
+        except Exception:
+            libqtile.log_utils.logger.exception("sounddevice re-init failed")
 
     def device_up(self):
         self.decay = self.MAX_DECAY
+        self._set_mode("manual")
         if self.device_id is not None:
             available_devices = len(sounddevice.query_devices())
             self.update_device((self.device_id + 1) % available_devices)
 
     def device_down(self):
         self.decay = self.MAX_DECAY
+        self._set_mode("manual")
         if self.device_id is not None and self.device_id > 0:
             available_devices = len(sounddevice.query_devices())
             self.update_device((self.device_id - 1) % available_devices)
@@ -119,6 +219,14 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             return ""
         measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
 
+        if self.mode == "auto":
+            self.last_active_sink = measurement.get("active_sink")
+            target = self._auto_device_index()
+            if target is None:
+                self._reenumerate_devices()
+                target = self._auto_device_index()
+            if target is not None and target != self.device_id:
+                self.update_device(target)
 
         output = f"<span letter_spacing='1024'>|{self.visualization}|</span>"
 
@@ -129,7 +237,8 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         if self.decay > 0:
             self.decay -= 1
             self.decay = max(self.decay, 0)
-            output = f"<span fgalpha='{max(self.decay * round(65535 / self.MAX_DECAY), 1)}'>{self.device_id}</span>" + output
+            mode_marker = "A" if self.mode == "auto" else "M"
+            output = f"<span fgalpha='{max(self.decay * round(65535 / self.MAX_DECAY), 1)}'>{mode_marker}:{self.device_id}</span>" + output
         return output
     
     
