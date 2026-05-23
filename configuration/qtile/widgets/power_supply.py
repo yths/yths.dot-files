@@ -7,6 +7,7 @@ icon plus per-battery capacity and charging status. ``BackgroundPoll`` based.
 import json
 
 import libqtile.widget.base
+import redis.exceptions
 
 
 class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
@@ -76,5 +77,5 @@ class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
                         battery = f"<span color='{self.warning_color}'>󰁺</span>"
                 output.append(battery)
             return f"{' '.join(output)}"
-        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError):
+        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError, redis.exceptions.RedisError):
             return ""

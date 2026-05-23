@@ -8,6 +8,7 @@ and surfaces an indicator plus a short location label when a tunnel is up.
 import json
 
 import libqtile.widget.base
+import redis.exceptions
 
 
 class WidgetVPN(libqtile.widget.base.BackgroundPoll):
@@ -33,5 +34,5 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
             else:
                 output.append("󰲝")
             return f"{' '.join(output)}"
-        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError):
+        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError, redis.exceptions.RedisError):
             return ""

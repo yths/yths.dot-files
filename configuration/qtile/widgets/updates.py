@@ -10,6 +10,7 @@ import json
 
 import libqtile.log_utils
 import libqtile.widget.base
+import redis.exceptions
 
 
 class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
@@ -35,7 +36,7 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
             data = self.r.xrevrange("updates", count=1)
             eid, payload = data[-1]
             measurement = json.loads(payload[b"measurement"].decode("utf-8"))
-        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError):
+        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError, redis.exceptions.RedisError):
             return ""
         outstanding_updates = measurement.get("outstanding_updates", 0)
 

@@ -8,6 +8,7 @@ import json
 
 import libqtile.widget.base
 import libqtile.log_utils
+import redis.exceptions
 
 
 class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
@@ -43,5 +44,5 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
                             output += f"{self.capcity_symbols[idx]}"
 
             return f"{output}"
-        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError):
+        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError, redis.exceptions.RedisError):
             return ""

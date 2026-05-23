@@ -12,6 +12,7 @@ import subprocess
 
 import libqtile.log_utils
 import libqtile.widget.base
+import redis.exceptions
 
 
 class WidgetLocation(libqtile.widget.base.InLoopPollText):
@@ -65,7 +66,10 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         with open(self.configuration_file_path, "r") as f:
             configuration = json.load(f)
 
-        data  = self.r.xrevrange("location", count=1)
+        try:
+            data = self.r.xrevrange("location", count=1)
+        except redis.exceptions.RedisError:
+            return ""
         try:
             eid, payload = data[-1]
         except IndexError:

@@ -9,6 +9,7 @@ import os
 
 import libqtile.log_utils
 import libqtile.widget.base
+import redis.exceptions
 
 
 class WidgetStreamState(libqtile.widget.base.InLoopPollText):
@@ -37,7 +38,10 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
     def poll(self):
         if self.r is None:
             return ""
-        data = self.r.xrevrange("stream", count=1)
+        try:
+            data = self.r.xrevrange("stream", count=1)
+        except redis.exceptions.RedisError:
+            return ""
         try:
             eid, payload = data[-1]
         except IndexError:
