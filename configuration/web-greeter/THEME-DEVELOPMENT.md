@@ -102,7 +102,6 @@ Set the active theme in `/etc/lightdm/web-greeter.yml`. After any palette change
 ## Currently Bundled Themes
 
 <!-- BEGIN: WEB_GREETER_THEMES -->
-- **nuunamnir**
 - **standard**
 <!-- END: WEB_GREETER_THEMES -->
 

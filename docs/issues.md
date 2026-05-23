@@ -34,7 +34,6 @@
 
 ## Themes
 
-- [ ] Add a `yths` web-greeter theme directory (currently only `nuunamnir` ships under `configuration/web-greeter/themes/`)
 - [ ] Add a `nuunamnir` plymouth theme directory (currently only `yths` ships under `configuration/plymouth/themes/`)
 
 ## Configurations

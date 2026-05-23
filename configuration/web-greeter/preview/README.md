@@ -30,32 +30,29 @@ Then open `http://127.0.0.1:8765/`.
 
 Symbols become CSS custom properties `--symbol-<key>` and are also assigned to any `[data-symbol="key"]` element's `textContent`. Strings are written to `[data-string]` text, `[data-placeholder]` `placeholder`, and `[data-title]` `title`. Add or remove keys in the panel — there's no fixed schema.
 
-Defaults shipped with each theme:
+Defaults shipped with the bundled theme:
 
-- `nuunamnir`: Nerd Font glyphs (`user_prompt`, `password_prompt`) — assumes Iosevka Nerd Font.
 - `standard`: Nerd Font glyphs mirroring the qtile bar and rofi run prompt (`monitor`, `run_prompt`, `password_prompt`, `submit`, `shutdown`/`restart`/`suspend`/`hibernate`, `brightness`, `battery_charging`/`battery_discharging`, `updates`, `vpn_on`/`vpn_off`). Assumes Iosevka NF; replace with whatever glyphs your font supports.
 
 Generated files (`theme.css`, `wallpaper.<ext>`, per-theme `_shared/` copies) are gitignored — the patch step rewrites them on every run.
 
 ## Verification checklist
 
-1. `python server.py` prints `Serving on http://127.0.0.1:8765  (ws://127.0.0.1:8766)` and lists both themes.
-2. Open `http://127.0.0.1:8765/` — panel loads, `ws_status` shows `connected`, iframe shows `nuunamnir` with current palette.
+1. `python server.py` prints `Serving on http://127.0.0.1:8765  (ws://127.0.0.1:8766)` and lists `standard`.
+2. Open `http://127.0.0.1:8765/` — panel loads, `ws_status` shows `connected`, iframe shows `standard` with current palette: user list (3), session dropdown (3), 4 power buttons, kb/battery/brightness indicators.
 3. Click `show_prompt password` → input switches to password mode and focuses.
 4. Type `x`, press Enter → `respond` fires; `authentication_complete` follows; the events panel shows a `start_session` toast. No real session starts.
 5. Toggle `force-fail next auth`, repeat → message shows `authentication failed`.
 6. Click `show_message error` → red message appears for 5 s.
-7. Switch theme picker to `standard` → iframe reloads with full UI: user list (3), session dropdown (3), 4 power buttons, kb/battery/brightness indicators.
-8. Click a power button → toast (e.g. `shutdown`). No real action.
-9. Click `battery -10%` and `brightness +20` → indicators update.
-10. Change `wallpaper_key` in panel → POSTs to `theme.json`; watcher regenerates `theme.css`; iframe reloads with new wallpaper.
-11. Change `layout.status_bar` in panel (nuunamnir only) → status bar moves on next reload.
-12. Edit `themes/nuunamnir/style.css` in another terminal → iframe reloads within ~1 s.
-13. Edit a color in `~/.config/config.json` → watcher regenerates `theme.css`; iframe reloads with new color.
-14. Pick a color in the panel → iframe updates immediately; "copy diff" emits the JSON snippet to clipboard.
-15. Edit a value in the Symbols section (e.g. change `submit` from `→` to `▶`) → iframe reloads; the submit button glyph updates.
-16. Edit a string (e.g. `welcome` → `who are you`) → iframe reloads; the input placeholder updates.
-17. Enter `my-theme` in the Save-as section and click `clone active theme` → new folder appears under `themes/`; panel switches to it; iframe renders the clone correctly.
+7. Click a power button → toast (e.g. `shutdown`). No real action.
+8. Click `battery -10%` and `brightness +20` → indicators update.
+9. Change `wallpaper_key` in panel → POSTs to `theme.json`; watcher regenerates `theme.css`; iframe reloads with new wallpaper.
+10. Edit `themes/standard/style.css` in another terminal → iframe reloads within ~1 s.
+11. Edit a color in `~/.config/config.json` → watcher regenerates `theme.css`; iframe reloads with new color.
+12. Pick a color in the panel → iframe updates immediately; "copy diff" emits the JSON snippet to clipboard.
+13. Edit a value in the Symbols section (e.g. change `submit` from `→` to `▶`) → iframe reloads; the submit button glyph updates.
+14. Edit a string (e.g. `welcome` → `who are you`) → iframe reloads; the input placeholder updates.
+15. Enter `my-theme` in the Save-as section and click `clone active theme` → new folder appears under `themes/`; panel switches to it; iframe renders the clone correctly.
 
 ## Notes
 
