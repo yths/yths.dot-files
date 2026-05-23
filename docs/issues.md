@@ -22,7 +22,7 @@
     - (2026-05-16) all docs now follow the codified path/code-block/list-marker rules
 - [x] Document the `yths` color scheme palette in `docs/notes.md`
     - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; concrete palette table for `yths` still to be authored
-- [ ] Remove stray non-widget files from `configuration/qtile/widgets/` (`patch_configurations.py` and `patch_vsc.py` are duplicates of `helper/`; `test_audio.py` is experimental)
+- [ ] Decouple `configuration/qtile/widgets/` from non-widget paths. The directory mixes widget classes with load-bearing symlinks (`patch_configurations.py`, `patch_vsc.py`, `vsc_default_dark.json`, `vsc_default_light.json` — all pointing into `helper/` or `configuration/vscode/` only because callers reference them via `~/.config/qtile/widgets/...`) and one standalone test harness (`test_audio.py`). The symlinks aren't duplicates — the cleanup needs the callers (`location.py`, `patch_configurations.py`, `patch_vsc.py --input-path`) to switch to canonical paths first, then the symlinks can be removed. `test_audio.py` can move directly.
 - [x] Drop legacy `colors` block from `~/.config/config.json`
     - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/color-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
 - [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
@@ -49,7 +49,8 @@
 - [ ] Automatically patch README.md on color theme change
 - [x] Create VSC color theme
     - (2026-01-02) added crude VSC theme color mapping script (does not work well in light mode)
-- [ ] Improve VSC color mapping - currently selection is not visible
+- [x] Improve VSC color mapping - currently selection is not visible
+    - (2026-05-23) `helper/patch_vsc.py` drops the `background` palette label from candidates for any selection/highlight/hover/focus/match/range `*Background` key, so the nearest-neighbour mapper can no longer collapse selection colours onto the editor background
 
 ## Background Service
 
