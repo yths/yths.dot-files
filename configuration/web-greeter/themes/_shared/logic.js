@@ -124,11 +124,28 @@
         }
     }
 
+    // The web-greeter / nody-greeter API does not expose a "default user".
+    // Resolve the user to preselect from the signals it does provide, falling
+    // back to a value we persist ourselves on every click.
+    function resolve_initial_user() {
+        const users = window.lightdm.users || [];
+        if (users.length === 0) return null;
+        const hint = window.lightdm.select_user_hint;
+        if (hint && users.some(u => u.username === hint)) return hint;
+        const active = users.find(u => u.logged_in);
+        if (active) return active.username;
+        try {
+            const stored = localStorage.getItem("last_user");
+            if (stored && users.some(u => u.username === stored)) return stored;
+        } catch (_) { /* localStorage may be unavailable */ }
+        return users[0].username;
+    }
+
     function render_users() {
         const list = $("user_list");
         if (!list || !window.lightdm.users) return;
         list.innerHTML = "";
-        const default_user = window.lightdm.default_user;
+        const initial_user = resolve_initial_user();
         for (const user of window.lightdm.users) {
             const item = document.createElement("li");
             item.className = "user_item";
@@ -143,15 +160,16 @@
             const label = document.createElement("span");
             label.textContent = user.display_name || user.username;
             item.appendChild(label);
-            if (user.username === default_user) item.classList.add("selected");
+            if (user.username === initial_user) item.classList.add("selected");
             item.addEventListener("click", () => select_user(user.username));
             list.appendChild(item);
         }
-        if (default_user) state.selected_user = default_user;
+        if (initial_user) state.selected_user = initial_user;
     }
 
     function select_user(username) {
         state.selected_user = username;
+        try { localStorage.setItem("last_user", username); } catch (_) { /* ignore */ }
         const list = $("user_list");
         if (list) {
             for (const item of list.children) {
@@ -162,12 +180,27 @@
         window.lightdm.authenticate(username);
     }
 
+    // lightdm.default_session is the system-wide fallback; the per-user last
+    // session lives on the user record (XSession in AccountsService).
+    function resolve_initial_session() {
+        const sessions = window.lightdm.sessions || [];
+        const user_entry = (window.lightdm.users || []).find(u => u.username === state.selected_user);
+        if (user_entry && user_entry.session && sessions.some(s => s.key === user_entry.session)) {
+            return user_entry.session;
+        }
+        try {
+            const stored = localStorage.getItem("last_session");
+            if (stored && sessions.some(s => s.key === stored)) return stored;
+        } catch (_) { /* ignore */ }
+        return window.lightdm.default_session;
+    }
+
     function render_sessions() {
         const picker = $("session_picker");
         if (!picker || !window.lightdm.sessions) return;
+        const default_session = resolve_initial_session();
         if (picker.tagName === "SELECT") {
             picker.innerHTML = "";
-            const default_session = window.lightdm.default_session;
             for (const session of window.lightdm.sessions) {
                 const opt = document.createElement("option");
                 opt.value = session.key;
@@ -176,14 +209,16 @@
                 picker.appendChild(opt);
             }
             state.selected_session = picker.value || default_session;
-            picker.addEventListener("change", () => { state.selected_session = picker.value; });
+            picker.addEventListener("change", () => {
+                state.selected_session = picker.value;
+                try { localStorage.setItem("last_session", picker.value); } catch (_) { /* ignore */ }
+            });
             return;
         }
         const current = picker.querySelector(".session_current");
         const options = picker.querySelector(".session_options");
         if (!current || !options) return;
         options.innerHTML = "";
-        const default_session = window.lightdm.default_session;
         let chosen = null;
         for (const session of window.lightdm.sessions) {
             const li = document.createElement("li");
@@ -196,6 +231,7 @@
             li.addEventListener("click", (e) => {
                 e.stopPropagation();
                 state.selected_session = session.key;
+                try { localStorage.setItem("last_session", session.key); } catch (_) { /* ignore */ }
                 current.textContent = session.name || session.key;
                 for (const sib of options.children) sib.classList.toggle("active", sib === li);
                 picker.classList.remove("open");
@@ -369,9 +405,7 @@
             window.lightdm.authentication_complete.connect(authenticate);
         }
 
-        const user = window.lightdm.default_user || (window.lightdm.users && window.lightdm.users[0] && window.lightdm.users[0].username);
-        state.selected_user = user || null;
-        window.lightdm.authenticate(state.selected_user);
+        if (state.selected_user) window.lightdm.authenticate(state.selected_user);
     }
 
     async function bootstrap() {

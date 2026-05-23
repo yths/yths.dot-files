@@ -1,0 +1,143 @@
+:root {
+    --symbol-user-prompt: "\f007";
+    --symbol-password-prompt: "\f0023";
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+
+    font-family: var(--font-family, "Iosevka Nerd Font"), "sans-serif";
+    font-size: var(--font-size, 1.125vh);
+    color: var(--neutral, #909090);
+
+    background-color: var(--background, #282828);
+    background: var(--wallpaper-url, none) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+body {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+}
+
+p {
+    margin: 0;
+    padding: 8px 4px 8px 4px;
+}
+
+div#status_bar,
+div#input_bar,
+div#message_bar {
+    background-color: var(--background, #282828);
+}
+
+div#status_bar {
+    justify-self: end;
+    align-self: start;
+}
+
+div#input_bar {
+    justify-self: center;
+    align-self: center;
+    padding: 0 12px 12px 12px;
+    font-size: var(--font-size, 1.125vh);
+}
+
+div#message_bar {
+    justify-self: center;
+    align-self: end;
+    visibility: hidden;
+}
+
+div {
+    margin: 0;
+    padding: 0.3vh 0.3vw 0.3vh 0.3vw;
+}
+
+input[type="text"] + label::before {
+    content: var(--symbol-user-prompt);
+    color: var(--neutral, #909090);
+    padding-right: 0.5em;
+}
+
+input[type="password"] + label::before {
+    content: var(--symbol-password-prompt);
+    color: var(--neutral, #909090);
+    padding-right: 0.5em;
+}
+
+form {
+    display: flex;
+}
+
+label {
+    order: 1;
+}
+
+input {
+    order: 2;
+}
+
+input#user_input {
+    border: 0;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    outline: none;
+    font-family: var(--font-family, "Iosevka Nerd Font"), "sans-serif";
+    font-size: var(--font-size, 1.125vh);
+    color: var(--foreground, #cbcbcb);
+    caret-color: var(--foreground, #cbcbcb);
+
+    background-color: var(--background, #282828);
+}
+
+input#user_input:focus {
+    border: 0;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    outline: none;
+}
+
+::placeholder {
+    color: var(--neutral, #909090);
+    opacity: 1;
+    font-family: var(--font-family, "Iosevka Nerd Font"), "sans-serif";
+}
+
+p#message {
+    font-family: var(--font-family, "Iosevka Nerd Font"), "sans-serif";
+    font-size: var(--font-size, 1.125vh);
+    color: var(--foreground, #cbcbcb);
+}
+
+.error_message {
+    color: var(--failure, #ff9fca) !important;
+}
+
+.info_message {
+    color: var(--notification, #5bd9ff) !important;
+}
+
+p#time {
+    text-align: right;
+    color: var(--foreground, #cbcbcb);
+}
+
+/* layout positions controlled via theme.json -> body[data-*] attrs */
+body[data-status-bar="top-left"]    #status_bar  { justify-self: start;  align-self: start; }
+body[data-status-bar="top-right"]   #status_bar  { justify-self: end;    align-self: start; }
+body[data-status-bar="bottom-left"] #status_bar  { justify-self: start;  align-self: end;   }
+body[data-status-bar="bottom-right"]#status_bar  { justify-self: end;    align-self: end;   }
+
+body[data-input-bar="top"]    #input_bar { justify-self: center; align-self: start; }
+body[data-input-bar="center"] #input_bar { justify-self: center; align-self: center; }
+body[data-input-bar="bottom"] #input_bar { justify-self: center; align-self: end; }
+
+body[data-message-bar="top"]    #message_bar { justify-self: center; align-self: start; }
+body[data-message-bar="center"] #message_bar { justify-self: center; align-self: center; }
+body[data-message-bar="bottom"] #message_bar { justify-self: center; align-self: end; }

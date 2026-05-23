@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>LightDM Theme</title>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="_shared/logic.js" defer></script>
+  </head>
+  <body>
+    <div id="status_bar">
+      <p id="time">&nbsp;</p>
+    </div>
+    <div id="input_bar">
+    <form action="javascript:handle_input()">
+        <input type="text" id="user_input" data-placeholder="welcome" placeholder="welcome" /><label id="user_input_label" for="user_input"></label>
+    </form>
+    </div>
+    <div id="message_bar">
+      <p id="message">&nbsp;</p>
+    </div>
+  </body>
+</html>

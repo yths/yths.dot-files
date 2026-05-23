@@ -51,7 +51,10 @@
         language: { code: "en_US.UTF-8", name: "English (US)", territory: "United States" },
         layout:   { name: "us", short_description: "us", description: "English (US)" },
 
-        default_user: "bob",
+        // nody-greeter does not expose default_user; the greeter is told who
+        // to preselect via select_user_hint (set on lock/relaunch) or by
+        // marking a user as logged_in. default_session is the system fallback.
+        select_user_hint: "bob",
         default_session: "qtile",
 
         is_authenticated: false,
@@ -85,7 +88,7 @@
     let current_user = null;
 
     lightdm.authenticate = function (username) {
-        current_user = username || lightdm.default_user;
+        current_user = username || lightdm.select_user_hint || (lightdm.users[0] && lightdm.users[0].username);
         lightdm.in_authentication = true;
         lightdm.is_authenticated = false;
         emit_event("authenticate", { username: current_user });
