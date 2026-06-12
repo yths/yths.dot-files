@@ -145,6 +145,7 @@ keys = [
     Key([mod, "control"], "r", lazy.restart(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key([mod], "r", lazy.spawn("rofi -show run"), desc="Spawn a command using rofi"),
+    Key([mod, "shift"], "r", lazy.spawn("rofi -show window"), desc="List all windows with rofi."),
     Key([mod], "Home", lazy.spawn("xsecurelock"), desc="Lock the screen"),
     Key(
         [],
