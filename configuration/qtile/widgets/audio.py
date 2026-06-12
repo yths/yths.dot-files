@@ -11,6 +11,7 @@ import time
 
 import libqtile.widget.base
 import libqtile.log_utils
+import redis.exceptions
 
 try:
     import sounddevice
@@ -212,12 +213,12 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
         if self.r is None:
             return ""
-        data = self.r.xrevrange("audio", count=1)
         try:
+            data = self.r.xrevrange("audio", count=1)
             eid, payload = data[-1]
-        except IndexError:
+            measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
+        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError, redis.exceptions.RedisError):
             return ""
-        measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
 
         if self.mode == "auto":
             self.last_active_sink = measurement.get("active_sink")
