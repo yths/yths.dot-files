@@ -29,7 +29,7 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 | `loguru` | `python-loguru` | `patch_plymouth` | optional; stdlib `logging` fallback |
 | `PIL` | `python-pillow` | `patch_plymouth` | renders boot background |
 | `cairo` | `python-pycairo` | `patch_plymouth` | renders boot background |
-| `colour` | `python-colour-science` **(AUR)** | `patch_vsc` | perceptual nearest-color matching |
+| `colour` | `python-colour-science` **(AUR)** | `patch_vsc`, `list_colors` | perceptual nearest-color matching (`list_colors` reuses it for the drift report) |
 | `toml` | `python-toml` | `patch_configurations` | reads `pyproject.toml`-style configs |
 
 ## qtile and Widgets (`configuration/qtile/`)

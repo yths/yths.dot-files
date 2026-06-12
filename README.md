@@ -24,6 +24,8 @@ python install.py
 - [docs/notes.md](docs/notes.md) — theme system, qtile widget architecture, yths.themes contract, color schemes
 - [docs/config-schema.md](docs/config-schema.md) — `~/.config/config.json` schema
 - [docs/color-semantics.md](docs/color-semantics.md) — what each semantic palette token means
+- [docs/colors.md](docs/colors.md) — generated map of palette tokens, per-app role maps, and hardcoded-hex drift
+- [docs/keybindings.md](docs/keybindings.md) — generated overview of every keyboard binding, grouped by tool
 - [docs/dependencies.md](docs/dependencies.md) — Python imports mapped to Arch packages
 - [docs/tips.md](docs/tips.md) — recipes for theme switching, previewing, debugging
 - [docs/issues.md](docs/issues.md) — known issues and roadmap

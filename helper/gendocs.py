@@ -21,6 +21,9 @@ import re
 import sys
 from pathlib import Path
 
+import list_colors
+import list_keybindings
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -114,6 +117,14 @@ GENERATORS = {
     "WEB_GREETER_THEMES": (
         "configuration/web-greeter/THEME-DEVELOPMENT.md",
         generate_web_greeter_themes,
+    ),
+    "KEYBINDINGS": (
+        "docs/keybindings.md",
+        list_keybindings.generate_markdown,
+    ),
+    "COLORS": (
+        "docs/colors.md",
+        list_colors.generate_markdown,
     ),
 }
 
