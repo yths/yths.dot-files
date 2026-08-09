@@ -6,48 +6,73 @@ background asset (PNG via PIL + cairo) so the boot splash matches the active pal
 """
 
 import argparse
+import configparser
 import json
 import os
-import configparser
-
 import subprocess
 
+import cairo
 import loguru
 import PIL.Image
 
-import cairo
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Patch plymouth configurations according to the given configuration file.")
-    parser.add_argument("--configuration", type=str, help="Path to the configuration file.", required=False, default="~/.config/config.json", dest="configuration_file_path")
-    parser.add_argument("--theme", type=str, help="Theme to be applied.", required=False, default="dark", dest="theme")
-    parser.add_argument("plymouth_path", type=str, help="Path to the plymouth theme file to be patched.")
+    parser = argparse.ArgumentParser(
+        description="Patch plymouth configurations according to the given configuration file."
+    )
+    parser.add_argument(
+        "--configuration",
+        type=str,
+        help="Path to the configuration file.",
+        required=False,
+        default="~/.config/config.json",
+        dest="configuration_file_path",
+    )
+    parser.add_argument(
+        "--theme",
+        type=str,
+        help="Theme to be applied.",
+        required=False,
+        default="dark",
+        dest="theme",
+    )
+    parser.add_argument(
+        "plymouth_path",
+        type=str,
+        help="Path to the plymouth theme file to be patched.",
+    )
     args = parser.parse_args()
 
-    with open(os.path.expanduser(args.configuration_file_path), "r") as config_handle:
+    with open(os.path.expanduser(args.configuration_file_path)) as config_handle:
         configuration = json.load(config_handle)
 
     loguru.logger.info(f"Patching plymouth theme at '{args.plymouth_path}' with theme '{args.theme}' ...")
-    
+
     plymouth_configuration = configparser.ConfigParser(interpolation=None)
     plymouth_configuration.optionxform = str
     plymouth_configuration.read(os.path.join(args.plymouth_path, "yths.plymouth"))
-    
-    plymouth_configuration["two-step"]["Font"] = f"{configuration['font']['family']} {int(round(configuration['font']['size'] * 1.25))}"
-    plymouth_configuration["two-step"]["TitleFont"] = f"{configuration['font']['family']} {int(round(configuration['font']['size'] * 1.25))}"
-    plymouth_configuration["two-step"]["MonospaceFont"] = f"{configuration['font']['family']} {int(round(configuration['font']['size'] * 0.85))}"
 
-    plymouth_configuration["two-step"]["BackgroundStartColor"] = f"{configuration['palette'][args.theme]['background'].replace('#', '0x')}"
-    plymouth_configuration["two-step"]["BackgroundEndColor"] = f"{configuration['palette'][args.theme]['background'].replace('#', '0x')}"
-    plymouth_configuration["two-step"]["ProgressBarBackgroundColor"] = f"{configuration['palette'][args.theme]['neutral'].replace('#', '0x')}"
-    plymouth_configuration["two-step"]["ConsoleLogTextColor"] = f"{configuration['palette'][args.theme]['foreground'].replace('#', '0x')}"
-    plymouth_configuration["two-step"]["ConsoleLogBackgroundColor"] = f"{configuration['palette'][args.theme]['background'].replace('#', '0x')}"
+    two_step = plymouth_configuration["two-step"]
+    font_family = configuration["font"]["family"]
+    font_size = configuration["font"]["size"]
+    palette = configuration["palette"][args.theme]
 
-    plymouth_configuration.write(open(os.path.join(args.plymouth_path, "yths.plymouth"), "w"), space_around_delimiters=False)
+    two_step["Font"] = f"{font_family} {round(font_size * 1.25)}"
+    two_step["TitleFont"] = f"{font_family} {round(font_size * 1.25)}"
+    two_step["MonospaceFont"] = f"{font_family} {round(font_size * 0.85)}"
+
+    two_step["BackgroundStartColor"] = f"{palette['background'].replace('#', '0x')}"
+    two_step["BackgroundEndColor"] = f"{palette['background'].replace('#', '0x')}"
+    two_step["ProgressBarBackgroundColor"] = f"{palette['neutral'].replace('#', '0x')}"
+    two_step["ConsoleLogTextColor"] = f"{palette['foreground'].replace('#', '0x')}"
+    two_step["ConsoleLogBackgroundColor"] = f"{palette['background'].replace('#', '0x')}"
+
+    with open(os.path.join(args.plymouth_path, "yths.plymouth"), "w") as handle:
+        plymouth_configuration.write(handle, space_around_delimiters=False)
 
     # find path to font file
-    proc = subprocess.run(["fc-list"], encoding='utf-8', stdout=subprocess.PIPE)
+    proc = subprocess.run(
+        ["fc-list"], encoding="utf-8", stdout=subprocess.PIPE, check=False
+    )
     for line in proc.stdout.split("\n"):
         try:
             font_path, font_name, font_style = line.split(":")
@@ -61,19 +86,19 @@ if __name__ == "__main__":
         except ValueError:
             continue
 
-    im_entry = PIL.Image.new("RGB", (305, 34), configuration['palette'][args.theme]["background"])
+    im_entry = PIL.Image.new("RGB", (305, 34), palette["background"])
     im_entry.save(os.path.join(args.plymouth_path, "entry.png"))
 
-    im_entry = PIL.Image.new("RGB", (533, 400), configuration['palette'][args.theme]["background"])
+    im_entry = PIL.Image.new("RGB", (533, 400), palette["background"])
     im_entry.save(os.path.join(args.plymouth_path, "animation-001.png"))
 
-    color_neutral_str = configuration['palette'][args.theme]["highlight"]
+    color_neutral_str = palette["highlight"]
     color_neutral_tuple = tuple(int(color_neutral_str[i:i+2], 16) for i in (1, 3, 5))
 
-    color_foreground_str = configuration['palette'][args.theme]["foreground"]
+    color_foreground_str = palette["foreground"]
     color_foreground_tuple = tuple(int(color_foreground_str[i:i+2], 16) for i in (1, 3, 5))
 
-    color_grey_str = configuration['palette'][args.theme]["neutral"]
+    color_grey_str = palette["neutral"]
     color_grey_tuple = tuple(int(color_grey_str[i:i+2], 16) for i in (1, 3, 5))
 
     with cairo.ImageSurface(cairo.FORMAT_ARGB32, 24, 28) as surface:

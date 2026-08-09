@@ -29,11 +29,10 @@ HEX_RE = re.compile(r"#[0-9a-fA-F]{6}")
 
 try:  # the drift report's perceptual matching reuses patch_vsc + the `colour` library
     import colour
-
     from patch_vsc import color_str_to_tuple
 
     _HAVE_COLOUR = True
-except Exception:  # pragma: no cover - colour is optional; fall back to exact matching
+except Exception:  # noqa: BLE001 - colour is optional; any import failure falls back
     _HAVE_COLOUR = False
 
 
@@ -41,7 +40,7 @@ def _escape(text: str) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
 
 
-def _load_active_config():
+def _load_active_config() -> dict:
     try:
         return json.loads(CONFIG_PATH.read_text())
     except (OSError, json.JSONDecodeError):
@@ -51,7 +50,7 @@ def _load_active_config():
 # ------------------------------------------------------------------ palette table
 
 
-def _palette_section(config) -> str:
+def _palette_section(config: dict) -> str:
     lines = ["### Palette (`~/.config/config.json`)", ""]
     if not config or "palette" not in config:
         lines.append(
@@ -81,7 +80,7 @@ def _palette_section(config) -> str:
 # --------------------------------------------------------------- qtile role maps
 
 
-def _palette_token(node: ast.AST):
+def _palette_token(node: ast.AST) -> str | None:
     """Return the token if ``node`` is ``configuration["palette"][theme]["<token>"]``."""
     if not isinstance(node, ast.Subscript):
         return None
@@ -103,12 +102,12 @@ def _palette_token(node: ast.AST):
     return token
 
 
-def _tokens_without_descending_into_calls(node: ast.AST):
+def _tokens_without_descending_into_calls(node: ast.AST) -> list:
     """Yield (lineno, token) for palette subscripts under ``node``, stopping at nested
     ``Call`` boundaries so a token is attributed to its own innermost consumer only."""
     found = []
 
-    def recurse(current):
+    def recurse(current: ast.AST) -> None:
         token = _palette_token(current)
         if token:
             found.append((getattr(current, "lineno", 0), token))
@@ -121,7 +120,7 @@ def _tokens_without_descending_into_calls(node: ast.AST):
     return found
 
 
-def _qtile_roles():
+def _qtile_roles() -> list:
     """Return ``(consumer, role, token)`` rows in source order, de-duplicated."""
     path = REPO_ROOT / "configuration" / "qtile" / "config.py"
     tree = ast.parse(path.read_text())
@@ -200,7 +199,7 @@ def _plymouth_section() -> str:
 # ----------------------------------------------------------------- drift report
 
 
-def _kitty_pairs():
+def _kitty_pairs() -> list:
     path = REPO_ROOT / "configuration" / "kitty" / "current-theme.conf"
     pairs = []
     for raw in path.read_text().splitlines():
@@ -210,7 +209,7 @@ def _kitty_pairs():
     return pairs
 
 
-def _tmux_pairs():
+def _tmux_pairs() -> list:
     path = REPO_ROOT / "configuration" / "tmux" / "tmux.conf"
     pairs = []
     for raw in path.read_text().splitlines():
@@ -220,7 +219,7 @@ def _tmux_pairs():
     return pairs
 
 
-def _starship_pairs():
+def _starship_pairs() -> list:
     path = REPO_ROOT / "configuration" / "starship" / "starship.toml"
     pairs = []
     for raw in path.read_text().splitlines():
@@ -230,7 +229,7 @@ def _starship_pairs():
     return pairs
 
 
-def _dunst_pairs():
+def _dunst_pairs() -> list:
     path = REPO_ROOT / "configuration" / "dunst" / "dunstrc"
     pairs = []
     for raw in path.read_text().splitlines():
@@ -244,7 +243,7 @@ def _dunst_pairs():
     return pairs
 
 
-def _rofi_pairs():
+def _rofi_pairs() -> list:
     path = REPO_ROOT / "configuration" / "rofi" / "theme_config.rasi"
     pairs = []
     for raw in path.read_text().splitlines():
@@ -263,7 +262,7 @@ DRIFT_TOOLS = [
 ]
 
 
-def _build_candidates(palette_variant):
+def _build_candidates(palette_variant: dict) -> list:
     """Pre-compute CAM16-UCS coordinates for every palette token (perceptual path)."""
     candidates = []
     for label, hex_value in palette_variant.items():
@@ -273,7 +272,7 @@ def _build_candidates(palette_variant):
     return candidates
 
 
-def _nearest_token(hex_value, candidates):
+def _nearest_token(hex_value: str, candidates: list) -> tuple:
     rgb = color_str_to_tuple(hex_value)
     cam16 = colour.XYZ_to_CAM16UCS(colour.sRGB_to_XYZ(rgb))
     best_label, best_delta = None, float("inf")
@@ -284,7 +283,7 @@ def _nearest_token(hex_value, candidates):
     return best_label, best_delta
 
 
-def _drift_section(config) -> str:
+def _drift_section(config: dict) -> str:
     lines = ["### Drift report — hardcoded hex vs. nearest palette token", ""]
     if not config or "palette" not in config:
         lines.append("_No active palette available; skipping reverse-mapping._")

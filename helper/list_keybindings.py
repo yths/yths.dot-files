@@ -68,7 +68,7 @@ def _render_modifiers(node: ast.AST, names: dict) -> list:
     return parts
 
 
-def _qtile_bindings():
+def _qtile_bindings() -> list[dict]:
     """Return (rows, dynamic_count) for literal qtile Key/KeyChord bindings.
 
     ``rows`` are ``(lineno, combo, action, description)`` for bindings whose trigger key
@@ -94,7 +94,7 @@ def _qtile_bindings():
             continue
 
         modifiers = _render_modifiers(node.args[0], names)
-        combo = " + ".join(modifiers + [key_node.value])
+        combo = " + ".join([*modifiers, key_node.value])
 
         keywords = {kw.arg: kw.value for kw in node.keywords}
         description = ""
@@ -268,7 +268,7 @@ def generate_markdown() -> str:
         "to screens in blocks of four (groups 1–4 → screen 1, 5–8 → screen 2, …), so the "
         "prefix doubles as a screen hint."
     )
-    return "\n\n".join(sections + [note])
+    return "\n\n".join([*sections, note])
 
 
 if __name__ == "__main__":

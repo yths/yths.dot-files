@@ -31,15 +31,16 @@ from libqtile import bar, hook, layout, qtile, widget
 from libqtile.config import (
     Click,
     Drag,
-    Group,
-    ScratchPad,
     DropDown,
+    Group,
     Key,
     KeyChord,
     Match,
+    ScratchPad,
     Screen,
 )
 from libqtile.lazy import lazy
+
 # from libqtile.utils import guess_terminal
 
 try:
@@ -47,11 +48,11 @@ try:
 
     pool = redis.ConnectionPool(
         host=os.environ.get("BACKEND_REDIS_HOST", "localhost"),
-        port=int(os.environ.get("BACKEND_REDIS_PORT", 6379)),
-        db=int(os.environ.get("BACKEND_REDIS_DB", 1)),
+        port=int(os.environ.get("BACKEND_REDIS_PORT", "6379")),
+        db=int(os.environ.get("BACKEND_REDIS_DB", "1")),
         socket_connect_timeout=0.5,  # connect phase
         socket_timeout=0.5,          # read/write phase
-        health_check_interval=30,  
+        health_check_interval=30,
         )
     r = redis.Redis(connection_pool=pool)
 except ImportError:
@@ -59,18 +60,19 @@ except ImportError:
 except redis.exceptions.ConnectionError:
     r = None
 
+import widgets.audio
 import widgets.bluetooth
 import widgets.claude_usage
 import widgets.location
 import widgets.power_supply
 import widgets.service_state
-import widgets.updates
-import widgets.audio
 import widgets.stream_state
+import widgets.updates
 import widgets.vpn
 
 try:
-    configuration = json.load(open(os.path.expanduser("~/.config/config.json")))
+    with open(os.path.expanduser("~/.config/config.json"), encoding="utf-8") as handle:
+        configuration = json.load(handle)
 except FileNotFoundError:
     configuration = {
         "font_size": 10,
@@ -146,7 +148,12 @@ keys = [
     Key([mod, "control"], "r", lazy.restart(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key([mod], "r", lazy.spawn("rofi -show run"), desc="Spawn a command using rofi"),
-    Key([mod, "shift"], "r", lazy.spawn("rofi -show window"), desc="Switch to any window via rofi (entries prefixed with their group number)."),
+    Key(
+        [mod, "shift"],
+        "r",
+        lazy.spawn("rofi -show window"),
+        desc="Switch to any window via rofi (entries prefixed with their group number).",
+    ),
     Key([mod], "Home", lazy.spawn("xsecurelock"), desc="Lock the screen"),
     Key(
         [],
@@ -239,7 +246,7 @@ groups += [
 
 
 @hook.subscribe.startup_complete
-def send_to_screens():
+def send_to_screens() -> None:
     for m, _ in enumerate(configuration["monitors"]):
         for i in range(
             1 + m * len(subscript_characters),
@@ -333,6 +340,18 @@ keys.extend(
     ]
 )
 
+# `layouts` and `widget_defaults` are module-level, so they cannot vary per screen. They
+# previously indexed configuration["monitors"][monitor] using the loop variable left over
+# from the group/chord loops above — whichever monitor happened to sort last. Name the
+# primary monitor instead, which is the one `screens` puts first.
+primary_monitor = next(
+    (name for name in configuration["monitors"] if configuration["monitors"][name]["is_primary"]),
+    next(iter(configuration["monitors"]), None),
+)
+primary_scaling_factor = (
+    configuration["monitors"][primary_monitor]["scaling_factor"] if primary_monitor else 1.0
+)
+
 layouts = [
     layout.Columns(
         border_normal=configuration["palette"][theme]["neutral"],
@@ -341,16 +360,16 @@ layouts = [
         border_focus_stack=configuration["palette"][theme]["foreground"],
         border_width=0,
         margin=[
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 10)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 20)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
+            round(primary_scaling_factor * 10),
+            round(primary_scaling_factor * 9.2),
+            round(primary_scaling_factor * 20),
+            round(primary_scaling_factor * 9.2),
         ],
         margin_on_single=[
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 10)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 20)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
+            round(primary_scaling_factor * 10),
+            round(primary_scaling_factor * 9.2),
+            round(primary_scaling_factor * 20),
+            round(primary_scaling_factor * 9.2),
         ],
         border_on_single=True,
         initial_ratio=16 / 9,
@@ -360,76 +379,60 @@ layouts = [
         border_focus=configuration["palette"][theme]["foreground"],
         border_width=0,
         margin=[
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 10)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 20)),
-            int(round(configuration["monitors"][monitor]["scaling_factor"] * 9.2)),
+            round(primary_scaling_factor * 10),
+            round(primary_scaling_factor * 9.2),
+            round(primary_scaling_factor * 20),
+            round(primary_scaling_factor * 9.2),
         ],
     ),
 ]
 
-widget_defaults = dict(
-    foreground=configuration["palette"][theme]["foreground"],
-    font=configuration["font"]["family"],
-    padding=int(
-        round(
-            configuration["monitors"][monitor]["scaling_factor"]
-            * configuration["font"]["size"]
-            / 4
-        )
-    ),
-)
+widget_defaults = {
+    "foreground": configuration["palette"][theme]["foreground"],
+    "font": configuration["font"]["family"],
+    "padding": round(primary_scaling_factor * configuration["font"]["size"] / 4),
+}
 extension_defaults = widget_defaults.copy()
 
-if configuration["state"]["theme"] == "light":
-    if configuration["state"]["condition"] == "normal":
-        wallpaper = configuration["wallpapers"]["light"]
-    elif configuration["state"]["condition"] == "urgent":
-        wallpaper = configuration["wallpapers"]["light-highlight"]
-else:
-    if configuration["state"]["condition"] == "normal":
-        wallpaper = configuration["wallpapers"]["dark"]
-    elif configuration["state"]["condition"] == "urgent":
-        wallpaper = configuration["wallpapers"]["dark-highlight"]
+# Fall back to the plain theme wallpaper rather than leaving `wallpaper` unbound: any
+# unexpected `condition` value used to raise NameError below and take the config down.
+wallpaper_key = configuration["state"]["theme"]
+if configuration["state"].get("condition") == "urgent":
+    wallpaper_key = f"{wallpaper_key}-highlight"
+wallpaper = configuration["wallpapers"].get(
+    wallpaper_key, configuration["wallpapers"][configuration["state"]["theme"]]
+)
 screens = [
     Screen(
         top=bar.Bar(
             [
                 widget.TextBox(
                     f"{icons['monitor']}{subscript_characters[m]}",
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.stream_state.WidgetStreamState(
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
                     warning_color=configuration["palette"][theme]["warning"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widget.GroupBox(
@@ -437,11 +440,9 @@ screens = [
                     urgent_alert_method="text",
                     hide_unused=False,
                     markup=True,
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     visible_groups=list(
                         map(
@@ -467,19 +468,15 @@ screens = [
                     urgent_border=configuration["palette"][theme]["notification"],
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widget.Prompt(
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widget.TaskList(
@@ -492,24 +489,18 @@ screens = [
                     + configuration["palette"][theme]["background"]
                     + "'>{}</span>",
                     foreground=configuration["palette"][theme]["neutral"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
-                    padding_x=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    padding_x=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
-                    padding_y=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                            / 3
-                        )
+                    padding_y=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                        / 3
                     ),
                 ),
                 widget.Chord(
@@ -520,174 +511,138 @@ screens = [
                         ),
                     },
                     name_transform=lambda name: name.upper(),
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                 ),
                 widgets.claude_usage.WidgetClaudeUsage(
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     notification_color=configuration["palette"][theme]["notification"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=5,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.audio.WidgetAudio(
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=0.1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.bluetooth.WidgetBluetooth(
                     r=r,
                     icons={"CC:98:8B:99:F4:E5": "󰋎", "AC:80:0A:A4:66:EB": "󰋎"},
                     warning_color=configuration["palette"][theme]["warning"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.updates.WidgetUpdates(
                     r=r,
                     notification_color=configuration["palette"][theme]["highlight"],
                     warning_color=configuration["palette"][theme]["notification"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.power_supply.WidgetPowerSupply(
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.location.WidgetLocation(
                     r=r,
                     notification_color=configuration["palette"][theme]["highlight"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.vpn.WidgetVPN(
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
                 widget.Spacer(
-                    length=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widget.Clock(
                     format="%Y-%m-%d %a %H:%M:%S",
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                 ),
                 widget.Chord(
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     )
                 ),
                 widgets.service_state.WidgetServiceState(
                     service="backend.service",
                     warning_color=configuration["palette"][theme]["warning"],
-                    fontsize=int(
-                        round(
-                            configuration["monitors"][monitor]["scaling_factor"]
-                            * configuration["font"]["size"]
-                        )
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
                     ),
                     update_interval=1,
                 ),
@@ -704,8 +659,10 @@ screens = [
         wallpaper=wallpaper,
         wallpaper_mode="fill",
         # You can uncomment this variable if you see that on X11 floating resize/moving is laggy
-        # By default we handle these events delayed to already improve performance, however your system might still be struggling
-        # This variable is set to None (no cap) by default, but you can set it to 60 to indicate that you limit it to 60 events per second
+        # By default we handle these events delayed to already improve performance,
+        # however your system might still be struggling
+        # This variable is set to None (no cap) by default, but you can set it to 60 to
+        # indicate that you limit it to 60 events per second
         # x11_drag_polling_rate = 60,
     )
     for m, monitor in enumerate(

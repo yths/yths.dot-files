@@ -12,9 +12,7 @@ import os
 import pickle
 
 import colour
-
 import utils
-
 
 HIGHLIGHT_KEY_MARKERS = (
     "selection",
@@ -28,7 +26,7 @@ HIGHLIGHT_KEY_MARKERS = (
 HIGHLIGHT_EXCLUDED_LABELS = frozenset({"background"})
 
 
-def _excludes_background(key):
+def _excludes_background(key: str | None) -> bool:
     if not key:
         return False
     kl = key.lower()
@@ -37,17 +35,17 @@ def _excludes_background(key):
     return any(marker in kl for marker in HIGHLIGHT_KEY_MARKERS)
 
 
-def _filter_candidates(key, colors):
+def _filter_candidates(key: str | None, colors: list) -> list:
     if _excludes_background(key):
         return [c for c in colors if c["label"] not in HIGHLIGHT_EXCLUDED_LABELS]
     return colors
 
 
-def color_str_to_tuple(s):
+def color_str_to_tuple(s: str) -> tuple[float, ...]:
     return tuple(int(s[i : i + 2], 16) / 255 for i in (1, 3, 5))
 
 
-def closest_color(v: str, colors, lookup_colors=None) -> str:
+def closest_color(v: str, colors: list, lookup_colors: list | None = None) -> str:
     if lookup_colors is None:
         lookup_colors = colors
     if len(v) == 9:
@@ -70,47 +68,51 @@ def closest_color(v: str, colors, lookup_colors=None) -> str:
                 if lookup_color["label"] == color["label"]:
                     best_color = lookup_color["hex"]
                     break
-    v = best_color + alpha
-    return v
+    return best_color + alpha
 
-def dict_replace_value(d: dict, colors, lookup_colors=None) -> dict:
+def dict_replace_value(d: dict, colors: list, lookup_colors: list | None = None) -> dict:
     if lookup_colors is None:
         lookup_colors = colors
-    x = {}
-    for k, v in d.items():
-        if isinstance(v, dict):
-            v = dict_replace_value(v, colors, lookup_colors)
-        elif isinstance(v, list):
-            v = list_replace_value(v, colors, lookup_colors, parent_key=k)
-        elif isinstance(v, str):
-            if v.startswith("#") and (len(v) == 7 or len(v) == 9):
-                v = closest_color(
-                    v,
-                    _filter_candidates(k, colors),
-                    _filter_candidates(k, lookup_colors),
-                )
-        x[k] = v
-    return x
+    replaced = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            entry = dict_replace_value(value, colors, lookup_colors)
+        elif isinstance(value, list):
+            entry = list_replace_value(value, colors, lookup_colors, parent_key=key)
+        elif isinstance(value, str) and value.startswith("#") and len(value) in (7, 9):
+            entry = closest_color(
+                value,
+                _filter_candidates(key, colors),
+                _filter_candidates(key, lookup_colors),
+            )
+        else:
+            entry = value
+        replaced[key] = entry
+    return replaced
 
 
-def list_replace_value(l: list, colors, lookup_colors=None, parent_key=None) -> list:
+def list_replace_value(
+    values: list, colors: list, lookup_colors: list | None = None,
+    parent_key: str | None = None,
+) -> list:
     if lookup_colors is None:
         lookup_colors = colors
-    x = []
-    for e in l:
-        if isinstance(e, list):
-            e = list_replace_value(e, colors, lookup_colors, parent_key=parent_key)
-        elif isinstance(e, dict):
-            e = dict_replace_value(e, colors, lookup_colors)
-        elif isinstance(e, str):
-            if e.startswith("#") and (len(e) == 7 or len(e) == 9):
-                e = closest_color(
-                    e,
-                    _filter_candidates(parent_key, colors),
-                    _filter_candidates(parent_key, lookup_colors),
-                )
-        x.append(e)
-    return x
+    replaced = []
+    for value in values:
+        if isinstance(value, list):
+            entry = list_replace_value(value, colors, lookup_colors, parent_key=parent_key)
+        elif isinstance(value, dict):
+            entry = dict_replace_value(value, colors, lookup_colors)
+        elif isinstance(value, str) and value.startswith("#") and len(value) in (7, 9):
+            entry = closest_color(
+                value,
+                _filter_candidates(parent_key, colors),
+                _filter_candidates(parent_key, lookup_colors),
+            )
+        else:
+            entry = value
+        replaced.append(entry)
+    return replaced
 
 
 if __name__ == "__main__":
@@ -133,25 +135,33 @@ if __name__ == "__main__":
         type=str,
         choices=["nearest_neighbor", "reference"],
         default="nearest_neighbor",
-        help="Method by which the colors of the theme are mapped to the Visual Studio Code configuration.",
+        help=(
+            "Method by which the colors of the theme are mapped to the "
+            "Visual Studio Code configuration."
+        ),
     )
     parser.add_argument(
         "--output-path",
         type=str,
         default=None,
-        help="Path to save the patched Visual Studio Code settings. If not provided, will not output.",
+        help=(
+            "Path to save the patched Visual Studio Code settings. "
+            "If not provided, will not output."
+        ),
     )
     parser.add_argument(
         "--input-path",
         type=str,
         default=None,
-        help="Path to load the Visual Studio Code settings from. If not provided, will use the current working directory.",
+        help=(
+            "Path to load the Visual Studio Code settings from. "
+            "If not provided, will use the current working directory."
+        ),
     )
     args = parser.parse_args()
 
-    colors = pickle.load(
-        open(os.path.expanduser(args.theme_pickle_path), "rb")
-    )
+    with open(os.path.expanduser(args.theme_pickle_path), "rb") as handle:
+        colors = pickle.load(handle)
 
     colors_map = collections.defaultdict(list)
     for mode in ["dark", "light"]:
@@ -168,7 +178,7 @@ if __name__ == "__main__":
         input_path = args.input_path
         if input_path is None:
             input_path = os.getcwd()
-        with open(os.path.join(input_path, f"vsc_default_{mode}.json"), "r") as input_handle:
+        with open(os.path.join(input_path, f"vsc_default_{mode}.json")) as input_handle:
             default_config[mode] = json.load(input_handle)
 
     patched_config_dark = default_config['dark'].copy()
@@ -182,7 +192,9 @@ if __name__ == "__main__":
         patched_config_light = dict_replace_value(patched_config_light, colors_map["light"])
     else:
         patched_config_dark = dict_replace_value(patched_config_dark, colors_map["dark"])
-        patched_config_light = dict_replace_value(patched_config_light, colors_map["light"], colors_map["dark"])
+        patched_config_light = dict_replace_value(
+            patched_config_light, colors_map["light"], colors_map["dark"]
+        )
 
 
     if args.mode == "dark":
@@ -195,7 +207,7 @@ if __name__ == "__main__":
     if os.path.exists(os.path.expanduser("~/.config/Code/User/settings.json")):
         utils.logger.info("Patching Visual Studio Code settings...")
         with open(
-            os.path.expanduser("~/.config/Code/User/settings.json"), "r"
+            os.path.expanduser("~/.config/Code/User/settings.json")
         ) as input_handle:
             user_config = json.load(input_handle)
             user_config["editor.tokenColorCustomizations"] = {

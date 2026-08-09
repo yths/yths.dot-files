@@ -2,104 +2,122 @@
 
 Reads the latest entry from the ``location`` Redis stream (latitude, longitude, timezone,
 sunrise, sunset) and surfaces the day/night transition that drives the automatic theme
-switch. ``BackgroundPoll`` based.
+switch. ``InLoopPollText`` based, so ``poll()`` must never raise: ``timer_setup``
+reschedules only after ``tick()`` returns, and one escaped exception freezes the cell — and
+with it the automatic theme switch — for the rest of the session.
 """
 
 import datetime
-import json
 import os
 import subprocess
+import zoneinfo
+from typing import Any
 
-import libqtile.log_utils
 import libqtile.widget.base
-import redis.exceptions
+import redis
+import widgets._state
+import widgets._stream
 
 
 class WidgetLocation(libqtile.widget.base.InLoopPollText):
-    def __init__(self, r, notification_color="#ff0000", configuration_file_path=os.path.expanduser(os.path.join("~", ".config", "config.json")), **config):
+    # Nerd Font Private Use Area glyphs. They render as blank in most editors and
+    # diffs, so they are named here rather than inlined into the format strings below.
+    SUNRISE_ICON = ""  # U+E34D
+    SUNSET_ICON = ""  # U+E34C
+    MANUAL_ICON = ""  # U+F456, shown when the theme switch is pinned
+
+    def __init__(
+        self,
+        r: redis.Redis | None,
+        notification_color: str = "#ff0000",
+        configuration_file_path: str | None = None,
+        **config: Any,
+    ) -> None:
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
         self.r = r
-        self.configuration_file_path = configuration_file_path
+        self.configuration_file_path = (
+            configuration_file_path
+            if configuration_file_path is not None
+            else widgets._state.CONFIGURATION_FILE_PATH
+        )
 
         self.notification_color = notification_color
 
-        self.add_callbacks({"Button2": self.toggle_mode, "Button3": self.toggle_theme_manually})
+        self.add_callbacks(
+            {"Button2": self.toggle_mode, "Button3": self.toggle_theme_manually}
+        )
 
-    def toggle_mode(self):
-        with open(self.configuration_file_path, "r") as f:
-            configuration = json.load(f)
-        if configuration['state']['mode'] == "automatic":
-            configuration['state']['mode'] = "manual"
-        else:
-            configuration['state']['mode'] = "automatic"
-        with open(self.configuration_file_path, "w") as f:
-            json.dump(configuration, f)
+    def toggle_mode(self) -> None:
+        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        mode = "manual" if state.get("mode") == "automatic" else "automatic"
+        widgets._state.update_state(self.configuration_file_path, mode=mode)
 
-    def toggle_theme_manually(self):
-        with open(self.configuration_file_path, "r") as f:
-            configuration = json.load(f)
-        configuration['state']['mode'] = "manual"
-        with open(self.configuration_file_path, "w") as f:
-            json.dump(configuration, f)
+    def toggle_theme_manually(self) -> None:
+        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        theme = "light" if state.get("theme") == "dark" else "dark"
+        widgets._state.update_state(self.configuration_file_path, mode="manual")
+        self.apply_theme(theme)
 
-        self.toggle_theme()
+    def apply_theme(self, theme: str) -> None:
+        """Set the theme to ``theme`` and re-patch every application.
 
-    def toggle_theme(self):
-        with open(self.configuration_file_path, "r") as f:
-            configuration = json.load(f)
-        if configuration['state']['theme'] == "light":
-            configuration['state']['theme'] = "dark"
-        else:
-            configuration['state']['theme'] = "light"
+        Takes the target rather than flipping whatever is on disk, so repeated calls
+        converge instead of cancelling each other out.
+        """
+        widgets._state.update_state(self.configuration_file_path, theme=theme)
+        subprocess.Popen(
+            args=[
+                "python",
+                os.path.expanduser(
+                    os.path.join("~", ".config", "qtile", "widgets", "patch_configurations.py")
+                ),
+            ]
+        )
 
-        
-        with open(self.configuration_file_path, "w") as f:
-            json.dump(configuration, f)
-        # execute patch script
-        subprocess.Popen(args=["python", os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets", "patch_configurations.py"))])
-        # subprocess.Popen(args=["pkill", "-SIGUSR1", "qtile"])
+    def _now(self, timezone: str | None) -> datetime.time:
+        """Local time in the *geolocated* zone, which is what sunrise/sunset are given in."""
+        if timezone:
+            try:
+                return datetime.datetime.now(zoneinfo.ZoneInfo(timezone)).time()
+            except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                pass
+        return datetime.datetime.now().astimezone().time()
 
-    def poll(self):
-        if self.r is None:
+    def poll(self) -> str:
+        measurement = widgets._stream.read_measurement(self.r, "location")
+        if measurement is None:
             return ""
-        
-        with open(self.configuration_file_path, "r") as f:
-            configuration = json.load(f)
 
+        sunrise = measurement.get("sunrise")
+        sunset = measurement.get("sunset")
+        if not isinstance(sunrise, str) or not isinstance(sunset, str):
+            return ""
         try:
-            data = self.r.xrevrange("location", count=1)
-        except redis.exceptions.RedisError:
+            sunrise_ts = datetime.datetime.strptime(sunrise, "%H:%M:%S").time()  # noqa: DTZ007
+            sunset_ts = datetime.datetime.strptime(sunset, "%H:%M:%S").time()  # noqa: DTZ007
+        except ValueError:
             return ""
-        try:
-            eid, payload = data[-1]
-        except IndexError:
-            return ""
-        measurement = json.loads(payload.get(b"measurement").decode("utf-8"))
 
-        sunrise = measurement.get("sunrise", 0)
-        sunset = measurement.get("sunset", 0)
+        # The backend queries sunrisesunset.io with the IP-derived timezone, so these are
+        # wall-clock times *there* — compare against that zone, not the machine's.
+        now = self._now(measurement.get("timezone"))
+        is_night = now < sunrise_ts or now > sunset_ts
+        theme = "dark" if is_night else "light"
 
-        # convert sunrise and sundset to timestamps
-        sunrise_ts = datetime.datetime.strptime(sunrise, '%H:%M:%S').time()
-        sunset_ts = datetime.datetime.strptime(sunset, '%H:%M:%S').time()
+        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        if theme != state.get("theme") and state.get("mode") == "automatic":
+            self.apply_theme(theme)
 
-        now = datetime.datetime.now().time()
+        mode_icon = f" {self.MANUAL_ICON}" if state.get("mode") == "manual" else ""
 
-        if now < sunrise_ts or now > sunset_ts:
-            theme = "dark"
-        else:
-            theme = "light"
-
-        if theme != configuration['state']['theme'] and configuration['state']['mode'] == "automatic":
-            # trigger reload
-            self.toggle_theme()
-
-        if configuration['state']['mode'] == "manual":
-            mode_icon = " "
-        else:
-            mode_icon = ""
-
-        if now < sunrise_ts or now > sunset_ts:
-            return f"<span color='{self.notification_color}'> {sunrise}</span>  {sunset}{mode_icon}"
-        else:
-            return f" {sunrise} <span color='{self.notification_color}'> {sunset}</span>{mode_icon} "
+        if is_night:
+            return (
+                f"<span color='{self.notification_color}'>"
+                f"{self.SUNRISE_ICON} {sunrise}</span> "
+                f"{self.SUNSET_ICON} {sunset}{mode_icon}"
+            )
+        return (
+            f"{self.SUNRISE_ICON} {sunrise} "
+            f"<span color='{self.notification_color}'>"
+            f"{self.SUNSET_ICON} {sunset}</span>{mode_icon} "
+        )

@@ -4,78 +4,60 @@ Reads the latest entry from the ``power_supply`` Redis stream and renders the gr
 icon plus per-battery capacity and charging status. ``BackgroundPoll`` based.
 """
 
-import json
+from typing import Any
 
 import libqtile.widget.base
-import redis.exceptions
+import redis
+import widgets._stream
 
 
 class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
-    def __init__(self, r, warning_color="#ff0000", **config):
+    GRID_SYMBOL = "󰚥"
+    #: Indexed by ``capacity // 10``, so entry *n* covers n0–n9 % and the last covers 100 %.
+    #: These are the Material Design Icons battery ramps in full; the previous if/elif
+    #: ladders repeated several glyphs and skipped others, losing granularity.
+    DISCHARGING_SYMBOLS = ("󰁺", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹")
+    CHARGING_SYMBOLS = ("󰢜", "󰢜", "󰂆", "󰂇", "󰂈", "󰂉", "󰂊", "󰂋", "󰂌", "󰂍", "󰁹")
+    #: Below this the discharging glyph is tinted with ``warning_color``.
+    WARNING_CAPACITY = 20
+
+    def __init__(
+        self,
+        r: redis.Redis | None,
+        warning_color: str = "#ff0000",
+        **config: Any,
+    ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.warning_color = warning_color
 
-    def poll(self):
-        if self.r is None:
-            return ""
-        try:
-            data = self.r.xrevrange("power_supply", count=1)
-            eid, payload = data[-1]
-            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
+    def _symbol(self, capacity: float, charging: bool) -> str:
+        capacity = min(max(capacity, 0), 100)
+        symbols = self.CHARGING_SYMBOLS if charging else self.DISCHARGING_SYMBOLS
+        symbol = symbols[int(capacity) // 10]
+        if not charging and capacity < self.WARNING_CAPACITY:
+            return f"<span color='{self.warning_color}'>{symbol}</span>"
+        return symbol
 
-            output = []
-            if measurement["grid"]:
-                output.append("󰚥")
-            for battery in measurement["batteries"]:
-                if measurement["batteries"][battery]["status"] == "Charging":
-                    if int(measurement["batteries"][battery]["capacity"]) >= 100:
-                        battery = "󰁹"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 90:
-                        battery = "󰂋"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 80:
-                        battery = "󰂊"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 70:
-                        battery = "󰂉"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 60:
-                        battery = "󰂈"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 50:
-                        battery = "󰂇"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 40:
-                        battery = "󰂆"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 30:
-                        battery = "󰂇"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 20:
-                        battery = "󰂆"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 10:
-                        battery = "󰢜"
-                    else:
-                        battery = "󰢜"
-                else:
-                    if int(measurement["batteries"][battery]["capacity"]) >= 100:
-                        battery = "󰁹"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 90:
-                        battery = "󰂂"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 80:
-                        battery = "󰂁"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 70:
-                        battery = "󰂀"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 60:
-                        battery = "󰁿"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 50:
-                        battery = "󰁾"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 40:
-                        battery = "󰁽"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 30:
-                        battery = "󰁼"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 20:
-                        battery = "󰁼"
-                    elif int(measurement["batteries"][battery]["capacity"]) >= 10:
-                        battery = f"<span color='{self.warning_color}'>󰁺</span>"
-                    else:
-                        battery = f"<span color='{self.warning_color}'>󰁺</span>"
-                output.append(battery)
-            return f"{' '.join(output)}"
-        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError, redis.exceptions.RedisError):
+    def poll(self) -> str:
+        measurement = widgets._stream.read_measurement(self.r, "power_supply")
+        if measurement is None:
             return ""
+
+        output = []
+        if measurement.get("grid"):
+            output.append(self.GRID_SYMBOL)
+
+        batteries = measurement.get("batteries")
+        if isinstance(batteries, dict):
+            for state in batteries.values():
+                if not isinstance(state, dict):
+                    continue
+                try:
+                    capacity = float(state.get("capacity"))
+                except (TypeError, ValueError):
+                    continue
+                output.append(self._symbol(capacity, state.get("status") == "Charging"))
+
+        return " ".join(output)

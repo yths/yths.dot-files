@@ -5,9 +5,12 @@ physical dimensions, derived DPI, diagonal, scaling factor, and ``is_primary`` f
 Consumed by ``install.py`` to merge into the active theme bundle's ``config.json``.
 """
 
+import contextlib
+
 import screeninfo
 
-def get():
+
+def get() -> dict[str, dict]:
     monitors = {}
     for m in screeninfo.get_monitors():
         print(f"Monitor: {m.name}")
@@ -17,10 +20,8 @@ def get():
         print(f"height_dpi = {round(m.height / m.height_mm * 25.4)}")
         print(f"diagonal_dpi = {round(diagonal / diagonal_mm * 25.4)}")
         is_primary = False
-        try:
+        with contextlib.suppress(AttributeError):
             is_primary = m.is_primary
-        except AttributeError:
-            pass
         monitors[m.name] = {
             "width": m.width,
             "width_mm": m.width_mm,

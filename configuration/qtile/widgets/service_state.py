@@ -6,26 +6,35 @@ Renders a blinking dot when the service is up, an empty cell otherwise, and appl
 """
 
 import subprocess
+from typing import Any
 
 import libqtile.log_utils
 import libqtile.widget.base
 
 
 class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
-    def __init__(self, service, warning_color="#ff0000", **config):
+    def __init__(
+        self, service: str, warning_color: str = "#ff0000", **config: Any
+    ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.service = service
         self.warning_color = warning_color
 
         self.tick_visible = False
 
-    def poll(self):
-        result = subprocess.run(
-            ["systemctl", "--user", "is-active", "--quiet", self.service],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+    def poll(self) -> str:
+        # A failure to even run systemctl must read as "service down", not freeze the cell
+        # on its last value — a health indicator stuck on "up" is worse than no indicator.
+        try:
+            result = subprocess.run(  # noqa: S603 - fixed argv, service name comes from config
+                ["systemctl", "--user", "is-active", "--quiet", self.service],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            libqtile.log_utils.logger.exception("could not run systemctl")
+            return f"<span color='{self.warning_color}'>󰒲</span>"
 
         if result.returncode == 0:
             output = "·" if self.tick_visible else " "

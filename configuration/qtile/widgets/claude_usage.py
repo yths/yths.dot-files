@@ -8,12 +8,14 @@ Polls every few seconds rather than every second like its siblings, because the 
 only publishes every 30 seconds. ``BackgroundPoll`` based.
 """
 
+import contextlib
 import datetime
-import json
 import subprocess
+from typing import Any
 
 import libqtile.widget.base
-import redis.exceptions
+import redis
+import widgets._stream
 
 
 class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
@@ -23,18 +25,18 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     # forces every space character to a full cell, so the shortfall is made up with a
     # fractionally sized second space — a percentage, so it tracks fontsize per monitor.
     ICON_GAP = ' <span size="34%"> </span>'
-    LEVELS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+    LEVELS = ("▁", "▂", "▃", "▄", "▅", "▆", "▇", "█")
     DIM_ALPHA = 24576
 
     def __init__(
         self,
-        r,
-        warning_color="#ff0000",
-        notification_color="#ff0000",
-        warning_threshold=75,
-        critical_threshold=90,
-        **config,
-    ):
+        r: redis.Redis | None,
+        warning_color: str = "#ff0000",
+        notification_color: str = "#ff0000",
+        warning_threshold: float = 75,
+        critical_threshold: float = 90,
+        **config: Any,
+    ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
@@ -49,10 +51,10 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
 
         self.add_callbacks({"Button3": self.notify})
 
-    def _dict(self, value):
+    def _dict(self, value: Any) -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
 
-    def _number(self, value):
+    def _number(self, value: Any) -> float | None:
         if isinstance(value, bool) or value is None:
             return None
         try:
@@ -60,14 +62,16 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         except (TypeError, ValueError):
             return None
 
-    def _scale(self, value, in_min, in_max, out_min, out_max):
+    def _scale(
+        self, value: float, in_min: float, in_max: float, out_min: float, out_max: float
+    ) -> float:
         return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-    def _level(self, percent):
+    def _level(self, percent: float) -> str:
         percent = min(max(percent, 0), 100)
-        return self.LEVELS[int(round(self._scale(percent, 0, 100, 0, len(self.LEVELS) - 1)))]
+        return self.LEVELS[round(self._scale(percent, 0, 100, 0, len(self.LEVELS) - 1))]
 
-    def _duration(self, seconds):
+    def _duration(self, seconds: Any) -> str:
         seconds = self._number(seconds)
         if seconds is None:
             return ""
@@ -81,13 +85,13 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return f"{hours}h{minutes:02d}"
         return f"{minutes}m"
 
-    def _limit(self, measurement, kind):
+    def _limit(self, measurement: dict[str, Any], kind: str) -> dict[str, Any] | None:
         for limit in measurement.get("limits") or []:
             if isinstance(limit, dict) and limit.get("kind") == kind:
                 return limit
         return None
 
-    def _severity(self, limit, percent):
+    def _severity(self, limit: Any, percent: float) -> str:
         severity = self._dict(limit).get("severity")
         if severity in ("normal", "warning", "critical"):
             return severity
@@ -97,7 +101,9 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return "warning"
         return "normal"
 
-    def _reading(self, measurement, kind, window_key):
+    def _reading(
+        self, measurement: dict[str, Any], kind: str, window_key: str
+    ) -> dict[str, Any] | None:
         limit = self._dict(self._limit(measurement, kind))
         window = self._dict(measurement.get(window_key))
 
@@ -121,14 +127,14 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             "resets_at": resets_at,
         }
 
-    def _colorize(self, text, severity):
+    def _colorize(self, text: str, severity: str) -> str:
         if severity == "critical":
             return f"<span color='{self.notification_color}'>{text}</span>"
         if severity == "warning":
             return f"<span color='{self.warning_color}'>{text}</span>"
         return text
 
-    def _scoped(self, measurement):
+    def _scoped(self, measurement: dict[str, Any]) -> dict[str, Any] | None:
         scoped = self._dict(self._limit(measurement, "weekly_scoped"))
         percent = self._number(scoped.get("percent"))
         model = self._dict(self._dict(scoped.get("scope")).get("model")).get("display_name")
@@ -136,7 +142,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return None
         return {"model": model, "percent": percent, "severity": self._severity(scoped, percent)}
 
-    def _detail(self, reading):
+    def _detail(self, reading: dict[str, Any]) -> str:
         block = self._colorize(self._level(reading["percent"]), reading["severity"])
         countdown = self._duration(reading["resets_in"])
         text = f"{block} {reading['percent']:.0f}%"
@@ -144,7 +150,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             text = f"{text} {countdown}"
         return text
 
-    def _render(self):
+    def _render(self) -> str:
         measurement = self.measurement
         if not measurement:
             return ""
@@ -184,7 +190,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             output = f"<span alpha='{self.DIM_ALPHA}'>{output}</span>"
         return output
 
-    def _reset_clock(self, reading):
+    def _reset_clock(self, reading: dict[str, Any]) -> str:
         resets_at = reading.get("resets_at")
         if isinstance(resets_at, str):
             try:
@@ -198,7 +204,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         countdown = self._duration(reading["resets_in"])
         return f"in {countdown}" if countdown else "unknown"
 
-    def _summary(self):
+    def _summary(self) -> str:
         measurement = self.measurement
         if not measurement:
             return "no data"
@@ -230,34 +236,25 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
 
         return "   ".join(parts)
 
-    def notify(self):
+    def notify(self) -> None:
         # dunstrc sets ignore_newline and leaves markup at its "no" default, so the body is
         # a single line of plain text.
-        try:
+        with contextlib.suppress(OSError):
             subprocess.Popen(
                 args=["notify-send", "-u", "low", "Claude usage", self._summary()]
             )
-        except OSError:
-            pass
 
-    def mouse_enter(self, x, y):
+    def mouse_enter(self, x: int, y: int) -> None:
         self.expanded = True
         self.update(self._render())
 
-    def mouse_leave(self, x, y):
+    def mouse_leave(self, x: int, y: int) -> None:
         self.expanded = False
         self.update(self._render())
 
-    def poll(self):
-        if self.r is None:
+    def poll(self) -> str:
+        measurement = widgets._stream.read_measurement(self.r, "claude_usage")
+        if measurement is None:
             return ""
-        try:
-            data = self.r.xrevrange("claude_usage", count=1)
-            eid, payload = data[-1]
-            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
-            if not isinstance(measurement, dict):
-                return ""
-            self.measurement = measurement
-            return self._render()
-        except (IndexError, KeyError, AttributeError, TypeError, ValueError, json.JSONDecodeError, redis.exceptions.RedisError):
-            return ""
+        self.measurement = measurement
+        return self._render()

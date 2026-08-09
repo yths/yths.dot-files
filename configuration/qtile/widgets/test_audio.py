@@ -1,17 +1,20 @@
-import numpy
-import sounddevice
 import time
 
-def compress_array(arr, m):
+import numpy
+import sounddevice
+
+
+def compress_array(arr: numpy.ndarray, m: int) -> numpy.ndarray:
     n = len(arr)
     if m > n:
         raise ValueError("m must be less than or equal to n")
     # Calculate the size of each bin
     bins = numpy.linspace(0, n, m+1, dtype=int)
-    compressed = numpy.array([arr[bins[i]:bins[i+1]].sum() for i in range(m)])
-    return compressed
+    return numpy.array([arr[bins[i]:bins[i+1]].sum() for i in range(m)])
 
-def calculate_spectrum(indata, frames, time, status):
+def calculate_spectrum(
+    indata: numpy.ndarray, frames: int, time: object, status: object
+) -> None:
     if status:
         print(status)
     fft_data = numpy.abs(numpy.fft.fft(indata - numpy.mean(indata, axis=0), axis=0))
@@ -29,8 +32,12 @@ def calculate_spectrum(indata, frames, time, status):
         discretized_spectrum = numpy.round(compressed_spectrum * 8).astype(int)
         if numpy.sum(discretized_spectrum) > 0:
             unicode_blocks = [chr(0x2581 + h) if h > 0 else ' ' for h in discretized_spectrum]
-            print(f"\rCompressed Spectrum: {''.join(unicode_blocks)} {numpy.sum(compressed_spectrum)}", end='', flush=True)
-    except ValueError as e:
+            print(
+                f"\rCompressed Spectrum: {''.join(unicode_blocks)} "
+                f"{numpy.sum(compressed_spectrum)}",
+                end='', flush=True,
+            )
+    except ValueError:
         pass
         #print("Error in compressing spectrum:", e)
 
@@ -41,7 +48,11 @@ if __name__ == '__main__':
     device_properties = sounddevice.query_devices(sounddevice.default.device)
     print("Using device:", device_properties['name'])
     print(device_properties)
-    with sounddevice.InputStream(channels=2, samplerate=device_properties['default_samplerate'], callback=calculate_spectrum) as stream:
+    with sounddevice.InputStream(
+        channels=2,
+        samplerate=device_properties['default_samplerate'],
+        callback=calculate_spectrum,
+    ) as stream:
         print(stream)
         try:
             while True:

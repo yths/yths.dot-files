@@ -13,6 +13,7 @@ Run:
 
 import argparse
 import asyncio
+import contextlib
 import json
 import os
 import re
@@ -41,8 +42,8 @@ HELPER_DIR = os.path.join(REPO_ROOT, "helper")
 GLOBAL_CONFIG = os.path.expanduser("~/.config/config.json")
 
 sys.path.insert(0, REPO_ROOT)
-from helper.patch_web_greeter import patch_web_greeter  # noqa: E402
 
+from helper.patch_web_greeter import patch_web_greeter  # noqa: E402 - needs the sys.path bootstrap above
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -58,11 +59,11 @@ MIME = {
 }
 
 
-def mime_for(path):
+def mime_for(path: str) -> str:
     return MIME.get(os.path.splitext(path)[1].lower(), "application/octet-stream")
 
 
-def list_themes():
+def list_themes() -> list:
     if not os.path.isdir(THEMES_DIR):
         return []
     return sorted(
@@ -72,7 +73,7 @@ def list_themes():
     )
 
 
-def safe_join(base, *parts):
+def safe_join(base: str, *parts: str) -> str | None:
     # Block ../ traversal at the path-string level but allow symlinks within
     # the theme dir to point outside the repo (e.g. wallpaper -> ~/.config/...).
     base_abs = os.path.abspath(base)
@@ -87,10 +88,16 @@ def safe_join(base, *parts):
 class PreviewHandler(BaseHTTPRequestHandler):
     server_version = "WebGreeterPreview/1.0"
 
-    def log_message(self, fmt, *args):
+    def log_message(self, fmt: str, *args: object) -> None:
         sys.stderr.write(f"[http] {self.address_string()} - {fmt % args}\n")
 
-    def _send_bytes(self, status, body, content_type="application/octet-stream", extra_headers=None):
+    def _send_bytes(
+        self,
+        status: int,
+        body: bytes,
+        content_type: str = "application/octet-stream",
+        extra_headers: dict | None = None,
+    ) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -101,13 +108,16 @@ class PreviewHandler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
-    def _send_text(self, status, text, content_type="text/plain; charset=utf-8"):
+    def _send_text(
+        self, status: int, text: str,
+        content_type: str = "text/plain; charset=utf-8",
+    ) -> None:
         self._send_bytes(status, text.encode("utf-8"), content_type)
 
-    def _send_json(self, status, payload):
+    def _send_json(self, status: int, payload: object) -> None:
         self._send_bytes(status, json.dumps(payload).encode("utf-8"), "application/json; charset=utf-8")
 
-    def _send_file(self, path):
+    def _send_file(self, path: str) -> None:
         try:
             with open(path, "rb") as fh:
                 body = fh.read()
@@ -118,21 +128,21 @@ class PreviewHandler(BaseHTTPRequestHandler):
 
     # ---- routing ----
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         try:
             self._route_get()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
             self.log_message("error: %s", exc)
             self._send_text(500, f"server error: {exc}")
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         try:
             self._route_post()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
             self.log_message("error: %s", exc)
             self._send_text(500, f"server error: {exc}")
 
-    def _route_get(self):
+    def _route_get(self) -> None:  # noqa: PLR0911 - flat router
         url = urlparse(self.path)
         path = url.path
         if path == "/":
@@ -152,7 +162,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
         rest = parts[1] if len(parts) > 1 else ""
         if not theme or theme not in list_themes():
             return self._send_text(404, "no such theme")
-        if rest == "" or rest == "/":
+        if rest in {"", "/"}:
             return self._serve_under(os.path.join(THEMES_DIR, theme), "index.html")
         if rest.startswith("_shared/"):
             return self._serve_under(os.path.join(THEMES_DIR, "_shared"), rest[len("_shared/"):])
@@ -165,7 +175,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
             return self._send_file(shared)
         return self._send_text(404, "not found")
 
-    def _serve_under(self, base, rel):
+    def _serve_under(self, base: str, rel: str) -> None:
         if rel in ("", "/"):
             rel = "index.html"
         target = safe_join(base, rel)
@@ -173,7 +183,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
             return self._send_text(404, "not found")
         return self._send_file(target)
 
-    def _api_get(self, path, query):
+    def _api_get(self, path: str, query: dict) -> None:  # noqa: PLR0911 - flat router
         if path == "/__api/themes":
             return self._send_json(200, {"themes": list_themes()})
         if path == "/__api/theme.json":
@@ -197,7 +207,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
                 return self._send_json(200, {"keys": []})
         return self._send_text(404, "no such endpoint")
 
-    def _route_post(self):
+    def _route_post(self) -> None:  # noqa: PLR0911 - flat router
         url = urlparse(self.path)
         if url.path == "/__api/theme.json":
             theme = (parse_qs(url.query).get("theme") or [""])[0]
@@ -233,7 +243,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
 
 # ---------- File watcher ----------
 
-def _is_generated_artifact(root, name):
+def _is_generated_artifact(root: str, name: str) -> bool:
     """Return True for files patch_web_greeter writes (and thus must not be watched)."""
     if name == "theme.css":
         return True
@@ -242,12 +252,10 @@ def _is_generated_artifact(root, name):
     # _shared/ copies inside individual theme dirs are generated; only the
     # canonical themes/_shared/ source-of-truth should be watched.
     parts = os.path.relpath(root, THEMES_DIR).split(os.sep)
-    if len(parts) >= 2 and not parts[0].startswith("_") and parts[1] == "_shared":
-        return True
-    return False
+    return bool(len(parts) >= 2 and not parts[0].startswith("_") and parts[1] == "_shared")
 
 
-def snapshot():
+def snapshot() -> dict:
     """Return dict[path -> mtime] for source files we care about.
 
     Generated artifacts (theme.css, wallpaper symlinks, per-theme _shared
@@ -255,30 +263,26 @@ def snapshot():
     trigger an infinite regeneration loop.
     """
     snap = {}
-    try:
+    with contextlib.suppress(OSError):
         snap[GLOBAL_CONFIG] = os.stat(GLOBAL_CONFIG).st_mtime
-    except OSError:
-        pass
     if os.path.isdir(THEMES_DIR):
         for root, _dirs, files in os.walk(THEMES_DIR):
             for name in files:
                 if _is_generated_artifact(root, name):
                     continue
                 p = os.path.join(root, name)
-                try:
+                with contextlib.suppress(OSError):
                     snap[p] = os.stat(p).st_mtime
-                except OSError:
-                    pass
     return snap
 
 
-def regenerate_now():
+def regenerate_now() -> dict:
     try:
         with open(GLOBAL_CONFIG) as fh:
             configuration = json.load(fh)
         patch_web_greeter(configuration)
         return True, None
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
         sys.stderr.write(f"[watcher] regenerate failed: {exc}\n")
         return False, str(exc)
 
@@ -289,7 +293,7 @@ THEME_NAME_RE = re.compile(r"^[a-z][a-z0-9-]{0,30}$")
 CLONE_FILES = ("index.html", "index_blank.html", "style.css", "theme.json", "index.yml")
 
 
-def clone_theme(source, name):
+def clone_theme(source: str, name: str) -> dict:
     if not source or source not in list_themes():
         return False, {"ok": False, "error": "source theme not found"}
     if not name or not THEME_NAME_RE.match(name):
@@ -315,7 +319,7 @@ def clone_theme(source, name):
     return True, {"ok": True, "name": name}
 
 
-def watcher_loop(broadcast_threadsafe, interval=0.25):
+def watcher_loop(broadcast_threadsafe: object, interval: float = 0.25) -> None:
     prev = snapshot()
     while True:
         time.sleep(interval)
@@ -340,11 +344,11 @@ def watcher_loop(broadcast_threadsafe, interval=0.25):
 # ---------- WebSocket server ----------
 
 class WSHub:
-    def __init__(self):
+    def __init__(self) -> None:
         self.clients = set()
         self.loop = None
 
-    async def handler(self, ws):
+    async def handler(self, ws: object) -> None:
         self.clients.add(ws)
         try:
             async for _ in ws:
@@ -354,7 +358,7 @@ class WSHub:
         finally:
             self.clients.discard(ws)
 
-    async def broadcast(self, payload):
+    async def broadcast(self, payload: object) -> None:
         if not self.clients:
             return
         msg = json.dumps(payload)
@@ -362,12 +366,12 @@ class WSHub:
         for ws in list(self.clients):
             try:
                 await ws.send(msg)
-            except Exception:
+            except Exception:  # noqa: BLE001 - a preview server must survive any single failure
                 dead.append(ws)
         for ws in dead:
             self.clients.discard(ws)
 
-    def threadsafe_broadcast(self, payload):
+    def threadsafe_broadcast(self, payload: object) -> None:
         if self.loop is None:
             return
         asyncio.run_coroutine_threadsafe(self.broadcast(payload), self.loop)
@@ -375,7 +379,7 @@ class WSHub:
 
 # ---------- main ----------
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port",    type=int, default=8765)
     ap.add_argument("--ws-port", type=int, default=8766)
@@ -406,7 +410,7 @@ def main():
     )
     sys.stderr.write(f"Themes: {', '.join(list_themes())}\n")
 
-    async def run_ws():
+    async def run_ws() -> None:
         hub.loop = asyncio.get_running_loop()
         async with websockets.serve(hub.handler, "127.0.0.1", args.ws_port):
             await asyncio.Future()  # run forever
