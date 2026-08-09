@@ -42,7 +42,7 @@ the parser cannot read from the files are summarised from curated knowledge inst
 | `Super + Ctrl + r` | `lazy.restart()` | Reload the config |
 | `Super + Ctrl + q` | `lazy.shutdown()` | Shutdown Qtile |
 | `Super + r` | `lazy.spawn('rofi -show run')` | Spawn a command using rofi |
-| `Super + Shift + r` | `lazy.spawn('rofi -show window')` | List all windows with rofi. |
+| `Super + Shift + r` | `lazy.spawn('rofi -show window')` | Switch to any window via rofi (entries prefixed with their group number). |
 | `Super + Home` | `lazy.spawn('xsecurelock')` | Lock the screen |
 | `XF86AudioMute` | `lazy.spawn('pactl set-sink-mute @DEFAULT_SINK@ toggle')` | Toggle mute |
 | `XF86AudioLowerVolume` | `lazy.spawn('pactl set-sink-volume @DEFAULT_SINK@ -5%')` | Lower volume |
@@ -95,5 +95,5 @@ tmux ships an extensive default key table that stays active, e.g. `C-b c` new wi
 
 Only the explicit overrides above are added; qutebrowser's full default keymap stays active, e.g. `o` / `O` open, `f` hint, `H` / `L` back / forward, `gt` tab select, `/` search, `:` command mode. Full list: <https://qutebrowser.org/doc/help/configuring.html> and `:bind` in the browser.
 
-> rofi and xorg configure action names and the keyboard layout rather than discrete shortcuts, so they are not listed here.
+> rofi and xorg configure action names and the keyboard layout rather than discrete shortcuts, so they are not listed here. The rofi window switcher (`Super + Shift + r`) prefixes each entry with its group as `[N]`; groups map to screens in blocks of four (groups 1–4 → screen 1, 5–8 → screen 2, …), so the prefix doubles as a screen hint.
 <!-- END: KEYBINDINGS -->

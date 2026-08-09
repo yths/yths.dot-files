@@ -22,7 +22,10 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
         self.capcity_symbols = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
 
     def _scale(self, value, in_min, in_max, out_min, out_max):
-        return (value - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
+        # Real division: with // the result was already an integer, so the round() below
+        # never did anything and the buckets came out skewed — the full block only ever
+        # appeared at exactly 100 and everything from 86 up collapsed into one level.
+        return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def poll(self):
         if self.r is None:

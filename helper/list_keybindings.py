@@ -263,7 +263,10 @@ def generate_markdown() -> str:
     ]
     note = (
         "> rofi and xorg configure action names and the keyboard layout rather than "
-        "discrete shortcuts, so they are not listed here."
+        "discrete shortcuts, so they are not listed here. The rofi window switcher "
+        "(`Super + Shift + r`) prefixes each entry with its group as `[N]`; groups map "
+        "to screens in blocks of four (groups 1–4 → screen 1, 5–8 → screen 2, …), so the "
+        "prefix doubles as a screen hint."
     )
     return "\n\n".join(sections + [note])
 

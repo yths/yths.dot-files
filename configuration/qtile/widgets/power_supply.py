@@ -72,7 +72,7 @@ class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
                     elif int(measurement["batteries"][battery]["capacity"]) >= 20:
                         battery = "󰁼"
                     elif int(measurement["batteries"][battery]["capacity"]) >= 10:
-                        battery = "<span color='{self.warning_color}'>󰁺</span>"
+                        battery = f"<span color='{self.warning_color}'>󰁺</span>"
                     else:
                         battery = f"<span color='{self.warning_color}'>󰁺</span>"
                 output.append(battery)

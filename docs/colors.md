@@ -73,6 +73,8 @@ _Hex values reflect the active theme bundle and differ per install._
 | `widget.TaskList` | `foreground` | `neutral` |
 | `widget.Chord` | `chords_colors` | `highlight` |
 | `widget.Chord` | `chords_colors` | `foreground` |
+| `widgets.claude_usage.WidgetClaudeUsage` | `warning_color` | `warning` |
+| `widgets.claude_usage.WidgetClaudeUsage` | `notification_color` | `notification` |
 | `widgets.audio.WidgetAudio` | `notification_color` | `notification` |
 | `widgets.bluetooth.WidgetBluetooth` | `warning_color` | `warning` |
 | `widgets.updates.WidgetUpdates` | `notification_color` | `highlight` |

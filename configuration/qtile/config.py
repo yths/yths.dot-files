@@ -60,6 +60,7 @@ except redis.exceptions.ConnectionError:
     r = None
 
 import widgets.bluetooth
+import widgets.claude_usage
 import widgets.location
 import widgets.power_supply
 import widgets.service_state
@@ -145,7 +146,7 @@ keys = [
     Key([mod, "control"], "r", lazy.restart(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key([mod], "r", lazy.spawn("rofi -show run"), desc="Spawn a command using rofi"),
-    Key([mod, "shift"], "r", lazy.spawn("rofi -show window"), desc="List all windows with rofi."),
+    Key([mod, "shift"], "r", lazy.spawn("rofi -show window"), desc="Switch to any window via rofi (entries prefixed with their group number)."),
     Key([mod], "Home", lazy.spawn("xsecurelock"), desc="Lock the screen"),
     Key(
         [],
@@ -525,6 +526,26 @@ screens = [
                             * configuration["font"]["size"]
                         )
                     ),
+                ),
+                widgets.claude_usage.WidgetClaudeUsage(
+                    r=r,
+                    warning_color=configuration["palette"][theme]["warning"],
+                    notification_color=configuration["palette"][theme]["notification"],
+                    fontsize=int(
+                        round(
+                            configuration["monitors"][monitor]["scaling_factor"]
+                            * configuration["font"]["size"]
+                        )
+                    ),
+                    update_interval=5,
+                ),
+                widget.Spacer(
+                    length=int(
+                        round(
+                            configuration["monitors"][monitor]["scaling_factor"]
+                            * configuration["font"]["size"]
+                        )
+                    )
                 ),
                 widgets.audio.WidgetAudio(
                     r=r,

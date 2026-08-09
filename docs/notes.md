@@ -41,6 +41,7 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 <!-- BEGIN: WIDGETS -->
 - **audio** — Qtile widget: audio level visualisation.
 - **bluetooth** — Qtile widget: connected bluetooth devices and their battery levels.
+- **claude_usage** — Qtile widget: Claude session and weekly usage limits.
 - **location** — Qtile widget: IP-derived geolocation with current sunrise/sunset.
 - **power_supply** — Qtile widget: AC/battery state.
 - **service_state** — Qtile widget: indicator that toggles when a systemd user unit is active.

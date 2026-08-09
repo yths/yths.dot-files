@@ -2082,5 +2082,7 @@
         "debugExceptionWidget.border": "#322f2f"
     },
     "editor.fontFamily": "'Iosevka Nerd Font', 'Droid Sans Mono', 'monospace', monospace",
-    "workbench.startupEditor": "none"
+    "workbench.startupEditor": "none",
+    "python.analysis.typeCheckingMode": "strict",
+    "claudeCode.preferredLocation": "panel"
 }
