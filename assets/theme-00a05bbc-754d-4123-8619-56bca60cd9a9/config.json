@@ -1,1 +1,46 @@
-{"name": "nuunamnir", "monitors": {"HDMI-0": {"width": 3840, "width_mm": 598, "width_dpi": 163, "height": 2160, "height_mm": 336, "height_dpi": 163, "diagonal": 4405.814340164597, "diagonal_mm": 685.9300255857007, "diagonal_dpi": 163, "scaling_factor": 1.63, "is_primary": false}, "HDMI-1": {"width": 3840, "width_mm": 620, "width_dpi": 157, "height": 2160, "height_mm": 345, "height_dpi": 159, "diagonal": 4405.814340164597, "diagonal_mm": 709.5244886541972, "diagonal_dpi": 158, "scaling_factor": 1.58, "is_primary": true}}, "font": {"size": 14, "family": "Iosevka Nerd Font"}, "colors": {"light": {"positive": "#6ab669", "negative": "#fb8087", "neutral": "#a5aa49", "foreground": "#787878", "background": "#ebebeb", "grey": "#a4a4a4", "cursor": "#636363", "red": "#dc9192", "green": "#84af81", "blue": "#73aadb", "yellow": "#bfa06e", "magenta": "#c097c8", "cyan": "#4bb4b7", "pastel_red": "#c29b9b", "pastel_green": "#95aa93", "pastel_blue": "#90a7bf", "pastel_yellow": "#b4a289", "pastel_magenta": "#b39eb6", "pastel_cyan": "#80adae", "light_muted": "#d3d3d3", "dark_muted": "#787878", "light_grey": "#bcbcbc", "dark_grey": "#8e8e8e", "effect_bright": "#eef18c", "effect_dark": "#606900", "effect_muted": "#a7a86f", "effect_pastel": "#a7a68a"}, "dark": {"positive": "#6ab669", "negative": "#fb8087", "neutral": "#a5aa49", "foreground": "#d3d3d3", "background": "#636363", "grey": "#a4a4a4", "cursor": "#ebebeb", "red": "#c29b9b", "green": "#95aa93", "blue": "#90a7bf", "yellow": "#b4a289", "magenta": "#b39eb6", "cyan": "#80adae", "pastel_red": "#dc9192", "pastel_green": "#84af81", "pastel_blue": "#73aadb", "pastel_yellow": "#bfa06e", "pastel_magenta": "#c097c8", "pastel_cyan": "#4bb4b7", "light_muted": "#787878", "dark_muted": "#d3d3d3", "light_grey": "#8e8e8e", "dark_grey": "#bcbcbc", "effect_bright": "#606900", "effect_dark": "#eef18c", "effect_muted": "#a7a68a", "effect_pastel": "#a7a86f"}}, "wallpapers": {"dark": "~/.config/qtile/wallpaper-dark-4k.png", "light": "~/.config/qtile/wallpaper-light-4k.png", "dark-urgent": "~/.config/qtile/wallpaper-dark-urgent-4k.png", "light-urgent": "~/.config/qtile/wallpaper-light-urgent-4k.png"}, "state": {"theme": "light", "urgency": "normal", "mode": "automatic"}}
+{
+    "name": "nuunamnir",
+    "monitors": {
+        "HDMI-0": {
+            "width": 3840,
+            "width_mm": 598,
+            "width_dpi": 163,
+            "height": 2160,
+            "height_mm": 336,
+            "height_dpi": 163,
+            "diagonal": 4405.814340164597,
+            "diagonal_mm": 685.9300255857007,
+            "diagonal_dpi": 163,
+            "scaling_factor": 1.63,
+            "is_primary": false
+        },
+        "HDMI-1": {
+            "width": 3840,
+            "width_mm": 620,
+            "width_dpi": 157,
+            "height": 2160,
+            "height_mm": 345,
+            "height_dpi": 159,
+            "diagonal": 4405.814340164597,
+            "diagonal_mm": 709.5244886541972,
+            "diagonal_dpi": 158,
+            "scaling_factor": 1.58,
+            "is_primary": true
+        }
+    },
+    "font": {
+        "size": 14,
+        "family": "Iosevka Nerd Font"
+    },
+    "wallpapers": {
+        "dark": "~/.config/qtile/wallpaper-dark.png",
+        "light": "~/.config/qtile/wallpaper-light.png",
+        "dark-highlight": "~/.config/qtile/wallpaper-dark-highlight.png",
+        "light-highlight": "~/.config/qtile/wallpaper-light-highlight.png"
+    },
+    "state": {
+        "theme": "light",
+        "condition": "normal",
+        "mode": "automatic"
+    }
+}
