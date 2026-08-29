@@ -37,7 +37,7 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 | Python import | Arch package | Required by | Notes |
 |---|---|---|---|
 | `libqtile` | `qtile` | window manager + all widgets | the window manager package brings the library |
-| `redis` | `python-redis` | `config.py`, every widget | optional at import — widgets degrade if Redis is unreachable |
+| `redis` | `python-redis` | `config.py`, eight of the nine widgets | optional at import — widgets degrade if Redis is unreachable; `service_state.py` uses no Redis |
 | `numpy` | `python-numpy` | `shared/spectrum.py`, `widgets/audio.py`, `helper/preview_audio.py` | level-meter math |
 | `sounddevice` | `python-sounddevice` **(AUR)** | `widgets/audio.py`, `helper/preview_audio.py` | live audio sampling |
 

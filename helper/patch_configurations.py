@@ -10,6 +10,8 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Callable
+from typing import Any
 
 import toml
 
@@ -18,25 +20,41 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 try:
     from helper.patch_web_greeter import patch_web_greeter
+
+    # Reuses the single loguru-or-stdlib fallback defined in helper/utils.py rather than
+    # repeating it. Failures below carry a traceback, which print() cannot.
+    from helper.utils import logger
 except ImportError:
-    # Reached when this file is run as a script rather than imported as `helper.X` --
-    # either directly, or through the symlink at ~/.config/qtile/widgets/, where realpath
-    # is the only way back to the repo root. install.py, which imports it as a module,
-    # takes the branch above.
+    # Reached when this file is run as a script rather than imported as `helper.X`, where
+    # realpath is the only way back to the repo root. install.py, which imports it as a
+    # module, takes the branch above.
     sys.path.insert(0, _REPOSITORY_ROOT)
     from helper.patch_web_greeter import patch_web_greeter
+    from helper.utils import logger
 
 
-def patch_rofi(configuration: dict) -> None:
+def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
+    """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
+
+    Three patchers scale something to the display, and each inlined the same
+    loop-sum-divide. With no monitors that divides by zero, which is how ``patch_xorg``
+    came to truncate ``~/.Xresources`` and then raise, taking every later patcher with it.
+    """
+    monitors = configuration.get("monitors") or {}
+    values = [monitor[key] for monitor in monitors.values() if key in monitor]
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def patch_rofi(configuration: dict[str, Any]) -> None:
     theme = configuration["state"]["theme"]
 
-    widths = []
-    scaling_factors = []
-    for monitor in configuration["monitors"]:
-        widths.append(configuration["monitors"][monitor]["width"])
-        scaling_factors.append(configuration["monitors"][monitor]["scaling_factor"])
-    average_width = round(sum(widths) / len(widths))
-    average_scaling_factor = sum(scaling_factors) / len(scaling_factors)
+    average_width = monitor_average(configuration, "width")
+    average_scaling_factor = monitor_average(configuration, "scaling_factor")
+    if average_width is None or average_scaling_factor is None:
+        logger.info("No monitor geometry available; leaving the rofi theme alone.")
+        return
 
     patched_configuration = {
         "FONT": f'"{configuration["font"]["family"]} {round(configuration["font"]["size"] * 1.214)}"',
@@ -45,7 +63,7 @@ def patch_rofi(configuration: dict) -> None:
         "COLOR2": f"{configuration['palette'][theme]['failure']}",
         "COLOR3": f"{configuration['palette'][theme]['foreground']}",
         "COLOR4": f"{configuration['palette'][theme]['highlight']}",
-        "WIDTH": f"{average_width}px",
+        "WIDTH": f"{round(average_width)}px",
         "YOFFSET": f"{round(configuration['font']['size'] * average_scaling_factor * 2.75)}px",
     }
     with open(
@@ -55,20 +73,23 @@ def patch_rofi(configuration: dict) -> None:
         for key, value in patched_configuration.items():
             output_handle.write(f"    {key}: {value};\n")
         output_handle.write("}\n")
-    print("Patched rofi configuration ...")
+    logger.info("Patched rofi configuration ...")
 
 
-def patch_xorg(configuration: dict) -> None:
-    dpis = []
+def patch_xorg(configuration: dict[str, Any]) -> None:
+    # The DPI is resolved before the file is opened. Opening first truncated ~/.Xresources,
+    # so any failure while computing left it empty -- and the exception then aborted
+    # patch_all, leaving the remaining apps on the previous palette.
+    average_dpi = monitor_average(configuration, "diagonal_dpi")
+    if average_dpi is None:
+        logger.info("No monitor geometry available; leaving ~/.Xresources alone.")
+        return
     with open(os.path.expanduser("~/.Xresources"), "w") as output_handle:
-        for monitor in configuration["monitors"]:
-            dpis.append(configuration["monitors"][monitor]["diagonal_dpi"])
-        average_dpi = round(sum(dpis) / len(dpis))
-        output_handle.write(f"Xft.dpi: {average_dpi}\n")
-    print(f"Patched .Xresources with average DPI: {average_dpi}.")
+        output_handle.write(f"Xft.dpi: {round(average_dpi)}\n")
+    logger.info(f"Patched .Xresources with average DPI: {round(average_dpi)}.")
 
 
-def patch_kitty(configuration: dict) -> None:
+def patch_kitty(configuration: dict[str, Any]) -> None:
     theme = configuration["state"]["theme"]
     patched_configuration = {
         "allow_remote_control": "yes",
@@ -120,10 +141,10 @@ def patch_kitty(configuration: dict) -> None:
         for key, value in patched_configuration.items():
             output_handle.write(f"{key} {value}\n")
 
-    print("Patched kitty configuration ...")
+    logger.info("Patched kitty configuration ...")
 
 
-def patch_tmux(configuration: dict) -> None:
+def patch_tmux(configuration: dict[str, Any]) -> None:
     configuration_path = os.path.expanduser("~/.config/tmux/tmux.conf")
 
     theme = configuration["state"]["theme"]
@@ -146,10 +167,10 @@ def patch_tmux(configuration: dict) -> None:
             output_handle.write(f"{key}={value}\n")
         for line in output:
             output_handle.write(line)
-    print("Patched tmux configuration ...")
+    logger.info("Patched tmux configuration ...")
 
 
-def patch_starship(configuration: dict) -> None:
+def patch_starship(configuration: dict[str, Any]) -> None:
     configuration_path = os.path.expanduser("~/.config/starship.toml")
 
     theme = configuration["state"]["theme"]
@@ -164,10 +185,10 @@ def patch_starship(configuration: dict) -> None:
 
     with open(configuration_path, "w") as output_handle:
         toml.dump(starship_configuration, output_handle)
-    print("Patched starship configuration ...")
+    logger.info("Patched starship configuration ...")
 
 
-def patch_dunst(configuration: dict) -> None:
+def patch_dunst(configuration: dict[str, Any]) -> None:
     configuration_path = os.path.expanduser("~/.config/dunst/dunstrc")
 
     theme = configuration["state"]["theme"]
@@ -183,11 +204,12 @@ def patch_dunst(configuration: dict) -> None:
         f'"{configuration["font"]["family"]} {dunst_font_size}"'
     )
 
-    scaling_factors = []
-    for monitor in configuration["monitors"]:
-        scaling_factors.append(configuration["monitors"][monitor]["scaling_factor"])
-    average_scaling_factor = sum(scaling_factors) / len(scaling_factors)
-    dunst_configuration["global"]["offset"] = f'0x{round(configuration["font"]["size"] * average_scaling_factor * 3)}'
+    # Only the offset needs a monitor to scale against, so a machine with none still gets
+    # a themed dunst rather than no dunst patch at all.
+    average_scaling_factor = monitor_average(configuration, "scaling_factor")
+    if average_scaling_factor is not None:
+        offset = round(configuration["font"]["size"] * average_scaling_factor * 3)
+        dunst_configuration["global"]["offset"] = f"0x{offset}"
 
     dunst_configuration["urgency_normal"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_normal"]["format"] = (
@@ -206,7 +228,7 @@ def patch_dunst(configuration: dict) -> None:
 
     with open(configuration_path, "w") as output_handle:
         dunst_configuration.write(output_handle)
-    print("Patched dunst configuration ...")
+    logger.info("Patched dunst configuration ...")
 
 
 def reload_qutebrowser() -> None:
@@ -222,7 +244,7 @@ def reload_qutebrowser() -> None:
             ["pgrep", "qutebrowser"], capture_output=True, text=True, check=False
         )
     except OSError:
-        print("pgrep is unavailable; qutebrowser was not reloaded ...")
+        logger.info("pgrep is unavailable; qutebrowser was not reloaded ...")
         return
     pids = [pid for pid in result.stdout.split() if pid.isdigit()]
     if not pids:
@@ -230,14 +252,37 @@ def reload_qutebrowser() -> None:
     subprocess.call(args=["kill", "-1", *pids])
 
 
-def patch_all(configuration: dict) -> None:
-    patch_rofi(configuration)
-    patch_xorg(configuration)
-    patch_kitty(configuration)
-    patch_tmux(configuration)
-    patch_starship(configuration)
-    patch_dunst(configuration)
-    patch_web_greeter(configuration)
+#: Every patcher ``patch_all`` runs, with the name reported when one fails. Order is not
+#: load-bearing -- they write to disjoint targets -- so a new patcher can be appended.
+PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
+    ("rofi", patch_rofi),
+    ("xorg", patch_xorg),
+    ("kitty", patch_kitty),
+    ("tmux", patch_tmux),
+    ("starship", patch_starship),
+    ("dunst", patch_dunst),
+    ("web-greeter", patch_web_greeter),
+)
+
+
+def patch_all(configuration: dict[str, Any]) -> list[str]:
+    """Run every patcher, isolating failures. Returns the names of those that failed.
+
+    A patcher skips the failures it can anticipate, but an unanticipated one used to escape
+    into this loop and cancel every patcher after it: a single raise in the first of seven
+    left kitty, tmux, starship, dunst and web-greeter on the previous palette, silently.
+    Catching broadly here is the point rather than a lapse -- the contract in
+    helper/README.md is that one broken app must not block the others -- and nothing is
+    swallowed: each failure is logged with its traceback and named in the return value.
+    """
+    failed = []
+    for name, patch in PATCHERS:
+        try:
+            patch(configuration)
+        except Exception:
+            logger.exception(f"Patching {name} failed; continuing with the remaining apps.")
+            failed.append(name)
+    return failed
 
 
 if __name__ == "__main__":
@@ -247,7 +292,7 @@ if __name__ == "__main__":
     # -- does not fire the whole sequence as a side effect.
     with open(os.path.expanduser("~/.config/config.json")) as input_handle:
         configuration = json.load(input_handle)
-    patch_all(configuration)
+    failed = patch_all(configuration)
 
     subprocess.call(args=["killall", "dunst"])
     subprocess.call(
@@ -272,4 +317,15 @@ if __name__ == "__main__":
         ]
     )
     subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
-    subprocess.call(args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."])
+    if failed:
+        subprocess.call(
+            args=[
+                "notify-send", "-u", "critical", "Patching",
+                f"Reloaded, but these were not patched: {', '.join(failed)}",
+            ]
+        )
+    else:
+        subprocess.call(
+            args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."]
+        )
+    sys.exit(1 if failed else 0)
