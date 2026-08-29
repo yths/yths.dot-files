@@ -182,3 +182,12 @@ configuration/web-greeter/themes/*/wallpaper.jpeg
 # Per-theme copy of themes/_shared/ — only the canonical source under
 # themes/_shared/ is tracked.
 configuration/web-greeter/themes/[!_]*/_shared/
+
+# Installed state, not source. install.py symlinks the chosen theme bundle's wallpapers
+# into ~/.config/qtile/, which is itself a symlink into this repository -- so these land
+# on tracked paths. Committing them pinned one theme's UUID into version control and made
+# every theme switch dirty the working tree.
+configuration/qtile/wallpaper-dark.png
+configuration/qtile/wallpaper-light.png
+configuration/qtile/wallpaper-dark-highlight.png
+configuration/qtile/wallpaper-light-highlight.png
