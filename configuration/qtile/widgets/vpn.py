@@ -13,6 +13,11 @@ import widgets._stream
 
 
 class WidgetVPN(libqtile.widget.base.BackgroundPoll):
+    # qtile clips each cell to the width derived from the text's advance, and this
+    # glyph's ink runs past its advance, so a lone icon needs a trailing space or its
+    # right edge is cut off.
+    DISCONNECTED_ICON = "󰲝 "
+
     def __init__(
         self,
         r: redis.Redis | None,
@@ -30,7 +35,7 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
             return ""
 
         if not measurement.get("connected"):
-            return "󰲝"
+            return self.DISCONNECTED_ICON
         output = [f"<span color='{self.warning_color}'>󰛳</span>"]
         country = measurement.get("country")
         city = measurement.get("city")
