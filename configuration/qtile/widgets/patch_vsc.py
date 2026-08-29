@@ -1,1 +1,0 @@
-../../../helper/patch_vsc.py

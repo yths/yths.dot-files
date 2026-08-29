@@ -13,6 +13,9 @@ import sys
 
 import toml
 
+#: This file's repository, resolved through any symlink used to invoke it.
+_REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
 try:
     from helper.patch_web_greeter import patch_web_greeter
 except ImportError:
@@ -20,7 +23,7 @@ except ImportError:
     # either directly, or through the symlink at ~/.config/qtile/widgets/, where realpath
     # is the only way back to the repo root. install.py, which imports it as a module,
     # takes the branch above.
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    sys.path.insert(0, _REPOSITORY_ROOT)
     from helper.patch_web_greeter import patch_web_greeter
 
 
@@ -261,13 +264,11 @@ if __name__ == "__main__":
     subprocess.call(
         args=[
             "python",
-            os.path.expanduser(
-                os.path.join("~", ".config", "qtile", "widgets", "patch_vsc.py")
-            ),
+            os.path.join(_REPOSITORY_ROOT, "helper", "patch_vsc.py"),
             "--mode",
             configuration["state"]["theme"],
             "--input-path",
-            os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets")),
+            os.path.join(_REPOSITORY_ROOT, "configuration", "vscode"),
         ]
     )
     subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])

@@ -18,6 +18,13 @@ import redis
 import widgets._state
 import widgets._stream
 
+#: Repository root, resolved through the ~/.config/qtile symlink qtile loads this file
+#: through. Reaching helper/ directly is what lets the patcher symlinks in this directory
+#: -- which existed only to be reachable from here -- be removed.
+REPOSITORY_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+)
+
 
 class WidgetLocation(libqtile.widget.base.InLoopPollText):
     # Nerd Font Private Use Area glyphs. They render as blank in most editors and
@@ -68,9 +75,7 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         subprocess.Popen(
             args=[
                 "python",
-                os.path.expanduser(
-                    os.path.join("~", ".config", "qtile", "widgets", "patch_configurations.py")
-                ),
+                os.path.join(REPOSITORY_ROOT, "helper", "patch_configurations.py"),
             ]
         )
 
