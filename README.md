@@ -22,10 +22,11 @@ python install.py
 - [docs/install.md](docs/install.md) — installing this desktop on an existing Arch system, through display calibration
 - [docs/os-build.md](docs/os-build.md) — building the base Arch system from a blank disk (optional background)
 - [docs/architecture.md](docs/architecture.md) — whole-system overview: theme bundles, installer flow, patchers, widgets, backend contract
-- [docs/notes.md](docs/notes.md) — theme system, qtile widget architecture, yths.themes contract, color schemes
+- [docs/notes.md](docs/notes.md) — theme system, qtile widget architecture, yths.themes contract, palette design
 - [docs/config-schema.md](docs/config-schema.md) — `~/.config/config.json` schema
-- [docs/color-semantics.md](docs/color-semantics.md) — what each semantic palette token means
-- [docs/colors.md](docs/colors.md) — generated map of palette tokens, per-app role maps, and hardcoded-hex drift
+- [docs/palette-semantics.md](docs/palette-semantics.md) — what each palette token *means*, and the contract every preset must honour
+- [docs/palette-reference.md](docs/palette-reference.md) — generated: *where* each token is used, per app, and which tools still hardcode hex
+- [docs/palettes/](docs/palettes/) — what each token *looks like*, one swatch reference per bundled preset
 - [docs/keybindings.md](docs/keybindings.md) — generated overview of every keyboard binding, grouped by tool
 - [docs/dependencies.md](docs/dependencies.md) — Python imports mapped to Arch packages, development tooling, and the pre-commit gate
 - [docs/tips.md](docs/tips.md) — recipes for theme switching, previewing, debugging

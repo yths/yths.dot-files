@@ -20,8 +20,8 @@ import re
 import sys
 from pathlib import Path
 
-import list_colors
 import list_keybindings
+import list_palette
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WIDGETS_DIR = REPO_ROOT / "configuration" / "qtile" / "widgets"
@@ -132,9 +132,9 @@ GENERATORS = {
         "docs/keybindings.md",
         list_keybindings.generate_markdown,
     ),
-    "COLORS": (
-        "docs/colors.md",
-        list_colors.generate_markdown,
+    "PALETTE": (
+        "docs/palette-reference.md",
+        list_palette.generate_markdown,
     ),
 }
 

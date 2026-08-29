@@ -52,7 +52,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 
 ## Palette
 
-`palette` is the only colour vocabulary downstream consumers read. Both `light` and `dark` keys are required; each maps to a dict of token name → hex string. The token set is bundle-defined, but a minimum subset is required by the qtile widgets — see [color-semantics.md](color-semantics.md) for the contract.
+`palette` is the only colour vocabulary downstream consumers read. Both `light` and `dark` keys are required; each maps to a dict of token name → hex string. The token set is bundle-defined, but a minimum subset is required by the qtile widgets — see [palette-semantics.md](palette-semantics.md) for the contract.
 
 ## `state` Subfields
 

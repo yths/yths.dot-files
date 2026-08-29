@@ -47,6 +47,7 @@ Do not mix `<angle-bracket>` placeholders with concrete examples in the same com
 
 | Term | Means |
 |---|---|
+| palette | The `{light,dark} → {token → hex}` mapping in `~/.config/config.json`. The one word for this domain: the three documents that describe it are `palette-semantics.md`, `palette-reference.md` and `palettes/`. Say *palette*, not *colors* or *color scheme*. |
 | theme preset | A user-facing label (`yths`, `nuunamnir`) the installer picks at install time. |
 | theme bundle | The `assets/theme-<uuid>/` filesystem directory produced by `yths.themes`. |
 | widget | A qtile widget under `configuration/qtile/widgets/`. |
@@ -103,17 +104,17 @@ Five files; each one has a single job. Do not blur them.
 | `docs/tips.md` | recipes | Short, recipe-style pointers for specific tasks (theme switching, debugging Plymouth, etc.). Imperative voice. |
 | `docs/issues.md` | tracker | Checklist of open and closed work. Closed items get a date and a one-line resolution note. |
 
-Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/color-semantics.md`, `docs/style.md`) live alongside the five genre files but are reference documents — written once, edited only when the contract they describe changes.
+Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/palette-semantics.md`, `docs/style.md`) live alongside the five genre files but are reference documents — written once, edited only when the contract they describe changes.
 
 Three more are inventories rather than prose, and are read as lookup tables:
 
 | File | Maintained by |
 |---|---|
-| `docs/colors.md` | `helper/gendocs.py` (from `helper/list_colors.py`) |
+| `docs/palette-reference.md` | `helper/gendocs.py` (from `helper/list_palette.py`) |
 | `docs/keybindings.md` | `helper/gendocs.py` (from `helper/list_keybindings.py`) |
 | `docs/dependencies.md` | by hand; every third-party import needs a row |
 
-`docs/palettes/<preset>/` holds the per-preset colour references — swatch images and a token table, one directory per bundled theme.
+`docs/palettes/<preset>/` holds the per-preset palette references — swatch images and a token table, one directory per bundled theme. It is the third of the three `palette*` documents: `palette-semantics.md` is what a token means, `palette-reference.md` is where it is used, `palettes/` is what it looks like.
 
 ## Subdirectory READMEs
 

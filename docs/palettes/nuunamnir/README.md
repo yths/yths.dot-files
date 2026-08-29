@@ -2,7 +2,7 @@
 
 The detailed color reference for the `nuunamnir` theme preset. Each PNG in this directory is a flat colour swatch named after its hex code, used by the table below for visual reference.
 
-For the palette contract that all presets must honour (the minimum required tokens and how consumers read them), see [../../color-semantics.md](../../color-semantics.md). For the design philosophy behind this specific palette (correlation of lightness and colorfulness with perceptual saliency, photonegative dark mode), see [../../notes.md](../../notes.md#color-scheme-nuunamnir).
+For the palette contract that all presets must honour (the minimum required tokens and how consumers read them), see [../../palette-semantics.md](../../palette-semantics.md). For the design philosophy behind this specific palette (correlation of lightness and colorfulness with perceptual saliency, photonegative dark mode), see [../../notes.md](../../notes.md#palette-design-nuunamnir).
 
 | Name | light sRGB String | light sRGB Numeric | light Patch | dark Patch | dark sRGB Numeric | dark sRGB String |
 | --------------- | -------------------- | --------------------- | -------------- | ------------- | -------------------- | -------------------- |
