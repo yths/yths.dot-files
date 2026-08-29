@@ -115,7 +115,7 @@ if __name__ == "__main__":
         ),
     }
     install_files(files_paths, "xorg")
-    source_folder_path = os.path.join(configuration_folder_path, "icc")
+    source_folder_path = os.path.join(configuration_folder_path, "hardware", "icc")
     destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "icc")
     install_folder(source_folder_path, destination_folder_path, "icc")
 
