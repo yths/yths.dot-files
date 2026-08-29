@@ -15,7 +15,8 @@
 
 ## Documentation
 
-- [ ] Manage backup/ directory — pre-refactor archive; consider deletion (git history preserves content)
+- [x] Manage backup/ directory — pre-refactor archive; consider deletion (git history preserves content)
+    - (2026-08-29) the directory is not present in the working tree and was never tracked; the `backup/` entry in `.gitignore` is retained so a future archive stays out of the tree
 - [x] Add LICENSE.md at root
     - (2026-05-16) added MIT license
 - [x] Standardize documentation style under `docs/style.md`

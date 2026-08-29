@@ -103,7 +103,17 @@ Five files; each one has a single job. Do not blur them.
 | `docs/tips.md` | recipes | Short, recipe-style pointers for specific tasks (theme switching, debugging Plymouth, etc.). Imperative voice. |
 | `docs/issues.md` | tracker | Checklist of open and closed work. Closed items get a date and a one-line resolution note. |
 
-Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/color-semantics.md`, `docs/style.md`) live alongside the four genre files but are reference documents — written once, edited only when the contract they describe changes.
+Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/color-semantics.md`, `docs/style.md`) live alongside the five genre files but are reference documents — written once, edited only when the contract they describe changes.
+
+Three more are inventories rather than prose, and are read as lookup tables:
+
+| File | Maintained by |
+|---|---|
+| `docs/colors.md` | `helper/gendocs.py` (from `helper/list_colors.py`) |
+| `docs/keybindings.md` | `helper/gendocs.py` (from `helper/list_keybindings.py`) |
+| `docs/dependencies.md` | by hand; every third-party import needs a row |
+
+`docs/palettes/<preset>/` holds the per-preset colour references — swatch images and a token table, one directory per bundled theme.
 
 ## Subdirectory READMEs
 
