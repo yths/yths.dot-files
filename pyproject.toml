@@ -38,9 +38,28 @@ ignore = [
     "PLR2004",  # thresholds such as `>= 90` read better inline than as constants
     "G004",     # f-strings in logging are the repo-wide idiom
     "S301",     # palette.pkl is a trusted local artifact
+    "S603",     # see the note below
     "S607",     # notify-send/python are invoked by name, not absolute path
     "RUF001",   # the bar deliberately uses nerd-font and block-element glyphs
     "RUF002",
     "RUF003",
     "ANN401",   # `Any` is honest at the qtile and JSON boundaries
 ]
+
+# S603 flags every `subprocess` call that does NOT use a shell and asks you to confirm the
+# input is trusted -- it cannot be satisfied by any code change. Audited: no call site in
+# this repository passes `shell=True`, every one passes a list argv, and the only values
+# interpolated into those lists come from the theme bundle or the widget's own
+# configuration. The rules that catch the hazards S603 gestures at stay on: S602
+# (shell=True) and S604/S605 (shell injection).
+
+[tool.ruff.lint.pylint]
+# The web-greeter preview server dispatches URLs with one `return` per route, which reads
+# better than nesting; the default of 6 is tuned for branching business logic, not routers.
+max-returns = 12
+
+[tool.ruff.lint.per-file-ignores]
+# A long-running preview server has to answer the next request even when one route raised.
+# Each handler reports the failure (500 response, stderr, or a returned error string)
+# rather than swallowing it, which is the substance BLE001 is protecting.
+"configuration/web-greeter/preview/server.py" = ["BLE001"]

@@ -101,6 +101,19 @@ ruff check .          # must exit 0
 ruff check . --fix    # apply the safe fixes
 ```
 
+## The Pre-Commit Gate
+
+`helper/hooks/pre-commit` runs both checks and refuses the commit if either fails. Git does
+not track hook configuration, so enable it once per clone:
+
+```bash
+git config core.hooksPath helper/hooks
+```
+
+It runs `ruff check .` and `python helper/gendocs.py --check` against the working tree —
+not the staged snapshot — because the qtile configuration is loaded live from this tree, so
+a clean tree is the property worth defending. `git commit --no-verify` bypasses it.
+
 Configuration lives in `pyproject.toml` at the repo root — `[tool.ruff]` only, with no
 `[project]` or `[build-system]` table, so it stays tool configuration rather than the
 packaging metadata this repo deliberately removed.

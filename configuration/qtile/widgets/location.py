@@ -93,8 +93,8 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         if not isinstance(sunrise, str) or not isinstance(sunset, str):
             return ""
         try:
-            sunrise_ts = datetime.datetime.strptime(sunrise, "%H:%M:%S").time()  # noqa: DTZ007
-            sunset_ts = datetime.datetime.strptime(sunset, "%H:%M:%S").time()  # noqa: DTZ007
+            sunrise_ts = datetime.time.fromisoformat(sunrise)
+            sunset_ts = datetime.time.fromisoformat(sunset)
         except ValueError:
             return ""
 

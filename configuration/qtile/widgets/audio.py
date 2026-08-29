@@ -10,6 +10,7 @@ from typing import Any
 
 import libqtile.log_utils
 import libqtile.widget.base
+import numpy
 import redis
 import widgets._state
 import widgets._stream
@@ -22,7 +23,14 @@ except ImportError:
     )
     sounddevice = None
 
-import numpy
+#: What the PortAudio calls below can actually raise. ``PortAudioError`` covers a device
+#: that has vanished or was never valid; the builtins cover a missing ``sounddevice``
+#: module, an out-of-range index, and a device whose properties came back incomplete.
+#: Named here rather than caught as a bare ``Exception`` so an unexpected failure still
+#: surfaces instead of being silently swallowed by the bar.
+AUDIO_ERRORS: tuple[type[BaseException], ...] = (
+    (sounddevice.PortAudioError,) if sounddevice is not None else ()
+) + (AttributeError, KeyError, OSError, TypeError, ValueError)
 
 
 class WidgetAudio(libqtile.widget.base.InLoopPollText):
@@ -60,7 +68,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
                 callback=self.callback_spectrum,
             )
             self.stream.start()
-        except Exception:  # noqa: BLE001 - PortAudio raises a wide range of errors on device changes
+        except AUDIO_ERRORS:
             self.device_properties = None
             self.stream = None
         self.visualization = ' ' * self.NUM_BARS
@@ -111,7 +119,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             return None
         try:
             devices = sounddevice.query_devices()
-        except Exception:  # noqa: BLE001 - PortAudio raises a wide range of errors on device changes
+        except AUDIO_ERRORS:
             return None
         for index, device in enumerate(devices):
             if device.get("name") == "default" and device.get("max_input_channels", 0) > 0:
@@ -132,13 +140,13 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             try:
                 self.stream.stop()
                 self.stream.close()
-            except Exception:  # noqa: BLE001 - PortAudio raises broadly here
+            except AUDIO_ERRORS:
                 libqtile.log_utils.logger.exception("stopping the audio stream failed")
             self.stream = None
         try:
             sounddevice._terminate()
             sounddevice._initialize()
-        except Exception:  # noqa: BLE001 - PortAudio raises a wide range of errors on device changes
+        except AUDIO_ERRORS:
             libqtile.log_utils.logger.exception("sounddevice re-init failed")
 
     def device_up(self) -> None:
@@ -167,7 +175,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         try:
             self.stream.stop()
             self.stream.close()
-        except Exception:  # noqa: BLE001 - PortAudio raises broadly on vanished devices
+        except AUDIO_ERRORS:
             libqtile.log_utils.logger.exception("closing the audio stream failed")
         finally:
             self.stream = None
@@ -184,7 +192,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
                 callback=self.callback_spectrum,
             )
             self.stream.start()
-        except Exception:  # noqa: BLE001 - PortAudio raises a wide range of errors on device changes
+        except AUDIO_ERRORS:
             self.device_properties = None
             self.stream = None
 
@@ -230,7 +238,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
                 callback=self.callback_spectrum,
             )
                 self.stream.start()
-            except Exception:  # noqa: BLE001 - PortAudio raises a wide range of errors on device changes
+            except AUDIO_ERRORS:
                 self.device_properties = None
                 self.stream = None
 
