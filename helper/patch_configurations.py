@@ -11,17 +11,17 @@ import os
 import subprocess
 import sys
 
-# Run from any cwd: as a script via `python helper/patch_configurations.py`
-# (sys.path[0] = helper/) or imported as `helper.patch_configurations` from
-# install.py at the repo root. Putting the repo root on sys.path makes the
-# absolute `helper.X` import below work in both shapes.
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-if _REPO_ROOT not in sys.path:
-    sys.path.insert(0, _REPO_ROOT)
+import toml
 
-import toml  # noqa: E402 - imported after the sys.path bootstrap above
-
-from helper.patch_web_greeter import patch_web_greeter  # noqa: E402
+try:
+    from helper.patch_web_greeter import patch_web_greeter
+except ImportError:
+    # Reached when this file is run as a script rather than imported as `helper.X` --
+    # either directly, or through the symlink at ~/.config/qtile/widgets/, where realpath
+    # is the only way back to the repo root. install.py, which imports it as a module,
+    # takes the branch above.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    from helper.patch_web_greeter import patch_web_greeter
 
 
 def patch_rofi(configuration: dict) -> None:
@@ -237,33 +237,38 @@ def patch_all(configuration: dict) -> None:
     patch_web_greeter(configuration)
 
 
-with open(os.path.expanduser("~/.config/config.json")) as input_handle:
-    configuration = json.load(input_handle)
-patch_all(configuration)
+if __name__ == "__main__":
+    # Everything below is the "apply the theme now" script: it rewrites every app's
+    # config, reloads the running programs and restarts qtile. It sits behind the
+    # guard so that importing this module -- to call a single patcher, or to test one
+    # -- does not fire the whole sequence as a side effect.
+    with open(os.path.expanduser("~/.config/config.json")) as input_handle:
+        configuration = json.load(input_handle)
+    patch_all(configuration)
 
-subprocess.call(args=["killall", "dunst"])
-subprocess.call(
-    args=[
-        "tmux",
-        "source-file",
-        os.path.expanduser(os.path.join("~", ".config", "tmux", "tmux.conf")),
-    ]
-)
-subprocess.call(
-    args=["kitty", "+kitten", "themes", "--reload-in=all", configuration["name"]]
-)
-reload_qutebrowser()
-subprocess.call(
-    args=[
-        "python",
-        os.path.expanduser(
-            os.path.join("~", ".config", "qtile", "widgets", "patch_vsc.py")
-        ),
-        "--mode",
-        configuration["state"]["theme"],
-        "--input-path",
-        os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets")),
-    ]
-)
-subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
-subprocess.call(args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."])
+    subprocess.call(args=["killall", "dunst"])
+    subprocess.call(
+        args=[
+            "tmux",
+            "source-file",
+            os.path.expanduser(os.path.join("~", ".config", "tmux", "tmux.conf")),
+        ]
+    )
+    subprocess.call(
+        args=["kitty", "+kitten", "themes", "--reload-in=all", configuration["name"]]
+    )
+    reload_qutebrowser()
+    subprocess.call(
+        args=[
+            "python",
+            os.path.expanduser(
+                os.path.join("~", ".config", "qtile", "widgets", "patch_vsc.py")
+            ),
+            "--mode",
+            configuration["state"]["theme"],
+            "--input-path",
+            os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets")),
+        ]
+    )
+    subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
+    subprocess.call(args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."])
