@@ -20,17 +20,13 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 try:
     from helper.patch_web_greeter import patch_web_greeter
-
-    # Reuses the single loguru-or-stdlib fallback defined in helper/utils.py rather than
-    # repeating it. Failures below carry a traceback, which print() cannot.
     from helper.utils import logger
 except ImportError:
-    # Reached when this file is run as a script rather than imported as `helper.X`, where
-    # realpath is the only way back to the repo root. install.py, which imports it as a
-    # module, takes the branch above.
-    sys.path.insert(0, _REPOSITORY_ROOT)
-    from helper.patch_web_greeter import patch_web_greeter
-    from helper.utils import logger
+    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
+    # repository root, so the package-qualified form cannot resolve. Both branches land on
+    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    from patch_web_greeter import patch_web_greeter
+    from utils import logger
 
 
 def monitor_average(configuration: dict[str, Any], key: str) -> float | None:

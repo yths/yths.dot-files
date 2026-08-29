@@ -11,6 +11,14 @@ import os
 import shutil
 from typing import Any
 
+try:
+    from helper.utils import logger
+except ImportError:
+    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
+    # repository root, so the package-qualified form cannot resolve. Both branches land on
+    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    from utils import logger
+
 
 def patch_web_greeter(configuration: dict[str, Any]) -> None:
     theme_state = configuration["state"]["theme"]
@@ -56,7 +64,7 @@ def patch_web_greeter(configuration: dict[str, Any]) -> None:
                 shutil.rmtree(shared_dst)
         shutil.copytree(shared_src, shared_dst)
 
-    print("Patched web-greeter configuration ...")
+    logger.info("Patched web-greeter configuration ...")
 
 
 if __name__ == "__main__":

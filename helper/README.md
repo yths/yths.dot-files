@@ -58,6 +58,14 @@ Conventions:
 - A patcher accepts the full configuration dict, not a path. The orchestrator loads `~/.config/config.json` once and passes it to every patcher.
 - A patcher writes the app's config file in place. It does not back up; the orchestrator's contract is that `~/.config/config.json` was freshly written by the installer or a previous patcher run.
 - A patcher swallows errors specific to the target app (e.g. a missing theme directory) by skipping rather than raising — one broken app must not block the others.
+- A patcher reports through `logger`, never `print()`. It runs as part of a theme switch, so its output belongs in the same stream as everything else in that run; `print()` is for the tools whose stdout *is* the product (`list_*`, `gendocs`, `preview_audio`). Import it with the two-branch guard below, which resolves whether the module is imported as `helper.<name>` or run as a script:
+
+  ```python
+  try:
+      from helper.utils import logger
+  except ImportError:
+      from utils import logger
+  ```
 
 ## Orchestrator
 
@@ -71,7 +79,8 @@ Conventions:
 2. Implement `def patch_<app>(configuration)`.
 3. Wire it into `helper/patch_configurations.py:patch_all`.
 4. If the patcher accepts CLI args for standalone use, follow the `argparse` pattern in `patch_plymouth.py` — default the configuration file path to `~/.config/config.json`.
-5. Run `python helper/gendocs.py` so the HELPERS block in this README picks up the new entry.
+5. Import `logger` with the guard above; do not `import loguru` directly, or the patcher loses the stdlib fallback that `utils.py` provides.
+6. Run `python helper/gendocs.py` so the HELPERS block in this README picks up the new entry.
 
 ## Installer Helpers
 

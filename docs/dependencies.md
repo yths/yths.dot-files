@@ -26,7 +26,7 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 
 | Python import | Arch package | Used by | Notes |
 |---|---|---|---|
-| `loguru` | `python-loguru` | `patch_plymouth` | optional; stdlib `logging` fallback |
+| `loguru` | `python-loguru` | every patcher, via `helper/utils.py` | optional; the fallback to stdlib `logging` is defined once, in `utils.py`, and the patchers import `logger` from there |
 | `PIL` | `python-pillow` | `patch_plymouth` | renders boot background |
 | `cairo` | `python-pycairo` | `patch_plymouth` | renders boot background |
 | `colour` | `python-colour-science` **(AUR)** | `patch_vsc`, `list_colors` | perceptual nearest-color matching (`list_colors` reuses it for the drift report) |
