@@ -4,7 +4,7 @@ Configuration files, theme presets, and patches for an Arch Linux desktop built 
 
 ## Getting Started
 
-Clone this repository and run the installer; full setup including the base OS lives in [docs/install.md](docs/install.md).
+Clone this repository and run the installer on a machine that already runs Arch Linux; the full walkthrough is in [docs/install.md](docs/install.md). To build that machine from a blank disk first, see [docs/os-build.md](docs/os-build.md).
 
 ```bash
 git clone https://github.com/yths/yths.dot-files.git
@@ -19,7 +19,8 @@ python install.py
 
 ## Documentation
 
-- [docs/install.md](docs/install.md) — full installation walkthrough, from base Arch through display calibration
+- [docs/install.md](docs/install.md) — installing this desktop on an existing Arch system, through display calibration
+- [docs/os-build.md](docs/os-build.md) — building the base Arch system from a blank disk (optional background)
 - [docs/architecture.md](docs/architecture.md) — whole-system overview: theme bundles, installer flow, patchers, widgets, backend contract
 - [docs/notes.md](docs/notes.md) — theme system, qtile widget architecture, yths.themes contract, color schemes
 - [docs/config-schema.md](docs/config-schema.md) — `~/.config/config.json` schema
