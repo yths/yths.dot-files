@@ -11,7 +11,7 @@ yths.themes (external)
        │
        ▼  emits a self-contained bundle
 assets/theme-<uuid>/
-  ├── config.json           # name, font, monitors, wallpapers, state
+  ├── config.json           # name, font, wallpapers, state
   ├── palette.pkl           # the semantic palette consumed by qtile + patchers
   └── wallpapers/*.png      # 4 wallpapers (light/dark, plain/highlight)
        │
@@ -44,7 +44,7 @@ The user-visible artefact of every install is `~/.config/config.json` — the si
 - **yths** — `assets/theme-c767bc2b-384f-428d-b4fe-1761d6b6e4a6`
 <!-- END: PRESETS -->
 
-Each preset's color palette is described in [color-semantics.md](color-semantics.md); the visual reference for the `nuunamnir` palette is at [docs/palettes/nuunamnir/](palettes/nuunamnir/).
+Each preset's color palette is described in [color-semantics.md](color-semantics.md); the visual references are at [docs/palettes/](palettes/), one directory per preset.
 
 ## Installer Flow (`install.py`)
 

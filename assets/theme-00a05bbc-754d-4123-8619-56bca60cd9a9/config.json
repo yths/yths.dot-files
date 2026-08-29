@@ -1,33 +1,5 @@
 {
     "name": "nuunamnir",
-    "monitors": {
-        "HDMI-0": {
-            "width": 3840,
-            "width_mm": 598,
-            "width_dpi": 163,
-            "height": 2160,
-            "height_mm": 336,
-            "height_dpi": 163,
-            "diagonal": 4405.814340164597,
-            "diagonal_mm": 685.9300255857007,
-            "diagonal_dpi": 163,
-            "scaling_factor": 1.63,
-            "is_primary": false
-        },
-        "HDMI-1": {
-            "width": 3840,
-            "width_mm": 620,
-            "width_dpi": 157,
-            "height": 2160,
-            "height_mm": 345,
-            "height_dpi": 159,
-            "diagonal": 4405.814340164597,
-            "diagonal_mm": 709.5244886541972,
-            "diagonal_dpi": 158,
-            "scaling_factor": 1.58,
-            "is_primary": true
-        }
-    },
     "font": {
         "size": 14,
         "family": "Iosevka Nerd Font"
