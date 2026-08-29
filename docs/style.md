@@ -117,7 +117,7 @@ Three more are inventories rather than prose, and are read as lookup tables:
 
 ## Subdirectory READMEs
 
-Subdirectory READMEs (`configuration/*/README.md`, `helper/README.md`, `configuration/qtile/widgets/README.md`) are component-local references. They:
+Subdirectory READMEs (`configuration/*/README.md`, `helper/README.md`, `configuration/qtile/widgets/README.md`, `configuration/qtile/shared/README.md`) are component-local references. They:
 
 - Open with a one-line description and a cross-link to the relevant `docs/` document for system-wide context.
 - Document the component-local workflow (how to patch this app, how to add a new widget) that doesn't belong in a global `docs/` file.

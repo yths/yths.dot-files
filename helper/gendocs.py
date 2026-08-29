@@ -24,6 +24,7 @@ import list_colors
 import list_keybindings
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+WIDGETS_DIR = REPO_ROOT / "configuration" / "qtile" / "widgets"
 
 
 def module_summary(path: Path) -> str:
@@ -43,7 +44,7 @@ def module_summary(path: Path) -> str:
 
 
 def is_qtile_widget(path: Path) -> bool:
-    """A file under widgets/ counts as a widget only if it imports libqtile.widget.base."""
+    """A module is a widget only if it builds on one of qtile's widget base classes."""
     try:
         text = path.read_text()
     except OSError:
@@ -51,12 +52,22 @@ def is_qtile_widget(path: Path) -> bool:
     return "libqtile.widget.base" in text
 
 
+def stray_widget_modules() -> list[Path]:
+    """Modules sitting in widgets/ that are not widgets.
+
+    The directory holds bar cells and nothing else: code shared between cells belongs in
+    ``configuration/qtile/shared/``, standalone tools in ``helper/``. That rule used to be
+    prose in a README backed by a silent ``continue`` here, which is how two shared helpers
+    and a test harness came to live among the widgets. Reporting it instead means the
+    pre-commit hook refuses the next one.
+    """
+    return [path for path in sorted(WIDGETS_DIR.glob("*.py")) if not is_qtile_widget(path)]
+
+
 def generate_widgets() -> str:
+    """Every module under widgets/ is a widget, so every module is listed."""
     lines = []
-    widgets_dir = REPO_ROOT / "configuration" / "qtile" / "widgets"
-    for path in sorted(widgets_dir.glob("*.py")):
-        if not is_qtile_widget(path):
-            continue
+    for path in sorted(WIDGETS_DIR.glob("*.py")):
         summary = module_summary(path) or "(no docstring)"
         lines.append(f"- **{path.stem}** — {summary}")
     return "\n".join(lines)
@@ -192,6 +203,18 @@ def main() -> int:
         help="exit non-zero if any block on disk differs from the generated content",
     )
     args = parser.parse_args()
+
+    strays = stray_widget_modules()
+    if strays:
+        print("Not widgets, but sitting in configuration/qtile/widgets/:", file=sys.stderr)
+        for path in strays:
+            print(f"  {path.relative_to(REPO_ROOT)}", file=sys.stderr)
+        print(
+            "Code shared between widgets belongs in configuration/qtile/shared/; "
+            "standalone tools belong in helper/.",
+            file=sys.stderr,
+        )
+        return 1
 
     stale = []
     changed = []

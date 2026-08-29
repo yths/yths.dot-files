@@ -15,8 +15,8 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._state
-import widgets._stream
+import shared.state
+import shared.stream
 
 #: Repository root, resolved through the ~/.config/qtile symlink qtile loads this file
 #: through. Reaching helper/ directly is what lets the patcher symlinks in this directory
@@ -45,7 +45,7 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         self.configuration_file_path = (
             configuration_file_path
             if configuration_file_path is not None
-            else widgets._state.CONFIGURATION_FILE_PATH
+            else shared.state.CONFIGURATION_FILE_PATH
         )
 
         self.notification_color = notification_color
@@ -55,14 +55,14 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         )
 
     def toggle_mode(self) -> None:
-        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        state = shared.state.read_state(self.configuration_file_path).get("state", {})
         mode = "manual" if state.get("mode") == "automatic" else "automatic"
-        widgets._state.update_state(self.configuration_file_path, mode=mode)
+        shared.state.update_state(self.configuration_file_path, mode=mode)
 
     def toggle_theme_manually(self) -> None:
-        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        state = shared.state.read_state(self.configuration_file_path).get("state", {})
         theme = "light" if state.get("theme") == "dark" else "dark"
-        widgets._state.update_state(self.configuration_file_path, mode="manual")
+        shared.state.update_state(self.configuration_file_path, mode="manual")
         self.apply_theme(theme)
 
     def apply_theme(self, theme: str) -> None:
@@ -71,7 +71,7 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         Takes the target rather than flipping whatever is on disk, so repeated calls
         converge instead of cancelling each other out.
         """
-        widgets._state.update_state(self.configuration_file_path, theme=theme)
+        shared.state.update_state(self.configuration_file_path, theme=theme)
         subprocess.Popen(
             args=[
                 "python",
@@ -89,7 +89,7 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         return datetime.datetime.now().astimezone().time()
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "location")
+        measurement = shared.stream.read_measurement(self.r, "location")
         if measurement is None:
             return ""
 
@@ -109,7 +109,7 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         is_night = now < sunrise_ts or now > sunset_ts
         theme = "dark" if is_night else "light"
 
-        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        state = shared.state.read_state(self.configuration_file_path).get("state", {})
         if theme != state.get("theme") and state.get("mode") == "automatic":
             self.apply_theme(theme)
 

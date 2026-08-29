@@ -9,7 +9,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._stream
+import shared.stream
 
 
 class WidgetVPN(libqtile.widget.base.BackgroundPoll):
@@ -30,7 +30,7 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
         self.warning_color = warning_color
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "vpn")
+        measurement = shared.stream.read_measurement(self.r, "vpn")
         if measurement is None:
             return ""
 

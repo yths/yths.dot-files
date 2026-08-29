@@ -12,8 +12,9 @@ import libqtile.log_utils
 import libqtile.widget.base
 import numpy
 import redis
-import widgets._state
-import widgets._stream
+import shared.spectrum
+import shared.state
+import shared.stream
 
 try:
     import sounddevice
@@ -31,6 +32,11 @@ except ImportError:
 AUDIO_ERRORS: tuple[type[BaseException], ...] = (
     (sounddevice.PortAudioError,) if sounddevice is not None else ()
 ) + (AttributeError, KeyError, OSError, TypeError, ValueError)
+
+#: Weight of the previous frame in the displayed meter. PortAudio delivers capture blocks
+#: far faster than the eye resolves, so each frame is mixed into the last rather than
+#: replacing it; without this the bars flicker rather than move.
+SMOOTHING = 0.8
 
 
 class WidgetAudio(libqtile.widget.base.InLoopPollText):
@@ -50,7 +56,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self.configuration_file_path = (
             configuration_file_path
             if configuration_file_path is not None
-            else widgets._state.CONFIGURATION_FILE_PATH
+            else shared.state.CONFIGURATION_FILE_PATH
         )
 
         self.device_id = 0
@@ -71,7 +77,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         except AUDIO_ERRORS:
             self.device_properties = None
             self.stream = None
-        self.visualization = ' ' * self.NUM_BARS
+        self.visualization = shared.spectrum.SILENCE * self.NUM_BARS
         self.past_values = numpy.zeros(self.NUM_BARS, dtype=float)
 
         self.mode = self._load_mode()
@@ -87,11 +93,11 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self.decay = 0
 
     def _load_mode(self) -> str:
-        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        state = shared.state.read_state(self.configuration_file_path).get("state", {})
         return state.get("audio_mode", "auto")
 
     def _save_mode(self, mode: str) -> None:
-        widgets._state.update_state(self.configuration_file_path, audio_mode=mode)
+        shared.state.update_state(self.configuration_file_path, audio_mode=mode)
 
     def _set_mode(self, mode: str) -> None:
         if mode == self.mode:
@@ -196,36 +202,21 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             self.device_properties = None
             self.stream = None
 
-    def compress_array(self, arr: numpy.ndarray, m: int) -> numpy.ndarray:
-        n = len(arr)
-        if m > n:
-            raise ValueError("m must be less than or equal to n")
-        # Calculate the size of each bin
-        bins = numpy.linspace(0, n, m+1, dtype=int)
-        return numpy.array([arr[bins[i]:bins[i+1]].sum() for i in range(m)])
-
     def callback_spectrum(
         self, in_data: numpy.ndarray, frame_count: int, time_info: Any, status: Any
     ) -> None:
-        fft_data = numpy.abs(numpy.fft.fft(in_data - numpy.mean(in_data, axis=0), axis=0))
-        spectrum = fft_data[:len(fft_data)//8, :]
-        spectrum_left = spectrum[:, 0]
-        spectrum_right = spectrum[:, 1]
+        """Fold one capture block into the displayed meter.
+
+        Runs on the PortAudio callback thread, not qtile's event loop, so it only assigns to
+        two attributes and never touches the drawer.
+        """
         try:
-            compressed_spectrum_left = self.compress_array(spectrum_left, self.NUM_BARS // 2)
-            compressed_spectrum_right = self.compress_array(spectrum_right, self.NUM_BARS // 2)
-            compressed_spectrum = numpy.concatenate((compressed_spectrum_left[::-1], compressed_spectrum_right))
-            compressed_spectrum /= numpy.max([numpy.max(compressed_spectrum), 2])
-            compressed_spectrum = 0.8 * self.past_values + 0.2 * compressed_spectrum
-            self.past_values = compressed_spectrum
-            discretized_spectrum = numpy.round(compressed_spectrum * 8).astype(int)
-            # h runs 0..8 and 0 renders as a space, so the ladder starts at U+2580 to put
-            # h=1 on ▁ and h=8 on █. Offsetting from U+2581 skipped ▁ entirely and landed
-            # h=8 on ▉ (LEFT SEVEN EIGHTHS BLOCK), which fills horizontally, not vertically.
-            unicode_blocks = [chr(0x2580 + h) if h > 0 else ' ' for h in discretized_spectrum]
-            self.visualization = ''.join(unicode_blocks)
+            current = shared.spectrum.levels(in_data, self.NUM_BARS)
         except ValueError:
-            pass
+            # Capture too short to fill the bars; keep the previous frame on screen.
+            return
+        self.past_values = SMOOTHING * self.past_values + (1 - SMOOTHING) * current
+        self.visualization = shared.spectrum.render(self.past_values)
 
     def poll(self) -> str:
         if self.stream is None:
@@ -242,7 +233,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
                 self.device_properties = None
                 self.stream = None
 
-        measurement = widgets._stream.read_measurement(self.r, "audio")
+        measurement = shared.stream.read_measurement(self.r, "audio")
         if measurement is None:
             return ""
 

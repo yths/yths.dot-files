@@ -8,7 +8,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._stream
+import shared.stream
 
 
 class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
@@ -40,7 +40,7 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
         return round(self._scale(capacity, 0, 100, 0, len(self.CAPACITY_SYMBOLS) - 1))
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "bluetooth")
+        measurement = shared.stream.read_measurement(self.r, "bluetooth")
         if measurement is None:
             return ""
 

@@ -59,7 +59,7 @@ Theme selection is interactive by default. `install.py --theme <name>` selects o
 
 ## qtile's Configuration
 
-qtile starts with `configuration/qtile/config.py` (installed into `~/.config/qtile/`). At session start it reads `~/.config/config.json`, instantiates one Redis connection pool using the `BACKEND_REDIS_*` environment variables, and constructs the bar with the widgets under `configuration/qtile/widgets/`.
+qtile starts with `configuration/qtile/config.py` (installed into `~/.config/qtile/`). At session start it reads `~/.config/config.json`, instantiates one Redis connection pool using the `BACKEND_REDIS_*` environment variables, and constructs the bar with the widgets under `configuration/qtile/widgets/`. That directory holds widgets and nothing else; code shared between them — the Redis read, the atomic `config.json` update, the level-meter maths — lives alongside it in `configuration/qtile/shared/`, which qtile reaches through the same `sys.path` entry.
 
 The widgets, and the Redis contract they share, are described in [notes.md](notes.md#qtile-widgets); the development conventions are in [../configuration/qtile/widgets/README.md](../configuration/qtile/widgets/README.md). This page does not restate either.
 

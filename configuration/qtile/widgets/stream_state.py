@@ -10,8 +10,8 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._state
-import widgets._stream
+import shared.state
+import shared.stream
 
 
 class WidgetStreamState(libqtile.widget.base.InLoopPollText):
@@ -32,10 +32,10 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
         self.configuration_file_path = (
             configuration_file_path
             if configuration_file_path is not None
-            else widgets._state.CONFIGURATION_FILE_PATH
+            else shared.state.CONFIGURATION_FILE_PATH
         )
 
-        state = widgets._state.read_state(self.configuration_file_path).get("state", {})
+        state = shared.state.read_state(self.configuration_file_path).get("state", {})
         self.condition = state.get("condition", "normal")
 
     def _apply_condition(self, condition: str) -> None:
@@ -47,7 +47,7 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
         in the installed configuration, so the urgent state never persisted and going live
         raised ``KeyError`` out of ``poll()``, permanently freezing the cell.
         """
-        configuration = widgets._state.update_state(
+        configuration = shared.state.update_state(
             self.configuration_file_path, condition=condition
         )
         self.condition = condition
@@ -63,7 +63,7 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
             screen.set_wallpaper(path_to_wallpaper)
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "stream")
+        measurement = shared.stream.read_measurement(self.r, "stream")
         if measurement is None:
             return ""
         # Default to not-streaming: a payload missing the key must not flip the desktop
