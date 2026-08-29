@@ -62,6 +62,7 @@ Listed here for completeness; the canonical install command is in [install.md](i
 | `lightdm`, `nody-greeter` | login screen + web-greeter runtime |
 | `plymouth` | boot splash |
 | `pacman-contrib`, `yay` | needed for the backend service's pacman post-transaction hook |
+| `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated; nothing fails |
 
 ## Adding a New Dependency
 

@@ -142,11 +142,31 @@ echo <value> | sudo tee /sys/class/backlight/intel_backlight/brightness
 cat /sys/class/backlight/intel_backlight/max_brightness
 ```
 
-Run `displaycal` and calibrate against the `sRGB` profile targeting 120 cd/m². Copy the generated ICC profile into the system profile directory and activate it:
+Run `displaycal` and calibrate against the `sRGB` profile targeting 120 cd/m². Then import
+the generated profile, naming the display it belongs to:
 
 ```bash
-sudo cp ~/.local/share/icc/<profile>.icc ~/.config/icc/
-dispwin -d 1 -i ~/.config/icc/<profile>.icc
+python helper/apply_icc.py --import-profile ~/.local/share/icc/<profile>.icc --display HDMI-1
 ```
 
-Add the `dispwin` invocation to `~/.xinitrc` so the profile is reapplied on every X session.
+That copies it into `configuration/hardware/icc/` under a canonical name and records the
+mapping for this machine in `configuration/hardware/icc/displays.json`. Commit both: the
+profile keeps a stable filename, so recalibrating the same panel later overwrites it and git
+carries the history rather than the directory accumulating `_v2`, `_v3` files.
+
+`--display` takes the xrandr output name (`HDMI-1`, `eDP-1`) — `python helper/apply_icc.py
+--list` shows what is connected and which profile each display resolves to. A display index
+works too, if the output name is not stable on that machine.
+
+Re-run `python install.py` to link the new profile into `~/.config/icc/`. From then on
+`~/.xinitrc` applies it at every session start.
+
+### Running uncalibrated
+
+Calibration is optional and every failure path is non-fatal — no `displaycal` installed, no
+profile recorded for this machine, a missing file, or no display to query all leave the
+session running with the display untouched. To switch it off deliberately:
+
+```bash
+touch ~/.config/icc/disabled
+```

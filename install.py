@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import pickle
+import platform
 import sys
 import time
 
@@ -22,6 +23,7 @@ except ImportError:
 
     logger = logging.getLogger(__name__)
 
+import helper.apply_icc
 import helper.screen_configuration
 from helper.utils import (
     install_credentials,
@@ -29,6 +31,42 @@ from helper.utils import (
     install_files,
     install_folder,
 )
+
+
+def report_display_calibration() -> None:
+    """Say what will happen to display colour on this machine, and how to change it.
+
+    Calibration is optional and needs a colorimeter, so nothing here prompts or fails.
+    The point is that the outcome is stated at install time rather than discovered later
+    from a display that looks wrong.
+    """
+    host = platform.node()
+    host_map = helper.apply_icc.read_displays().get(host, {})
+    displays = helper.apply_icc.detect_displays()
+
+    if not host_map:
+        logger.info(
+            f"No display profiles are configured for {host!r}. The desktop installs and "
+            "runs uncalibrated; to add one, calibrate with displaycal and then run "
+            "`python helper/apply_icc.py --import-profile <file>.icc --display <output>`."
+        )
+        return
+
+    for index, output in displays or []:
+        name = host_map.get(output) or host_map.get(index)
+        if name and helper.apply_icc.profile_path(name):
+            logger.info(f"Display {index} ({output}) will use the {name} profile.")
+        elif name:
+            logger.info(f"Display {index} ({output}) is mapped to {name}, which is missing.")
+        else:
+            logger.info(f"Display {index} ({output}) has no profile; it stays uncalibrated.")
+    if not displays:
+        logger.info(
+            f"Profiles are configured for {host!r} but no display could be queried; they "
+            "will be applied at the next X session start."
+        )
+    logger.info("Create ~/.config/icc/disabled to run uncalibrated without changing anything.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -118,6 +156,7 @@ if __name__ == "__main__":
     source_folder_path = os.path.join(configuration_folder_path, "hardware", "icc")
     destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "icc")
     install_folder(source_folder_path, destination_folder_path, "icc")
+    report_display_calibration()
 
     # install vim configuration
     source_file_path = os.path.join(configuration_folder_path, "vim", ".vimrc")
