@@ -123,7 +123,9 @@ python install.py
 
 The installer prompts for a theme — choose between the bundled presets (e.g. `yths`, `nuunamnir`) discovered under `assets/`. The selected theme's `config.json` is written to `~/.config/config.json`, where qtile and the helper scripts read it from.
 
-The `DOTFILES_REPOSITORY_PATH` environment variable overrides the default repository location (`~/repositories/yths.dot-files`); the installer and the helpers under `helper/` honour it.
+The installer also arms this clone's pre-commit gate, so `ruff` and `helper/gendocs.py` run on every commit — see [dependencies.md](dependencies.md#the-pre-commit-gate). It is reported, never prompted, and a failure to arm it does not stop the install.
+
+The `DOTFILES_REPOSITORY_PATH` environment variable overrides the default repository location (`~/repositories/yths.dot-files`); the installer and the helpers under `helper/` honour it. Hook arming deliberately ignores it, so redirecting where configuration is read from cannot arm a different clone.
 
 ## Calibrating the Display
 

@@ -32,6 +32,8 @@ The helpers fall into three roles:
 
 `gendocs.py` (this directory's own utility) sits outside all three — it regenerates marker blocks in the docs from the filesystem.
 
+`hooks/` holds the git hooks rather than a Python module, so the generated inventory above does not list it: `hooks/pre-commit` is the gate, `hooks/enable` arms it for a clone. See [../docs/dependencies.md](../docs/dependencies.md#the-pre-commit-gate).
+
 ## Patcher Pattern
 
 A patcher takes the active configuration (`~/.config/config.json`), extracts the bits it needs (palette, font, state), and writes them into an app-specific format. The canonical minimal patcher is `patch_web_greeter.py`: it iterates over web-greeter themes, reads each theme's `theme.json#role_map`, and emits a `theme.css` containing the mapped palette tokens as CSS variables.

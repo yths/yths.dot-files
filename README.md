@@ -27,7 +27,7 @@ python install.py
 - [docs/color-semantics.md](docs/color-semantics.md) — what each semantic palette token means
 - [docs/colors.md](docs/colors.md) — generated map of palette tokens, per-app role maps, and hardcoded-hex drift
 - [docs/keybindings.md](docs/keybindings.md) — generated overview of every keyboard binding, grouped by tool
-- [docs/dependencies.md](docs/dependencies.md) — Python imports mapped to Arch packages
+- [docs/dependencies.md](docs/dependencies.md) — Python imports mapped to Arch packages, development tooling, and the pre-commit gate
 - [docs/tips.md](docs/tips.md) — recipes for theme switching, previewing, debugging
 - [docs/issues.md](docs/issues.md) — known issues and roadmap
 - [docs/style.md](docs/style.md) — documentation style guide (for contributors)

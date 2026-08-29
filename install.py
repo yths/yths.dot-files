@@ -11,6 +11,7 @@ import json
 import os
 import pickle
 import platform
+import subprocess
 import sys
 import time
 
@@ -31,6 +32,43 @@ from helper.utils import (
     install_files,
     install_folder,
 )
+
+#: The repository this installer is part of, resolved through any symlink. Deliberately not
+#: DOTFILES_REPOSITORY_PATH: that variable redirects where configuration is *read from*, and
+#: following it here could arm the hooks of a clone other than the one being run.
+_REPOSITORY_ROOT = os.path.dirname(os.path.realpath(__file__))
+
+
+def enable_git_hooks() -> None:
+    """Arm the pre-commit gate in the repository this installer came from.
+
+    Git will not let a repository configure its own hooks -- ``core.hooksPath`` is local
+    configuration, deliberately outside version control, so that cloning can never run code
+    the author chose. Every fresh clone therefore starts with the gate off and nothing says
+    so. Installing is the one step everyone takes, so the gate is armed from here.
+
+    Never fatal, and never interactive: installing the desktop does not depend on being able
+    to commit to the repository it came from, and an installer that stops for a linting gate
+    would be worse than one that ships without it.
+    """
+    enable_script = os.path.join(_REPOSITORY_ROOT, "helper", "hooks", "enable")
+    if not os.path.exists(enable_script):
+        return
+    try:
+        result = subprocess.run(
+            [enable_script], capture_output=True, text=True, check=False
+        )
+    except OSError as error:
+        logger.info(f"Could not arm the pre-commit gate: {error}")
+        return
+    reported = (result.stdout or result.stderr).strip()
+    if result.returncode == 0:
+        logger.info(reported or "Armed the pre-commit gate.")
+    else:
+        logger.info(
+            f"The pre-commit gate is not armed ({reported}). Run helper/hooks/enable "
+            "from a clone of this repository to arm it."
+        )
 
 
 def report_display_calibration() -> None:
@@ -79,6 +117,8 @@ if __name__ == "__main__":
         help="Install this theme by name, without prompting (e.g. --theme yths).",
     )
     arguments = parser.parse_args()
+
+    enable_git_hooks()
 
     repository_folder_path = os.environ.get(
         "DOTFILES_REPOSITORY_PATH",

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Pre-commit gate for yths.dot-files.
 #
-# Enable once per clone:
-#     git config core.hooksPath helper/hooks
+# Arm it once per clone -- `install.py` already does this for you:
+#     helper/hooks/enable
 #
 # Bypass a single commit with `git commit --no-verify` when you genuinely need to.
 #

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Arm the pre-commit gate for this clone.
+#
+#     helper/hooks/enable
+#
+# Git will not let a repository configure its own hooks. `core.hooksPath` is local
+# configuration, deliberately outside version control, so that cloning a repository can
+# never run code its author chose. The cost of that safety is that every fresh clone starts
+# with the gate off and nothing says so -- `ruff` and `gendocs` are simply never run.
+#
+# This is the one command that turns it on. `install.py` runs it, so a normal install is
+# already covered; a contributor who only clones runs it once by hand.
+#
+# Idempotent: safe to run again, and it re-points a clone whose hooks were configured
+# somewhere else.
+
+set -uo pipefail
+
+if ! repository_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    printf 'not a git repository, so there are no hooks to enable\n' >&2
+    exit 1
+fi
+cd "$repository_root" || exit 1
+
+if [ ! -x helper/hooks/pre-commit ]; then
+    printf 'helper/hooks/pre-commit is missing or not executable\n' >&2
+    exit 1
+fi
+
+# Relative, not absolute: git resolves it against the top of the working tree, so the
+# setting survives the clone being moved or checked out at a different path.
+git config core.hooksPath helper/hooks
+
+configured="$(git config --get core.hooksPath)"
+if [ "$configured" != "helper/hooks" ]; then
+    printf 'could not set core.hooksPath (it reads %s)\n' "${configured:-<unset>}" >&2
+    exit 1
+fi
+
+printf 'pre-commit gate enabled: ruff and gendocs now run on every commit\n'
