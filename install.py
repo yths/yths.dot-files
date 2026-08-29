@@ -341,7 +341,7 @@ if __name__ == "__main__":
     configuration["state"] = {}
     configuration["state"]["theme"] = "light"
     configuration["state"]["condition"] = "normal"
-    configuration["state"]["mode"] = "automatic"
+    configuration["state"]["theme_mode"] = "automatic"
 
     # if configuration file already exists, back it up
     global_configuration_path = os.path.expanduser(

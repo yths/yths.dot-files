@@ -56,13 +56,13 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
 
     def toggle_mode(self) -> None:
         state = shared.state.read_state(self.configuration_file_path).get("state", {})
-        mode = "manual" if state.get("mode") == "automatic" else "automatic"
-        shared.state.update_state(self.configuration_file_path, mode=mode)
+        mode = "manual" if state.get("theme_mode") == "automatic" else "automatic"
+        shared.state.update_state(self.configuration_file_path, theme_mode=mode)
 
     def toggle_theme_manually(self) -> None:
         state = shared.state.read_state(self.configuration_file_path).get("state", {})
         theme = "light" if state.get("theme") == "dark" else "dark"
-        shared.state.update_state(self.configuration_file_path, mode="manual")
+        shared.state.update_state(self.configuration_file_path, theme_mode="manual")
         self.apply_theme(theme)
 
     def apply_theme(self, theme: str) -> None:
@@ -110,10 +110,10 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         theme = "dark" if is_night else "light"
 
         state = shared.state.read_state(self.configuration_file_path).get("state", {})
-        if theme != state.get("theme") and state.get("mode") == "automatic":
+        if theme != state.get("theme") and state.get("theme_mode") == "automatic":
             self.apply_theme(theme)
 
-        mode_icon = f" {self.MANUAL_ICON}" if state.get("mode") == "manual" else ""
+        mode_icon = f" {self.MANUAL_ICON}" if state.get("theme_mode") == "manual" else ""
 
         if is_night:
             return (

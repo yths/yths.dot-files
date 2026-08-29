@@ -4,7 +4,7 @@
 
 Re-run `install.py` to pick a different preset. The current `~/.config/config.json` is preserved as `~/.config/config.json.<timestamp>.bak` first, so the previous selection can be recovered.
 
-Re-running also rewrites `state` to its defaults — `theme: light`, `condition: normal`, `mode: automatic` — so a manually pinned dark theme reverts to automatic switching. Restore it by editing `~/.config/config.json`, or with the location widget's middle- and right-click bindings.
+Re-running also rewrites `state` to its defaults — `theme: light`, `condition: normal`, `theme_mode: automatic` — so a manually pinned dark theme reverts to automatic switching. Restore it by editing `~/.config/config.json`, or with the location widget's middle- and right-click bindings.
 
 ```bash
 python install.py

@@ -94,7 +94,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
     def _load_mode(self) -> str:
         state = shared.state.read_state(self.configuration_file_path).get("state", {})
-        return state.get("audio_mode", "auto")
+        return state.get("audio_mode", "automatic")
 
     def _save_mode(self, mode: str) -> None:
         shared.state.update_state(self.configuration_file_path, audio_mode=mode)
@@ -107,10 +107,10 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
     def toggle_mode(self) -> None:
         self.decay = self.MAX_DECAY
-        target = "manual" if self.mode == "auto" else "auto"
+        target = "manual" if self.mode == "automatic" else "automatic"
         self._set_mode(target)
         self.last_active_sink = None
-        if target == "auto":
+        if target == "automatic":
             # User-initiated refresh — bypass throttle so a freshly connected
             # bluetooth headset can be picked up immediately on middle-click.
             self._reenumerate_devices(force=True)
@@ -237,7 +237,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         if measurement is None:
             return ""
 
-        if self.mode == "auto":
+        if self.mode == "automatic":
             self.last_active_sink = measurement.get("active_sink")
             target = self._auto_device_index()
             if target is None:
@@ -255,7 +255,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         if self.decay > 0:
             self.decay -= 1
             self.decay = max(self.decay, 0)
-            mode_marker = "A" if self.mode == "auto" else "M"
+            mode_marker = "A" if self.mode == "automatic" else "M"
             fgalpha = max(self.decay * round(65535 / self.MAX_DECAY), 1)
             output = (
                 f"<span fgalpha='{fgalpha}'>{mode_marker}:{self.device_id}</span>"
