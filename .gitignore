@@ -13,6 +13,14 @@ __pycache__/
 ### Pre-refactor archive, kept out of the tree ###
 backup/
 
+### Theme bundles ###
+# One bundle is tracked and ships with the repository; every other one is somebody's own,
+# exported by yths.themes into this directory and never committed. Discovery is "any
+# directory under assets/ holding a config.json", so an ignored bundle installs exactly like
+# the tracked one -- `install.py --theme <name>` -- without appearing in a diff.
+assets/*
+!assets/default/
+
 ### Installed state, not source ###
 # install.py symlinks the chosen theme bundle's wallpapers into ~/.config/qtile/, which is
 # itself a symlink into this repository, so these land on tracked paths. Committing them

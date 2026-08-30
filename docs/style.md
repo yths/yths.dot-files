@@ -49,7 +49,7 @@ Do not mix `<angle-bracket>` placeholders with concrete examples in the same com
 |---|---|
 | palette | The `{light,dark} → {token → hex}` mapping in `~/.config/config.json`. The one word for this domain: the three documents that describe it are `palette-semantics.md`, `palette-reference.md` and `palettes/`. Say *palette*, not *colors* or *color scheme*. |
 | theme preset | A user-facing label the installer picks at install time. One ships, named `default`; `assets/<name>/` holds each. |
-| theme bundle | The `assets/theme-<uuid>/` filesystem directory produced by `yths.themes`. |
+| theme bundle | The `assets/<name>/` filesystem directory produced by `yths.themes`. One is tracked (`default`); the rest are personal and gitignored. |
 | widget | A qtile widget under `configuration/qtile/widgets/`. |
 | patcher | A `helper/patch_*.py` module that writes palette values into a target app config. |
 | backend | The metrics service at `yths/yths.backend-service` that publishes Redis streams. |

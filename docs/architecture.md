@@ -4,15 +4,15 @@ A whole-system overview of how a theme bundle, the installer, the per-app patche
 
 ## The Theme-Bundle Lifecycle
 
-A *theme bundle* is the unit of theming. Bundles are produced by [yths.themes](https://github.com/yths/yths.themes) (an external orchestrator) and land in this repo as `assets/theme-<uuid>/`. Each bundle is self-describing.
+A *theme bundle* is the unit of theming. Bundles are produced by [yths.themes](https://github.com/yths/yths.themes) (an external orchestrator) and land in this repo as `assets/<name>/`. Each bundle is self-describing, and its directory name is its identity — `install.py --theme <name>` selects it.
 
 ```text
 yths.themes (external)
        │
        ▼  emits a self-contained bundle
-assets/theme-<uuid>/
+assets/<name>/
   ├── config.json           # name, font, wallpapers, state
-  ├── palette.pkl           # the semantic palette consumed by qtile + patchers
+  ├── palette.pkl           # {mode: {token: hex}}, consumed by qtile + patchers
   └── wallpapers/*.png      # 4 wallpapers (light/dark, plain/highlight)
        │
        ▼  user picks one at install time
