@@ -38,15 +38,22 @@ render and throw the result away, which is only useful for checking that renderi
 `--theme light` or `--theme dark` renders a specific variant; the default follows
 `state.theme` in `~/.config/config.json`.
 
-## In the Automatic Pipeline
+## Always Dark, and Not on a Theme Switch
 
-`patch_plymouth` is in `patch_all`'s registry, so a theme switch re-renders the splash. It
-**never prompts**: a password dialog at dawn and dusk would be worse than a boot splash that
-lags a theme behind. It installs only where root costs nothing — already root, or a live
-`sudo` timestamp — and otherwise logs the command above and moves on.
+The splash is rendered from the dark palette whatever the desktop's current theme, and it is
+not in `patch_all`'s registry — a day/night switch does not touch it.
 
-So on a normal machine the automatic run keeps the render honest and the boot splash
-updates the next time you run the install command yourself.
+Both follow from when it is drawn. The splash appears before anyone logs in, so there is no
+user whose light-or-dark preference could apply; `state.theme` describes a session that does
+not exist yet. It also matches `background-tile.png`, which links to the dark wallpaper, and
+a screen coming up in a dark room.
+
+Leaving it out of the pipeline follows from what updating it costs: root, and an
+`mkinitcpio` run. Doing that twice a day would prompt for a password and rebuild the
+initramfs to change something nobody is looking at.
+
+So this is a system decision, made once. Re-run the command above when the palette itself
+changes.
 
 ## Silent Boot
 
