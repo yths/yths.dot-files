@@ -94,7 +94,8 @@ def patch_<app>(configuration):
 Conventions:
 
 - A patcher accepts the full configuration dict, not a path. The orchestrator loads `~/.config/config.json` once and passes it to every patcher.
-- A patcher writes the app's config file in place. It does not back up; the orchestrator's contract is that `~/.config/config.json` was freshly written by the installer or a previous patcher run.
+- A patcher writes the app's config file in place, and never reads it back as its own input. `~/.config/<app>` is a symlink into this repository, so a patcher that read and rewrote its own output would rewrite a tracked file at every theme switch. Where the app's config also holds hand-written settings, keep those in a tracked `<name>.template` beside it, read that with `utils.template_path()`, and let `.gitignore` cover the output — `patch_tmux`, `patch_starship` and `patch_dunst` all work this way. Where the config is entirely generated, gitignore it outright, as kitty's and rofi's are.
+- A patcher does not back up; the orchestrator's contract is that `~/.config/config.json` was freshly written by the installer or a previous patcher run.
 - A patcher swallows errors specific to the target app (e.g. a missing theme directory) by skipping rather than raising — one broken app must not block the others.
 - A patcher reports through `logger`, never `print()`. It runs as part of a theme switch, so its output belongs in the same stream as everything else in that run; `print()` is for the tools whose stdout *is* the product (`list_*`, `gendocs`, `preview_audio`). Import it with the two-branch guard below, which resolves whether the module is imported as `helper.<name>` or run as a script:
 
