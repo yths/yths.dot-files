@@ -2,7 +2,9 @@
 
 ## Miscellaneous
 
-- [ ] Add representative screenshots to `README.md`
+- [x] Add representative screenshots to `README.md`
+    - (2026-08-30) rendered rather than captured. A screenshot of the running desktop would carry whatever was on it — window titles, file names, the bar's VPN country and usage figures — so `helper/render_preview.py` draws the same surfaces from the theme bundle: the bar, a terminal with the sixteen colours `patch_kitty` assigns, a dunst notification, and the palette itself. It opens two files, both under `assets/`, and a test asserts it reaches for no session source.
+    - (2026-08-30) if a real screenshot is wanted later, it can replace `docs/preview/*.png` without touching anything else; the README references the paths, not the renderer.
 - [x] Fix installation script
 - [x] Add missing dependencies (OS packages) to installation instructions/dependencies list
     - (2026-05-16) full inventory in `docs/dependencies.md`; `docs/install.md` references it
@@ -65,7 +67,9 @@
 - [x] Automate installation of plymouth
     - (2026-08-30) partly done: `python helper/patch_plymouth.py --install --rebuild` performs the copy into `/usr/share/plymouth/themes/` and the `mkinitcpio` rebuild that used to be two manual commands in the theme README, prompting for root once.
     - (2026-08-30) finished by `./bootstrap.sh` running it, rather than `install.py`. The installer writes into `$HOME` and never asks for root; the bootstrap script already holds a sudo context from the package install, and is the step a reader runs deliberately on a new machine. Both privileged installs are its last action, so everything reversible happens first, and `--skip-system` leaves them.
-- [ ] Automatically patch README.md on color theme change
+- [x] Automatically patch README.md on color theme change
+    - (2026-08-30) as a generated block rather than a patcher, which is the distinction that matters: the README describes the repository, not the running session, so a dusk/dawn switch must not touch it. `helper/list_configured.py` derives the application table from `install.py`'s install table and the theme name from `setup.toml`, so the block changes exactly when an application is added or the default theme changes.
+    - (2026-08-30) the preview images are rendered by `helper/render_preview.py` from the theme bundle, and `gendocs.py` fails when they no longer match the palette that ships — so a theme change cannot leave the README showing the old one.
 - [x] Create VSC color theme
     - (2026-01-02) added crude VSC theme color mapping script (does not work well in light mode)
 - [x] Improve VSC color mapping - currently selection is not visible

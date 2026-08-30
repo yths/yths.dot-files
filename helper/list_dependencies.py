@@ -32,7 +32,7 @@ EXCLUDED_DIRECTORIES = ("tests/",)
 #: and anything a reader needs to know before installing it. Everything else is derived.
 ARCH_PACKAGES: dict[str, tuple[str, str]] = {
     "PIL": ("python-pillow", "renders the boot background"),
-    "cairo": ("python-pycairo", "renders the boot background's glyphs"),
+    "cairo": ("python-pycairo", "draws the boot background and the README preview"),
     "colour": (
         "python-colour-science",
         "perceptual nearest-colour matching, sRGB → XYZ → ΔE",

@@ -20,7 +20,7 @@ entry there and running `python helper/gendocs.py`; nothing else needs editing.
 | Import | Arch package | Used by | Notes |
 |---|---|---|---|
 | `PIL` | `python-pillow` | `helper/patch_plymouth.py` | renders the boot background |
-| `cairo` | `python-pycairo` | `helper/patch_plymouth.py` | renders the boot background's glyphs |
+| `cairo` | `python-pycairo` | `helper/patch_plymouth.py`, `helper/render_preview.py` | draws the boot background and the README preview |
 | `colour` | `python-colour-science` **(AUR)** | `helper/list_palette.py`, `helper/patch_vsc.py` | perceptual nearest-colour matching, sRGB → XYZ → ΔE |
 | `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/widgets/` (9 files) | the window manager package provides the library |
 | `loguru` | `python-loguru` | `helper/utils.py`, `install.py` | optional; `helper/utils.py` falls back to stdlib `logging` |

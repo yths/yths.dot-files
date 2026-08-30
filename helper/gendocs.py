@@ -16,13 +16,17 @@ The script is idempotent: running it twice in a row produces no diff.
 import argparse
 import ast
 import json
+import pickle
 import re
 import sys
 from pathlib import Path
 
+import list_configured
 import list_dependencies
 import list_keybindings
 import list_palette
+import render_preview
+from utils import read_setup
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WIDGETS_DIR = REPO_ROOT / "configuration" / "qtile" / "widgets"
@@ -107,6 +111,27 @@ def unresolvable_module_references() -> list[str]:
     return sorted(unresolved)
 
 
+def stale_preview() -> list[str]:
+    """Whether docs/preview/ was rendered from the palette that ships today.
+
+    The images are tracked, unlike everything else generated here, because GitHub has to
+    serve them from the README. That is only defensible while they change when the theme
+    does and at no other time -- so the digest they were drawn from is compared, and a
+    forgotten re-render fails the commit instead of leaving the README showing an old theme.
+    """
+    setup = read_setup()
+    bundle = REPO_ROOT / "assets" / setup["desktop"]["theme"]
+    digest_path = REPO_ROOT / "docs" / "preview" / "rendered-from.txt"
+    if not digest_path.is_file():
+        return ["docs/preview/ has never been rendered"]
+    with (bundle / "palette.pkl").open("rb") as handle:
+        palette = pickle.load(handle)
+    expected = render_preview.palette_digest(palette, setup["desktop"]["font_family"])
+    if digest_path.read_text().strip() != expected:
+        return [f"rendered from a different palette than assets/{setup['desktop']['theme']}/"]
+    return []
+
+
 def invariants() -> list[tuple[str, list[str], str]]:
     """Every structural rule this script refuses to generate documentation around.
 
@@ -125,6 +150,11 @@ def invariants() -> list[tuple[str, list[str], str]]:
             list_dependencies.mismatches(list_dependencies.third_party_imports()),
             "Record the package in ARCH_PACKAGES (helper/list_dependencies.py), and list it\n"
             "under [packages] in setup.toml so a fresh machine installs it.",
+        ),
+        (
+            "The rendered preview no longer matches the palette it shows:",
+            stale_preview(),
+            "Run `python helper/render_preview.py` and commit the images.",
         ),
         (
             "Not widgets, but sitting in configuration/qtile/widgets/:",
@@ -200,6 +230,10 @@ GENERATORS = {
     "KEYBINDINGS": (
         "docs/keybindings.md",
         list_keybindings.generate_markdown,
+    ),
+    "CONFIGURED": (
+        "README.md",
+        list_configured.generate_markdown,
     ),
     "DEPENDENCIES": (
         "docs/dependencies.md",
