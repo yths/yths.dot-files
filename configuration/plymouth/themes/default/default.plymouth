@@ -1,12 +1,12 @@
 [Plymouth Theme]
-Name=yths
-Description=A plymouth theme for the yths desktop environment.
+Name=default
+Description=Boot splash for the default preset.
 ModuleName=two-step
 
 [two-step]
 Font=OverpassM Nerd Font 18
 TitleFont=OverpassM Nerd Font 18
-ImageDir=/usr/share/plymouth/themes/yths
+ImageDir=/usr/share/plymouth/themes/default
 DialogHorizontalAlignment=0.05
 DialogVerticalAlignment=0.1
 TitleHorizontalAlignment=.05

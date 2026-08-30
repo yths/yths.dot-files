@@ -162,8 +162,10 @@ def _rgb(hex_colour: str) -> tuple[float, float, float]:
     return tuple(int(hex_colour[i : i + 2], 16) / 255 for i in (1, 3, 5))
 
 
-def render_configuration(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
-    """Rewrite the theme's ``.plymouth`` INI with the active palette and fonts."""
+def render_configuration(
+    configuration: dict[str, Any], theme_path: str, theme: str, name: str
+) -> None:
+    """Rewrite the theme's ``.plymouth`` INI with the active palette, fonts and name."""
     # Found rather than derived: theme_path is a staging directory whose name has nothing
     # to do with the theme's, and the previous code hardcoded "yths.plymouth", which would
     # have silently produced an empty config for any other preset.
@@ -192,6 +194,15 @@ def render_configuration(configuration: dict[str, Any], theme_path: str, theme: 
     two_step["ConsoleLogTextColor"] = palette["foreground"].replace("#", "0x")
     two_step["ConsoleLogBackgroundColor"] = palette["background"].replace("#", "0x")
 
+    # Derived, not carried over from the source. ImageDir is an absolute path into the
+    # system theme directory, so it has to name wherever install_theme is about to put this
+    # -- and it silently pointed at a directory belonging to the preset's previous name
+    # after the bundle was renamed, which plymouth answers by drawing no images at all.
+    two_step["ImageDir"] = os.path.join(SYSTEM_THEME_ROOT, name)
+    header = plymouth_configuration["Plymouth Theme"]
+    header["Name"] = name
+    header["Description"] = f"Boot splash for the {name} preset."
+
     with open(ini_path, "w") as handle:
         plymouth_configuration.write(handle, space_around_delimiters=False)
 
@@ -217,9 +228,11 @@ def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) ->
             surface.write_to_png(os.path.join(theme_path, filename))
 
 
-def render_theme(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
+def render_theme(
+    configuration: dict[str, Any], theme_path: str, theme: str, name: str
+) -> None:
     """Rewrite the staged theme's INI and re-render its assets for one palette variant."""
-    render_configuration(configuration, theme_path, theme)
+    render_configuration(configuration, theme_path, theme, name)
     render_assets(configuration, theme_path, theme)
 
 
@@ -239,8 +252,9 @@ def patch_plymouth(configuration: dict[str, Any]) -> None:
         return
     staged = stage_theme(source)
     try:
-        render_theme(configuration, staged, PALETTE_VARIANT)
-        install_theme(staged, os.path.basename(source), prompt=False)
+        name = os.path.basename(source)
+        render_theme(configuration, staged, PALETTE_VARIANT, name)
+        install_theme(staged, name, prompt=False)
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 
@@ -283,15 +297,16 @@ def main() -> int:
         return 1
     theme = arguments.theme or PALETTE_VARIANT
 
+    name = os.path.basename(os.path.normpath(source))
     staged = stage_theme(source)
     try:
         logger.info(f"Rendering plymouth theme {source} for the {theme} palette ...")
-        render_theme(configuration, staged, theme)
+        render_theme(configuration, staged, theme, name)
         if not arguments.install:
             logger.info("Rendered only; pass --install to copy it into place.")
             return 0
         return 0 if install_theme(
-            staged, os.path.basename(source), prompt=True, rebuild=arguments.rebuild
+            staged, name, prompt=True, rebuild=arguments.rebuild
         ) else 1
     finally:
         shutil.rmtree(staged, ignore_errors=True)
