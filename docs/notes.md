@@ -40,6 +40,8 @@ is what made the "copy a bundle's `config.json` into place" recipe silently unus
 
 The widgets under `configuration/qtile/widgets/` each render a small status segment. Eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service); `service_state.py` reports whether that service is running and so polls `systemctl` directly, since it cannot ask the service it monitors whether it is alive. Most inherit from `libqtile.widget.base.BackgroundPoll` so the poll runs off the qtile event loop; a few (e.g. `audio`) use `InLoopPollText` because they need to integrate with a callback running on its own thread.
 
+A widget's module name is the Redis stream it reads, with one exception recorded in [issues.md](issues.md): `broadcast.py` reads a stream the backend still publishes as `stream`, and `shared/stream.py` bridges the two until the backend follows.
+
 Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB` environment variables — the same ones the backend service reads. If Redis is unreachable at qtile startup, the widgets silently fall back to empty values.
 
 For the widget-development pattern, see [../configuration/qtile/widgets/README.md](../configuration/qtile/widgets/README.md).
@@ -51,11 +53,11 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 
 - **audio** — Qtile widget: audio level visualisation.
 - **bluetooth** — Qtile widget: connected bluetooth devices and their battery levels.
+- **broadcast** — Qtile widget: OBS broadcast and recording state.
 - **claude_usage** — Qtile widget: Claude session and weekly usage limits.
 - **location** — Qtile widget: IP-derived geolocation with current sunrise/sunset.
 - **power_supply** — Qtile widget: AC/battery state.
 - **service_state** — Qtile widget: indicator that toggles when a systemd user unit is active.
-- **stream_state** — Qtile widget: OBS streaming and recording state.
 - **updates** — Qtile widget: outstanding pacman updates count.
 - **vpn** — Qtile widget: VPN connection state with country/city.
 <!-- END: WIDGETS -->
