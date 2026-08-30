@@ -8,6 +8,7 @@ __pycache__/
 
 ### Tool caches ###
 .ruff_cache/
+.pytest_cache/
 
 ### Pre-refactor archive, kept out of the tree ###
 backup/

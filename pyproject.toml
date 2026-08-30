@@ -50,6 +50,11 @@ ignore = [
 # configuration. The rules that catch the hazards S603 gestures at stay on: S602
 # (shell=True) and S604/S605 (shell injection).
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Quiet by default: the gate prints one line per check, and a wall of dots buries it.
+addopts = "--quiet --no-header"
+
 [tool.ruff.lint.pylint]
 # The web-greeter preview server dispatches URLs with one `return` per route, which reads
 # better than nesting; the default of 6 is tuned for branching business logic, not routers.
@@ -68,3 +73,8 @@ max-returns = 12
 # missing font, a read-only config -- so narrowing the catch would reinstate the cascade
 # the isolation exists to prevent. Failures are logged and returned as a list of names.
 "helper/patch_configurations.py" = ["BLE001"]
+# S101 flags `assert`, which is how a test states its expectation -- the rule exists because
+# asserts vanish under `python -O`, which is not how pytest runs. SLF001 flags reaching into a
+# module's private helpers, which is what a unit test does; routing every one through a public
+# wrapper that exists only for the test would be worse than the rule it satisfies.
+"tests/*" = ["S101", "SLF001"]
