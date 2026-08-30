@@ -21,6 +21,15 @@ configuration/qtile/wallpaper-light.png
 configuration/qtile/wallpaper-dark-highlight.png
 configuration/qtile/wallpaper-light-highlight.png
 
+# kitty's whole configuration is generated. helper/patch_kitty.py writes kitty.conf and
+# themes/<preset>.conf from the palette on every theme switch, and `kitty +kitten themes`
+# writes current-theme.conf -- all through the ~/.config/kitty symlink, which lands them on
+# tracked paths. Committing them meant the tree went dirty at every dawn and dusk. The
+# settings that are not palette-derived live in helper/patch_kitty.py, not in these files.
+configuration/kitty/kitty.conf
+configuration/kitty/current-theme.conf
+configuration/kitty/themes/*.conf
+
 ### web-greeter generated artifacts ###
 # Produced by helper/patch_web_greeter.py — should not be committed.
 configuration/web-greeter/themes/*/theme.css
