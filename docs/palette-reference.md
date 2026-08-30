@@ -87,7 +87,7 @@ _Hex values reflect the active theme bundle and differ per install._
 | `widgets.location.WidgetLocation` | `notification_color` | `highlight` |
 | `widgets.vpn.WidgetVPN` | `warning_color` | `warning` |
 | `widgets.service_state.WidgetServiceState` | `warning_color` | `warning` |
-| `bar.Bar` | `background` | `background` |
+| `shared.hover_bar.HoverBar` | `background` | `background` |
 | `Screen` | `background` | `background` |
 | `layout.Floating` | `border_focus` | `highlight` |
 | `layout.Floating` | `border_normal` | `background` |

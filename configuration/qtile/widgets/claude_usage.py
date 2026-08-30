@@ -280,17 +280,20 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         libqtile.widget.base.BackgroundPoll.update(self, self._render())
 
     def _pointer_is_on_me(self) -> bool:
-        """Whether the pointer is really inside this cell, asked of the pointer itself.
+        """Whether the pointer is inside this cell, asked of the pointer itself.
 
-        Neither of qtile's own answers is dependable here. ``Bar._has_cursor`` is cleared
-        by ``process_pointer_motion`` without the widget being told whenever the pointer
-        lands somewhere no widget covers. And ``Bar.get_widget_in_position`` bounds the
-        vertical hit test with ``border_width[3]`` -- the *west* border -- so the focused
-        screen outline leaves a band at the top of the bar that reports no widget at all.
+        Hover is driven by enter and leave events, which arrive on every pointer motion and
+        are what makes the cell react immediately; see ``shared.hover_bar``. This is the
+        slow backstop for the one case no motion event covers: the cell changing width under
+        a pointer that has not moved, when new data arrives or the theme switches.
 
-        Measuring the pointer against this widget's own rectangle sidesteps both. Returns
-        the current flag when the position cannot be read, so an unavailable pointer never
-        forces a state change.
+        The rectangle has to be the one ``HoverBar.get_widget_in_position`` tests, or the
+        two disagree and each poll undoes what the last crossing did. Widgets span the bar
+        from ``offsety`` for ``bar.size`` across, which is not the same as ``0`` to
+        ``bar.size``: the window is taller than ``size`` by the width of the north border.
+
+        Returns the current flag when the position cannot be read, so an unavailable pointer
+        never forces a state change.
         """
         bar = getattr(self, "bar", None)
         window = getattr(bar, "window", None)
@@ -303,24 +306,19 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return self.expanded
         x = pointer_x - window.x
         y = pointer_y - window.y
-        return self.offsetx <= x < self.offsetx + self.length and 0 <= y < bar.size
+        return (
+            self.offsetx <= x < self.offsetx + self.length
+            and self.offsety <= y < self.offsety + bar.size
+        )
 
     def update(self, text: str) -> None:
         """Apply the *current* state, not the text handed in.
 
-        Two separate problems make the argument untrustworthy, and both showed up as
-        hover misbehaving:
-
-        ``poll()`` runs on a worker thread, so the string it produced can predate a
-        pointer that entered or left while the Redis read was still in flight. Applying
-        that stale snapshot made hover sometimes fail to expand, and sometimes fail to
-        contract on leave.
-
-        Separately, the enter and leave events cannot be relied on to arrive in pairs:
-        ``Bar.process_pointer_motion`` drops the ``mouse_leave`` whenever the pointer
-        lands somewhere no widget covers. So rather than trusting the flag, every poll
-        re-derives it from where the pointer actually is -- in both directions, so a
-        missed *enter* is corrected as well as a missed *leave*.
+        ``poll()`` runs on a worker thread, so the string it produced can predate a pointer
+        that entered or left while the Redis read was still in flight. Applying that stale
+        snapshot made hover sometimes fail to expand, and sometimes fail to contract on
+        leave. Re-deriving the flag here costs one pointer query every five seconds and
+        makes the poll unable to contradict the pointer.
 
         Only the poll path reconciles. The hover handlers call ``_refresh`` directly,
         because they run before the pointer has settled and re-deriving there would fight
