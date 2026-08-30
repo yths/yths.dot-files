@@ -145,19 +145,47 @@ WALLPAPERS = (
 SETUP = read_setup()
 
 
+class InconsistentBundle(ValueError):
+    """A bundle whose directory name and manifest name disagree."""
+
+
 def discover_themes(assets_folder_path: str) -> dict[str, str]:
-    """Map every bundled theme's name to its directory.
+    """Map every bundled theme's name to its directory, keyed by the directory.
+
+    The directory name is the identity. ``--theme <name>`` names a directory, so a bundle can
+    be picked out of a file listing rather than by opening the JSON inside each one, and
+    ``.gitignore`` can carry ``!assets/default/`` and mean something.
+
+    The manifest's ``name`` has to agree, and is checked rather than trusted. The two are
+    written from one value by ``yths.themes``, but nothing here can enforce that at the far
+    end -- and a disagreement is not cosmetic: ``patch_plymouth`` finds a preset's boot splash
+    at ``configuration/plymouth/themes/<manifest name>``, so a bundle installed under a
+    directory that says something else would quietly ship no splash at all. Refused here,
+    before anything is installed, rather than discovered at the next boot.
 
     Sorted so the numbering the prompt shows is the same on every machine; ``os.listdir``
     order is not.
     """
     theme_paths = {}
+    disagreements = []
     for entry in sorted(os.listdir(assets_folder_path)):
         manifest = os.path.join(assets_folder_path, entry, "config.json")
         if not os.path.isfile(manifest):
             continue
         with open(manifest, encoding="utf-8") as handle:
-            theme_paths[json.load(handle)["name"]] = os.path.dirname(manifest)
+            declared = json.load(handle).get("name")
+        if declared != entry:
+            disagreements.append(
+                f"  assets/{entry}/ has a manifest naming it {declared!r}"
+            )
+            continue
+        theme_paths[entry] = os.path.dirname(manifest)
+    if disagreements:
+        raise InconsistentBundle(
+            "A theme bundle's directory and its manifest disagree about its name:\n"
+            + "\n".join(disagreements)
+            + "\nRename the directory, or fix the manifest, so the two match."
+        )
     return theme_paths
 
 
@@ -297,7 +325,10 @@ def main(argv: list[str] | None = None) -> int:
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")
 
-    theme_paths = discover_themes(assets_folder_path)
+    try:
+        theme_paths = discover_themes(assets_folder_path)
+    except InconsistentBundle as error:
+        sys.exit(str(error))
     if not theme_paths:
         sys.exit(f"No theme bundles found under {assets_folder_path}.")
     selected_theme = select_theme(

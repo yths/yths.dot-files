@@ -42,6 +42,13 @@ fi
 printf '  gendocs  '
 if output="$(python helper/gendocs.py --check 2>&1)"; then
     printf 'ok\n'
+    # gendocs also warns about things that must not block a commit -- documentation past its
+    # own "Last verified" date. It exits 0 for those, so show whatever it said beyond the
+    # success line rather than swallowing it.
+    warnings="$(printf '%s\n' "$output" | grep -v '^All blocks up to date\.$')"
+    if [ -n "$warnings" ]; then
+        printf '%s\n' "$warnings"
+    fi
 else
     printf 'FAIL\n%s\n' "$output"
     printf '           run: python helper/gendocs.py\n\n'

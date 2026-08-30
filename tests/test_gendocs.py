@@ -7,7 +7,10 @@ checker would have passed it too: with the bracket gone it is not a link, so the
 to resolve.
 """
 
+import datetime
 import pathlib
+import subprocess
+import sys
 
 import gendocs
 import pytest
@@ -83,3 +86,65 @@ def test_unmaintained_directories_are_skipped(docs: pathlib.Path) -> None:
 def test_the_real_documentation_has_no_broken_links() -> None:
     """The check, against the tree it guards."""
     assert gendocs.broken_documentation_links() == []
+
+
+# ------------------------------------------------- documentation past its verification date
+
+TODAY = datetime.date(2026, 8, 30)
+
+
+def test_a_recent_claim_is_not_reported(docs: pathlib.Path) -> None:
+    (docs / "guide.md").write_text("> Last verified 2026-08-01 on Arch ISO 2026.08.01\n")
+    assert gendocs.stale_verification_markers(TODAY) == []
+
+
+def test_a_claim_past_the_interval_is_reported(docs: pathlib.Path) -> None:
+    """docs/os-build.md's real date when this check was written: 106 days, one quarter past."""
+    (docs / "guide.md").write_text("> Last verified 2026-05-16 on Arch ISO 2026.04.01\n")
+    reported = gendocs.stale_verification_markers(TODAY)
+    assert reported == ["guide.md — last verified 2026-05-16, 106 days ago"]
+
+
+def test_the_boundary_is_not_reported(docs: pathlib.Path) -> None:
+    edge = TODAY - gendocs.VERIFICATION_INTERVAL
+    (docs / "guide.md").write_text(f"> Last verified {edge} on something\n")
+    assert gendocs.stale_verification_markers(TODAY) == []
+
+
+def test_a_document_without_a_claim_is_not_reported(docs: pathlib.Path) -> None:
+    (docs / "notes.md").write_text("# Notes\n\nNothing is claimed here.\n")
+    assert gendocs.stale_verification_markers(TODAY) == []
+
+
+def test_an_unreadable_date_is_reported_rather_than_skipped(docs: pathlib.Path) -> None:
+    """A marker that cannot be parsed is the one most likely to be quietly wrong."""
+    (docs / "guide.md").write_text("> Last verified 2026-13-45 on something\n")
+    assert gendocs.stale_verification_markers(TODAY) == [
+        "guide.md — unreadable date '2026-13-45'"
+    ]
+
+
+def test_the_marker_is_only_recognised_as_a_blockquote(docs: pathlib.Path) -> None:
+    """docs/style.md specifies the blockquote form; prose mentioning a date is not a claim."""
+    (docs / "guide.md").write_text("We last verified 2020-01-01, roughly.\n")
+    assert gendocs.stale_verification_markers(TODAY) == []
+
+
+def test_staleness_is_a_warning_and_not_an_invariant() -> None:
+    """Nobody can re-verify a bare-metal Arch install to satisfy a commit hook, and a gate
+    that failed on a date would start refusing unrelated work overnight -- with editing the
+    date as the only remedy, which teaches the marker to lie."""
+    titles = [title for title, _, _ in gendocs.invariants()]
+    assert not any("verified" in title.lower() for title in titles)
+
+
+def test_the_gate_passes_while_the_real_documentation_is_stale() -> None:
+    """End to end, against whatever the tree actually holds."""
+    if not gendocs.stale_verification_markers():
+        pytest.skip("nothing in the tree is past its verification date")
+    result = subprocess.run(
+        [sys.executable, "helper/gendocs.py", "--check"],
+        cwd=gendocs.REPO_ROOT, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0
+    assert "verification date" in result.stderr
