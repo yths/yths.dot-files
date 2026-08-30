@@ -23,6 +23,7 @@ The bar, the terminal, the launcher and the notifications above are drawn from t
 | picom | `~/.config/picom` | compositor |
 | tmux | `~/.config/tmux` | terminal multiplexer |
 | kitty | `~/.config/kitty` | terminal |
+| lock | `~/.config/lock` | screen lock |
 | dunst | `~/.config/dunst` | notifications |
 | rofi | `~/.config/rofi` | launcher |
 | qutebrowser | `~/.config/qutebrowser/config.py` | browser |

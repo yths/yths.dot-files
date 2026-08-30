@@ -9,7 +9,11 @@
 - [x] Add missing dependencies (OS packages) to installation instructions/dependencies list
     - (2026-05-16) full inventory in `docs/dependencies.md`; `docs/install.md` references it
 - [ ] Integrate wallpaper generation script
-- [ ] Add screen lock feature
+- [x] Add screen lock feature
+    - (2026-08-30) a binding already existed — `mod+Home` spawning bare `xsecurelock` — so what was missing was everything around it: the locker was unthemed, neither package was in the install list, and nothing locked on idle, on `loginctl lock-session`, or before suspend.
+    - (2026-08-30) `configuration/lock/lock.sh` sources an `environment` that `helper/patch_lock.py` generates from the palette, so the lock screen follows the theme like every other surface. `mod+Home` keeps its key and now goes through the launcher; `XF86ScreenSaver` is added because it cannot collide.
+    - (2026-08-30) `~/.xinitrc` starts `xss-lock --transfer-sleep-lock`, which covers the X idle timer already set by `xset s`, systemd's lock-session, and suspend — the inhibitor is held until the locker is up, so the machine cannot wake unlocked.
+    - (2026-08-30) what the lock screen withholds is a decision, not a default: username, hostname and date are off, and the password field reveals neither its length nor that typing is happening. Tests assert each, because they are the reason the feature exists.
 - [x] Reference VM with dot files
     - (2026-05-16) `docs/os-build.md` carries the QEMU walkthrough under "Setting Up the Virtual Machine"
 - [x] Change color names to something meaningful, also show dark theme colors

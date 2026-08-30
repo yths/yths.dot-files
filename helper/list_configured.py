@@ -32,6 +32,7 @@ PURPOSE = {
     "picom": "compositor",
     "tmux": "terminal multiplexer",
     "kitty": "terminal",
+    "lock": "screen lock",
     "dunst": "notifications",
     "rofi": "launcher",
     "qutebrowser": "browser",

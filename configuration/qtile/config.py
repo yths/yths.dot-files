@@ -163,7 +163,20 @@ keys = [
         lazy.spawn("rofi -show window"),
         desc="Switch to any window via rofi (entries prefixed with their group number).",
     ),
-    Key([mod], "Home", lazy.spawn("xsecurelock"), desc="Lock the screen"),
+    # Through the launcher rather than xsecurelock directly: the launcher sources the
+    # colours helper/patch_lock.py generates, so the lock screen follows the theme. Spawning
+    # xsecurelock bare gave a black screen with a white prompt whatever the palette said.
+    Key(
+        [mod], "Home",
+        lazy.spawn(os.path.expanduser("~/.config/lock/lock.sh")),
+        desc="Lock the screen",
+    ),
+    # The dedicated key, where a keyboard has one. It cannot collide with anything.
+    Key(
+        [], "XF86ScreenSaver",
+        lazy.spawn(os.path.expanduser("~/.config/lock/lock.sh")),
+        desc="Lock the screen",
+    ),
     Key(
         [],
         "XF86AudioMute",

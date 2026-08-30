@@ -62,5 +62,13 @@ fi
 xset s 512 512
 xset dpms 512 512 1024
 
+# Lock on idle, on `loginctl lock-session`, and before suspend. xss-lock watches all three
+# and runs the locker; the timer it obeys is the `xset s` above. --transfer-sleep-lock holds
+# systemd's sleep inhibitor until the locker is actually up, so the machine cannot suspend
+# to a state where it wakes unlocked.
+if command -v xss-lock >/dev/null 2>&1; then
+    xss-lock --transfer-sleep-lock -- "$HOME/.config/lock/lock.sh" &
+fi
+
 # picom -b
 qtile start
