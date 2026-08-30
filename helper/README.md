@@ -14,7 +14,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
 - **patch_kitty** — Patch kitty: the terminal's base settings and its 16-colour theme file.
-- **patch_plymouth** — Patch a plymouth theme.
+- **patch_plymouth** — Patch plymouth: the boot splash's palette, fonts and rendered assets.
 - **patch_rofi** — Patch rofi: the launcher's theme colours, font, width and vertical offset.
 - **patch_starship** — Patch starship: the prompt's named palette entries.
 - **patch_tmux** — Patch tmux: the four palette colours its status line reads.

@@ -24,6 +24,7 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 try:
     from helper.patch_dunst import patch_dunst
     from helper.patch_kitty import patch_kitty
+    from helper.patch_plymouth import patch_plymouth
     from helper.patch_rofi import patch_rofi
     from helper.patch_starship import patch_starship
     from helper.patch_tmux import patch_tmux
@@ -36,6 +37,7 @@ except ImportError:
     # the same modules; see helper/README.md.
     from patch_dunst import patch_dunst
     from patch_kitty import patch_kitty
+    from patch_plymouth import patch_plymouth
     from patch_rofi import patch_rofi
     from patch_starship import patch_starship
     from patch_tmux import patch_tmux
@@ -76,6 +78,7 @@ PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
     ("starship", patch_starship),
     ("dunst", patch_dunst),
     ("web-greeter", patch_web_greeter),
+    ("plymouth", patch_plymouth),
 )
 
 

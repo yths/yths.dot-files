@@ -67,12 +67,11 @@ The widgets, and the Redis contract they share, are described in [notes.md](note
 
 Each application that cannot read `~/.config/config.json` natively has one patcher module, `helper/patch_<app>.py`, exposing `patch_<app>(configuration)` and runnable on its own. `helper/patch_configurations.py` is the registry that runs them; it holds no patching logic.
 
-Seven are in the registry and run on every theme switch: **rofi**, **xorg** (the average DPI into `~/.Xresources`), **kitty**, **tmux**, **starship**, **dunst**, and **web-greeter** — the last walking `configuration/web-greeter/themes/` and emitting a `theme.css` per theme, driven by the theme's own `theme.json#role_map`.
+Eight are in the registry and run on every theme switch: **rofi**, **xorg** (the average DPI into `~/.Xresources`), **kitty**, **tmux**, **starship**, **dunst**, **web-greeter** — which walks `configuration/web-greeter/themes/` and emits a `theme.css` per theme, driven by the theme's own `theme.json#role_map` — and **plymouth**.
 
-Two are not, and the distinction is worth knowing:
+Plymouth is the one patcher whose target is not under `~`. Boot-splash themes live in `/usr/share/plymouth/themes/`, so `helper/patch_plymouth.py` splits into a render stage (into a staging directory, no privileges) and an install stage (into the system path, root). In the pipeline it renders every time and installs only where root costs nothing, because a password prompt at dawn and dusk would be worse than a splash that lags a theme behind. `python helper/patch_plymouth.py --install --rebuild` does the privileged half, including the `mkinitcpio` run the splash needs to actually change — see [../configuration/plymouth/README.md](../configuration/plymouth/README.md).
 
-- **VSCode** — `helper/patch_vsc.py` maps the palette to VSCode editor and token colors using perceptual nearest-color matching. It runs as a subprocess from the `__main__` block rather than through the registry, because it takes CLI arguments.
-- **Plymouth** — `helper/patch_plymouth.py` rewrites the target `.plymouth` INI and re-renders the boot background (PNG via PIL + cairo). Nothing runs it automatically: every line of it sits under `if __name__`, so there is no function to register. Whether the boot splash should be re-rendered on each theme switch is an open question — see [issues.md](issues.md).
+**VSCode** is outside the registry: `helper/patch_vsc.py` maps the palette to VSCode editor and token colors using perceptual nearest-color matching, and runs as a subprocess from the `__main__` block because it takes CLI arguments.
 
 The full helper inventory is in [../helper/README.md](../helper/README.md); adding a new patcher is described there.
 
