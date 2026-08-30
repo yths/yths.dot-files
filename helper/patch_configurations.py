@@ -5,10 +5,6 @@ Holds no patching logic of its own: each application is patched by its own
 isolation around them, and the "apply the theme now" script under ``__main__`` that also
 reloads the running programs. Invoked when the theme is switched or the palette is
 regenerated.
-
-Six of these patchers used to live in this file as functions while three had modules of
-their own, so ``helper/README.md`` documented a layout most of them did not follow and the
-orchestrator both orchestrated and implemented.
 """
 
 import json
@@ -85,12 +81,11 @@ PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
 def patch_all(configuration: dict[str, Any]) -> list[str]:
     """Run every patcher, isolating failures. Returns the names of those that failed.
 
-    A patcher skips the failures it can anticipate, but an unanticipated one used to escape
-    into this loop and cancel every patcher after it: a single raise in the first of seven
-    left kitty, tmux, starship, dunst and web-greeter on the previous palette, silently.
-    Catching broadly here is the point rather than a lapse -- the contract in
-    helper/README.md is that one broken app must not block the others -- and nothing is
-    swallowed: each failure is logged with its traceback and named in the return value.
+    A patcher skips the failures it can anticipate; this catches the ones it cannot. The
+    breadth is the point rather than a lapse -- one raise here would otherwise leave every
+    later app on the previous palette, and the contract in helper/README.md is that one
+    broken app must not block the others. Nothing is swallowed: each failure is logged with
+    its traceback and named in the return value.
     """
     failed = []
     for name, patch in PATCHERS:

@@ -1,14 +1,11 @@
 """Shared FFT-to-block-glyph rendering for the audio level meter.
 
 The bar's level meter and the ``helper/preview_audio.py`` harness draw the same picture from
-the same samples, so the maths lives here rather than in both. It was in both, and they had
-already drifted: the harness still offset from U+2581, which skips ``▁`` and lands a full
-bar on ``▉`` (a *horizontal* seven-eighths block), and it summed the lower half of the
-spectrum where the widget sums the lower eighth.
+the same samples, so the maths lives here rather than in either of them.
 
 Everything here is pure: it takes samples and returns numbers or a string, with no reference
 to PortAudio, qtile or the bar. That is what lets the harness preview exactly what the bar
-will draw.
+draws, rather than something that resembles it.
 """
 
 import numpy

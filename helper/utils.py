@@ -27,10 +27,11 @@ except ImportError:
 def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
     """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
 
-    Three patchers scale something to the display -- rofi's width, xorg's DPI, dunst's
-    offset -- and each inlined the same loop-sum-divide. With no monitors that divides by
-    zero, which is how ``patch_xorg`` came to truncate ``~/.Xresources`` and then raise,
-    taking every later patcher with it. Callers treat ``None`` as "leave this app alone".
+    Three patchers scale something to the display: rofi's width, xorg's DPI, dunst's offset.
+    ``None`` rather than a zero or a raise, because with no monitors there is no meaningful
+    average and the caller's right move is to leave its app alone -- computing one anyway
+    divides by zero, in the middle of a patcher that may already have opened its target for
+    writing.
     """
     monitors = configuration.get("monitors") or {}
     values = [monitor[key] for monitor in monitors.values() if key in monitor]

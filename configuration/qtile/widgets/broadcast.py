@@ -47,11 +47,10 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
     def _apply_condition(self, condition: str) -> None:
         """Persist the wallpaper condition and repaint every screen.
 
-        The key is ``state.condition`` and the wallpaper suffix is ``-highlight``, matching
-        what ``config.py`` reads at startup and what ``install.py`` writes. This widget
-        previously used ``state.urgency`` and a ``-urgent`` suffix — neither of which exists
-        in the installed configuration, so the urgent state never persisted and going live
-        raised ``KeyError`` out of ``poll()``, permanently freezing the cell.
+        The key is ``state.condition`` and the wallpaper suffix is ``-highlight``. Both have
+        to match what ``config.py`` reads at startup and what ``install.py`` writes: a name
+        that exists only here persists nothing, and the missing wallpaper key then raises
+        ``KeyError`` out of ``poll()``, which freezes the cell for the rest of the session.
         """
         configuration = shared.state.update_state(
             self.configuration_file_path, condition=condition

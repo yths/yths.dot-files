@@ -57,10 +57,9 @@ def stray_widget_modules() -> list[Path]:
     """Modules sitting in widgets/ that are not widgets.
 
     The directory holds bar cells and nothing else: code shared between cells belongs in
-    ``configuration/qtile/shared/``, standalone tools in ``helper/``. That rule used to be
-    prose in a README backed by a silent ``continue`` here, which is how two shared helpers
-    and a test harness came to live among the widgets. Reporting it instead means the
-    pre-commit hook refuses the next one.
+    ``configuration/qtile/shared/``, standalone tools in ``helper/``. Reported rather than
+    skipped, so the pre-commit hook refuses a stray file instead of quietly excluding it
+    from the generated list -- which is the failure mode that lets one accumulate.
     """
     return [path for path in sorted(WIDGETS_DIR.glob("*.py")) if not is_qtile_widget(path)]
 
@@ -228,8 +227,8 @@ MARKER_RE = re.compile(
 def block_body(generated: str) -> str:
     """The exact text that belongs between a pair of markers.
 
-    Defined once because ``rewrite`` and ``check`` must agree byte for byte; they each
-    built it separately before, which is how they came to disagree.
+    Defined once because ``rewrite`` and ``check`` must agree byte for byte: two separate
+    constructions of the same string silently disagree the moment one of them changes.
     """
     return f"\n{GENERATED_NOTE}\n\n{generated}\n"
 
