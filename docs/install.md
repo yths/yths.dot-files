@@ -1,5 +1,10 @@
 # Installation
 
+> One command does all of this: `./bootstrap.sh` from a clone. This page is the long form —
+> what each step changes, and what to do when one of them does not apply to your machine.
+> Edit [../setup.toml](../setup.toml) first if you want a different theme, font or package
+> set; every command below reads it.
+
 Installing this desktop onto a machine that already runs Arch Linux. To build that machine
 first -- partitioning, encryption, boot loader -- see [os-build.md](os-build.md).
 

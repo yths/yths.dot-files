@@ -38,7 +38,9 @@ install path that does not exist. `pyproject.toml` holds tool configuration only
 
 ## System Packages
 
-Not derivable — these are services and runtimes, not imports.
+Not derivable — these are services and runtimes, not imports. The list `./bootstrap.sh`
+installs is in [../setup.toml](../setup.toml) under `[packages]`, grouped by what stops
+working without them; this table says what each group's less obvious members are for.
 
 | Arch package | Role |
 |---|---|

@@ -17,6 +17,8 @@ import pathlib
 import subprocess
 import sys
 
+import utils
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 #: Not part of what this desktop needs installed. The qutebrowser config is vendor-generated
@@ -106,13 +108,32 @@ def describe_users(paths: list[str]) -> str:
     )
 
 
+def installed_packages() -> set[str]:
+    """Every Arch package setup.toml tells the bootstrap script to install."""
+    return {
+        name
+        for group in utils.read_setup()["packages"].values()
+        for name in group
+    }
+
+
 def mismatches(imports: dict[str, list[str]]) -> list[str]:
-    """Imports with no Arch package recorded, and recorded packages nothing imports."""
+    """Every way the imports, the recorded packages and the install list can disagree.
+
+    Three sources have to stay in step: what the code imports, which Arch package provides
+    it, and whether a fresh machine is told to install that package. A dependency added to
+    the code without a line in setup.toml installs fine here and fails on someone else's
+    machine, which is the failure this catches.
+    """
+    installed = installed_packages()
     return sorted(
         [f"{name}: imported, but no Arch package recorded" for name in imports
          if name not in ARCH_PACKAGES]
         + [f"{name}: Arch package recorded, but nothing imports it" for name in ARCH_PACKAGES
            if name not in imports]
+        + [f"{package}: provides {name}, but setup.toml never installs it"
+           for name, (package, _) in ARCH_PACKAGES.items()
+           if name in imports and package not in installed]
     )
 
 
@@ -133,7 +154,7 @@ def main() -> int:
         print("Dependency table and imports disagree:", file=sys.stderr)
         for problem in problems:
             print(f"  {problem}", file=sys.stderr)
-        print("Edit ARCH_PACKAGES in helper/list_dependencies.py.", file=sys.stderr)
+        print("Record it in ARCH_PACKAGES and list it under [packages] in setup.toml.", file=sys.stderr)
         return 1
     print(generate_markdown())
     return 0

@@ -6,6 +6,7 @@ checks.
 ## Setup
 
 ```bash
+./bootstrap.sh --dev     # or, on a machine that already has the desktop:
 yay -S ruff python-pytest
 helper/hooks/enable
 ```
