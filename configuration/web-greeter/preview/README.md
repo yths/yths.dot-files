@@ -1,4 +1,4 @@
-# Preview tool
+# Theme Preview Server
 
 A dev server that:
 

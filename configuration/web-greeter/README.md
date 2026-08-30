@@ -1,8 +1,17 @@
-# LightDM Themes
+# Web-Greeter Themes
 
-The web-greeter themes that LightDM renders at the login screen. For authoring a new theme, see [THEME-DEVELOPMENT.md](THEME-DEVELOPMENT.md); for the iteration workflow, see [preview/README.md](preview/README.md); for where the greeter fits in the system, see [../../docs/architecture.md](../../docs/architecture.md).
+The login screen LightDM shows before the desktop starts. Each theme is a directory under
+`themes/` containing an HTML page and a stylesheet, rendered by web-greeter in a browser
+engine.
 
-Themes live as directories under `themes/`. Each theme consumes CSS variables generated from `~/.config/config.json` by `helper/patch_web_greeter.py`; shared greeter logic lives in `themes/_shared/logic.js` and is copied into every theme during the patch step so deployed themes under `/usr/share/web-greeter/themes/` are self-contained. Directories whose name starts with `_` are shared-asset bundles, not themes.
+A theme never contains colours of its own. It declares CSS variable names in its
+`theme.json`, and `helper/patch_web_greeter.py` fills them from the active palette into a
+generated `theme.css`. Shared greeter logic lives in `themes/_shared/` and is copied into
+each theme during that step, so a deployed theme is self-contained. A directory whose name
+starts with `_` is a shared-asset bundle, not a theme.
+
+Writing one is described in [THEME-DEVELOPMENT.md](THEME-DEVELOPMENT.md); iterating on one
+without logging out is described in [preview/](preview/README.md).
 
 ## Patch
 

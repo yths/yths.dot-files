@@ -1,6 +1,8 @@
 # Qtile Widgets
 
-The custom widgets that live in the qtile bar. Each renders a small status segment, and eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service). `service_state.py` is the deliberate exception — see [The one that reads no stream](#the-one-that-reads-no-stream). System-wide context is in [../../../docs/architecture.md](../../../docs/architecture.md); this file documents the widget-development pattern.
+One module per cell in the qtile bar. Each renders a short status segment — an icon, a level meter, a countdown — and eight of the nine get their data by reading the newest entry of one Redis stream. The ninth is the exception described below.
+
+A widget never collects system state itself. A separate service does that and publishes to Redis; a widget reads and renders. That is what keeps a slow or failing probe out of the bar's event loop.
 
 Every `.py` file in this directory is a widget. Code shared between widgets lives one level up in [../shared/](../shared/README.md); standalone tools live in [../../../helper/](../../../helper/README.md).
 
@@ -64,12 +66,6 @@ unreachable.
 So follow `vpn.py` for anything the backend already collects. Reach for a direct poll only
 when the thing being reported is the backend, or Redis.
 
-## Available Widgets
-
-Enumerated, with each widget's one-line description, in
-[../../../docs/notes.md](../../../docs/notes.md#available-widgets). That block is generated
-by `helper/gendocs.py`; this file does not repeat it.
-
 ## Adding a New Widget
 
 1. Pick the Redis stream the widget will read; add it to the backend service if it doesn't exist yet.
@@ -93,4 +89,4 @@ complaining. Where each kind of file goes now:
 | --- | --- |
 | Bar cell | here |
 | Code two or more widgets share | [`../shared/`](../shared/README.md) |
-| Script run by hand or by another program | [`../../../helper/`](../../../helper/README.md) |
+| Script run by hand or by another program | `helper/`, at the repository root |

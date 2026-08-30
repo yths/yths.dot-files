@@ -1,37 +1,31 @@
-# Patching EDID Files
+# X Session Startup
 
-## Rationale
+The two files that start and configure the X session: `.xinitrc`, which runs when X starts,
+and `.Xresources`, which holds the display DPI. `install.py` symlinks both into the home
+directory.
 
-Sometimes monitors are shipped with erroneous EDID information. For example, in my case, the horizontal dimension of my screen was wrong, leading to false calculation of the DPI.
+## `.xinitrc`
 
-### Retrieving the EDID File
+Runs at session start, in this order: merge X resources and keymaps, run whatever
+`/etc/X11/xinit/xinitrc.d/` provides, apply this machine's monitor layout and keyboard
+layout, load display colour profiles, set the blanking timeouts, and finally `qtile start`.
 
-Copy the current EDID file via the following command, adjust the path according to your specific hardware setup
-```bash
-sudo cp /sys/class//drm/card1-HDMI-A-2/edid ~/edid_HDMI-A-2.bin
-```
+Per-machine blocks are keyed on `$HOSTNAME`, because monitor arrangement and keyboard layout
+are the two things that genuinely differ between the machines this repository is installed
+on. Add a block for a new host; the rest of the file is shared.
 
-### Modifying the EDID File
+Colour profiles are loaded by `helper/apply_icc.py`, which exits 0 in every failure case, so
+an uncalibrated or misconfigured display can never stop a session from starting.
 
-Install `wxedid` and open the retrieved EDID file; adjust the erroneous parameters and save the file.
-```bash
-yay -S wxedid
-wxedid ~/edid_HDMI-A-2.bin
-```
+## `.Xresources`
 
-### Installing the EDID File
+One line, `Xft.dpi`, and it is generated rather than edited: `helper/patch_xorg.py` writes
+the average DPI across the detected monitors on every theme switch. Editing it by hand lasts
+until the next one.
 
-Copy the EDID file to `/etc/X11/`. To find out the correct monitor identifier, run:
-```bash
-cat /var/log/Xorg.0.log | grep DFP-
-```
-and look for the `connected` montiors, let's assume it is `DFP-3`.
-Then add the following options to `/etc/X11/xorg.conf` in the `Device` section.
-```bash
-Section "Device"
-# ...
-    Option "CustomEDID" "DFP-3:/etc/X11/edid_HDMI-A-2.bin" 
-    Option "IgnoreEDID" "false"
-    Option "UseEDID" "true"
-EndSection
-```
+## Correcting a Monitor That Lies About Its Size
+
+Some monitors report wrong physical dimensions in their EDID, which throws off the DPI above
+and every scaling factor derived from it. The fix is a corrected EDID blob, and it lives with
+the other machine-specific files: see
+[../hardware/README.md](../hardware/README.md).
