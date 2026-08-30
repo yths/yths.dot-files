@@ -106,6 +106,8 @@ Five files; each one has a single job. Do not blur them.
 
 Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/palette-semantics.md`, `docs/style.md`) live alongside the five genre files but are reference documents — written once, edited only when the contract they describe changes.
 
+Two documents sit at the repository root rather than in `docs/`, because they are read before anything else: `README.md` orients someone deciding whether to install this, and `CONTRIBUTING.md` tells someone changing it how to get a commit past the gate. Both stay short enough to read in full.
+
 Three more are inventories rather than prose, and are read as lookup tables:
 
 | File | Maintained by |
