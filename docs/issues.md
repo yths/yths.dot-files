@@ -58,7 +58,11 @@
 ## Configurations
 
 - [ ] Map all colors for `qutebrowser`
-- [ ] Handle monitor plug/unplug events gracefully in `qtile`
+- [x] Handle monitor plug/unplug events gracefully in `qtile`
+    - (2026-08-30) `config.py` subscribes to `screen_change`. The geometry every scaled size derives from was read once by `install.py` and never again, so a new display got the old one's scaling factor until qtile was restarted by hand.
+    - (2026-08-30) detection moved to `configuration/qtile/shared/monitors.py`, which qtile reaches natively and `helper/screen_configuration.py` reaches the way `helper/preview_audio.py` reaches `shared.spectrum` — one definition of what a monitor's geometry is, rather than one for the installer and one for the bar.
+    - (2026-08-30) three things keep it from misbehaving: the burst of events a single hotplug raises is coalesced into one reload; a layout that has not changed reloads nothing, because the event also fires for things that are not a plug; and a failed query is never written as "no monitors", which would leave the desktop with no geometry to scale from and nothing able to recover it.
+    - (2026-08-30) `helper/patch_configurations.py --no-reload` exists for this hook: the geometry-dependent configurations are rewritten, but the reload is left to the hook, which restarts qtile itself. Without it the two would restart qtile twice, or loop.
 - [x] Add web-greeter to patch configuration
     - (2026-05-14) added `helper/patch_web_greeter.py`, wired into `patch_all`; themes parameterized via CSS variables generated into each theme's `theme.css`
 - [x] Add plymouth to patch configuration

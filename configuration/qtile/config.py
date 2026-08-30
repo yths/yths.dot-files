@@ -30,6 +30,7 @@
 
 import json
 import os
+import subprocess
 
 from libqtile import bar, hook, layout, qtile, widget
 from libqtile.config import (
@@ -44,6 +45,7 @@ from libqtile.config import (
     Screen,
 )
 from libqtile.lazy import lazy
+from libqtile.log_utils import logger
 
 try:
     import redis
@@ -62,6 +64,7 @@ except ImportError:
 except redis.exceptions.ConnectionError:
     r = None
 
+import shared.monitors
 import widgets.audio
 import widgets.bluetooth
 import widgets.broadcast
@@ -88,6 +91,12 @@ theme = configuration["state"]["theme"]
 FOCUS_BORDER_WIDTH = 3
 FOCUS_BORDER_ACTIVE = configuration["palette"][theme]["highlight"]
 FOCUS_BORDER_INACTIVE = configuration["palette"][theme]["background"]
+
+#: This file's repository, resolved through the ~/.config/qtile symlink qtile loads it
+#: through, so the hooks below can reach helper/ without depending on where it was cloned.
+REPOSITORY_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+)
 
 mod = "mod4"
 terminal = "kitty"  # guess_terminal()
@@ -265,6 +274,59 @@ groups += [
         ],
     ),
 ]
+
+
+#: A hotplug raises several screen-change events in quick succession as outputs settle, and
+#: each reload tears the bar down and builds it again. Coalescing them into one reload is the
+#: difference between a flicker and a stutter.
+SCREEN_SETTLE_SECONDS = 1.0
+
+
+class _ScreenChange:
+    """Whether a reload is already scheduled.
+
+    An attribute rather than a module global so the handler can set it without rebinding a
+    name it does not own -- which is the thing that makes module state hard to follow.
+    """
+
+    pending = False
+
+
+@hook.subscribe.screen_change
+def handle_screen_change(event: object) -> None:
+    """Re-read the monitors when one is plugged in or unplugged.
+
+    Every size here is derived from monitor geometry, and that geometry was read once by
+    install.py -- so without this a new display got the old display's scaling factor until
+    somebody restarted qtile.
+    """
+    if _ScreenChange.pending:
+        return
+    _ScreenChange.pending = True
+    qtile.call_later(SCREEN_SETTLE_SECONDS, apply_screen_change)
+
+
+def apply_screen_change() -> None:
+    """Record the new layout and rebuild against it, if anything actually changed."""
+    _ScreenChange.pending = False
+
+    if not shared.monitors.refresh():
+        # The event fires for changes that are not a plug or an unplug. Reloading anyway
+        # would drop the bar every time a resolution was queried.
+        return
+
+    # Rewrite the configurations that scale to the display -- the X server's DPI, rofi's
+    # width, dunst's offset -- without reloading the running programs: this function restarts
+    # qtile a line later, and letting the patcher do it too would restart it twice.
+    subprocess.Popen(
+        args=[
+            "python",
+            os.path.join(REPOSITORY_ROOT, "helper", "patch_configurations.py"),
+            "--no-reload",
+        ]
+    )
+    logger.warning("Monitor layout changed; reloading the configuration.")
+    qtile.reload_config()
 
 
 @hook.subscribe.startup_complete

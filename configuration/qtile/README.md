@@ -24,6 +24,17 @@ their own.
 `config.py`. Neither needs an `__init__.py`, and neither is importable from outside a qtile
 session without adding this directory to the path first.
 
+## When a Display Is Plugged In
+
+`config.py` subscribes to qtile's `screen_change` hook. Every size here is derived from
+monitor geometry, which was read once by `install.py`, so without that hook a new display got
+the old one's scaling factor until somebody restarted qtile.
+
+The hook coalesces the burst of events one hotplug raises, records the new layout, and
+reloads only if it actually changed — a screen-change event fires for things that are not a
+plug, and reloading on each would drop the bar for no reason. It also re-runs the patchers
+that scale to the display, with `--no-reload`, because it restarts qtile itself a line later.
+
 ## Restarting
 
 ```bash
