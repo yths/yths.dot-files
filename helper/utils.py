@@ -13,6 +13,9 @@ lands on a tracked file.
 
 import json
 import os
+import shutil
+import subprocess
+import sys
 import time
 import tomllib
 from typing import Any
@@ -42,6 +45,29 @@ def read_setup(path: str | None = None) -> dict[str, Any]:
     """
     with open(path or SETUP_PATH, "rb") as handle:
         return tomllib.load(handle)
+
+
+def root_prefix(*, prompt: bool) -> list[str] | None:
+    """An argv prefix that runs a command as root here, or ``None`` if nothing can.
+
+    An empty list means the caller is already root. ``sudo -n`` is tried first because it
+    either works silently — a live timestamp, or a NOPASSWD rule — or fails immediately;
+    it is the only form the unattended theme switch is allowed to use. When prompting is
+    permitted, pkexec puts the dialog on the desktop and sudo on the terminal.
+    """
+    if os.geteuid() == 0:
+        return []
+    if shutil.which("sudo") and subprocess.run(
+        ["sudo", "-n", "true"], capture_output=True, check=False
+    ).returncode == 0:
+        return ["sudo", "-n"]
+    if not prompt:
+        return None
+    if os.environ.get("DISPLAY") and shutil.which("pkexec"):
+        return ["pkexec"]
+    if sys.stdin.isatty() and shutil.which("sudo"):
+        return ["sudo"]
+    return None
 
 
 def template_path(app: str, filename: str) -> str:

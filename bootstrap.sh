@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Install this desktop on a fresh Arch system, in one command.
 #
-#     ./bootstrap.sh              from a clone
-#     ./bootstrap.sh --dev        also install ruff and pytest, for changing the repository
-#     ./bootstrap.sh --dry-run    print what would happen and stop
+#     ./bootstrap.sh                  from a clone
+#     ./bootstrap.sh --dev            also install ruff and pytest, for changing the repository
+#     ./bootstrap.sh --dry-run        print what would happen and stop
+#     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
 # Everything it installs comes from setup.toml. Edit that first if you want a different
 # theme, font, or package set; nothing needs editing here.
@@ -17,10 +18,12 @@ DEFAULT_CLONE_PATH="$HOME/repositories/yths.dot-files"
 
 dry_run=false
 development=false
+system=true
 for argument in "$@"; do
     case "$argument" in
         --dry-run) dry_run=true ;;
         --dev) development=true ;;
+        --skip-system) system=false ;;
         -h|--help) sed -n '2,12p' "$0" | sed 's/^# \?//'; exit 0 ;;
         *) printf 'unknown option: %s\n' "$argument" >&2; exit 2 ;;
     esac
@@ -85,14 +88,26 @@ run yay -S --needed --noconfirm $packages
 say "Installing the configuration"
 run python "$REPOSITORY_PATH/install.py"
 
+# --- the two that write outside $HOME, and so need root -----------------------------------
+# Deliberately last: everything above is reversible by re-running, while these two change how
+# the machine boots and logs in. --skip-system leaves both, and each has its own command.
+if $system; then
+    say "Installing the login screen"
+    run python "$REPOSITORY_PATH/helper/patch_web_greeter.py" --install --activate
+
+    say "Installing the boot splash"
+    run python "$REPOSITORY_PATH/helper/patch_plymouth.py" --install --rebuild
+else
+    say "Skipping the boot splash and login screen (--skip-system)"
+fi
+
 say "Done"
 cat <<'EOF'
     Start the desktop with `startx`, or reboot into the display manager.
 
-    Still manual, because each needs a decision or a root-owned path:
-      python helper/patch_plymouth.py --install --rebuild    the boot splash
-      sudo cp -RL configuration/web-greeter/themes/standard \
-                  /usr/share/web-greeter/themes/standard     the login screen
+    To do the system half later, or again:
+      python helper/patch_web_greeter.py --install --activate    the login screen
+      python helper/patch_plymouth.py --install --rebuild        the boot splash
 
     docs/install.md has both, with what they change and why.
 EOF

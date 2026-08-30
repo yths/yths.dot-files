@@ -60,9 +60,11 @@
     - (2026-08-30) correction: it was not, and had never been. The module exposed no importable function — every line sat under `if __name__` — so there was nothing for `patch_all` to call, and nothing else invoked it either.
     - (2026-08-30) `patch_plymouth(configuration)` exists and is importable. The blocker was that the theme installs into root-owned `/usr/share/plymouth/themes/`, so the patcher was split: rendering goes to a staging directory and needs no privileges, and installing promotes via `sudo -n` or `pkexec`.
     - (2026-08-30) deliberately *not* in the `PATCHERS` registry, which settles the question this ticket left open. The splash is drawn before login, so no user's theme preference applies to it; it is always rendered dark; and updating it costs root and an `mkinitcpio` run. It is a system decision made once, not a per-session one.
-- [ ] Automate installation of web-greeter
-- [ ] Automate installation of plymouth
-    - (2026-08-30) partly done: `python helper/patch_plymouth.py --install --rebuild` now performs the copy into `/usr/share/plymouth/themes/` and the `mkinitcpio` rebuild that used to be two manual commands in the theme README, prompting for root once. What is left is `install.py` running it, which means deciding whether a desktop install should rebuild the initramfs unattended.
+- [x] Automate installation of web-greeter
+    - (2026-08-30) `helper/patch_web_greeter.py --install --activate` copies the patched theme into `/usr/share/web-greeter/themes/` and points LightDM at it, promoting through the same `utils.root_prefix` the plymouth installer uses. Activation is a separate flag because it changes what the next login looks like, and the theme already deployed on a machine need not be one of these. `./bootstrap.sh` runs it; `--skip-system` opts out.
+- [x] Automate installation of plymouth
+    - (2026-08-30) partly done: `python helper/patch_plymouth.py --install --rebuild` performs the copy into `/usr/share/plymouth/themes/` and the `mkinitcpio` rebuild that used to be two manual commands in the theme README, prompting for root once.
+    - (2026-08-30) finished by `./bootstrap.sh` running it, rather than `install.py`. The installer writes into `$HOME` and never asks for root; the bootstrap script already holds a sudo context from the package install, and is the step a reader runs deliberately on a new machine. Both privileged installs are its last action, so everything reversible happens first, and `--skip-system` leaves them.
 - [ ] Automatically patch README.md on color theme change
 - [x] Create VSC color theme
     - (2026-01-02) added crude VSC theme color mapping script (does not work well in light mode)

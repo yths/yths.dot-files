@@ -20,7 +20,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_starship** — Patch starship: the prompt's named palette entries.
 - **patch_tmux** — Patch tmux: the four palette colours its status line reads.
 - **patch_vsc** — Patch the user's Visual Studio Code ``settings.json``.
-- **patch_web_greeter** — Patch every web-greeter theme under ``configuration/web-greeter/themes/``.
+- **patch_web_greeter** — Patch and install the web-greeter themes LightDM renders at the login screen.
 - **patch_xorg** — Patch xorg: the X server's DPI, averaged across the detected monitors.
 - **preview_audio** — Preview the qtile audio meter in a terminal and pick a capture device.
 - **screen_configuration** — Detect connected monitors via ``screeninfo``.
@@ -74,7 +74,7 @@ the module gets a value it can act on, and the shell still gets its status.
 
 ## Patcher Pattern
 
-A patcher takes the active configuration (`~/.config/config.json`), extracts the bits it needs (palette, font, state), and writes them into an app-specific format. The canonical minimal patcher is `patch_web_greeter.py`: it iterates over web-greeter themes, reads each theme's `theme.json#role_map`, and emits a `theme.css` containing the mapped palette tokens as CSS variables.
+A patcher takes the active configuration (`~/.config/config.json`), extracts the bits it needs (palette, font, state), and writes them into an app-specific format. The canonical minimal patcher is `patch_xorg.py`: it reads one number off the configuration and writes one line. `patch_web_greeter.py` and `patch_plymouth.py` are the two that also *install* — their target is root-owned rather than under `~`, so each splits into a patch stage that needs no privileges and an install stage that does.
 
 ```python
 """Patch <app>: write palette values into <app>'s native config format."""
