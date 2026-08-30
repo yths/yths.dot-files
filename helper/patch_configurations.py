@@ -102,15 +102,13 @@ def patch_all(configuration: dict[str, Any]) -> list[str]:
     return failed
 
 
-if __name__ == "__main__":
-    # Everything below is the "apply the theme now" script: it rewrites every app's
-    # config, reloads the running programs and restarts qtile. It sits behind the
-    # guard so that importing this module -- to call a single patcher, or to test one
-    # -- does not fire the whole sequence as a side effect.
-    with open(os.path.expanduser("~/.config/config.json")) as input_handle:
-        configuration = json.load(input_handle)
-    failed = patch_all(configuration)
+def reload_applications(configuration: dict[str, Any]) -> None:
+    """Make the running programs pick up what the patchers just wrote.
 
+    Separate from ``patch_all`` because patching is idempotent and safe to call from
+    anywhere, while this restarts qtile and kills dunst. Anything that only wants the files
+    updated calls ``patch_all`` alone.
+    """
     subprocess.call(args=["killall", "dunst"])
     subprocess.call(
         args=[
@@ -123,6 +121,9 @@ if __name__ == "__main__":
         args=["kitty", "+kitten", "themes", "--reload-in=all", configuration["name"]]
     )
     reload_qutebrowser()
+    # A subprocess rather than a registry entry: patch_vsc takes CLI arguments, and keeping
+    # it out of the registry keeps the heavyweight `colour` import off the path of the seven
+    # patchers that do not need it.
     subprocess.call(
         args=[
             "python",
@@ -134,6 +135,10 @@ if __name__ == "__main__":
         ]
     )
     subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
+
+
+def report(failed: list[str]) -> None:
+    """Tell the desktop what happened, since nothing is watching this script's output."""
     if failed:
         subprocess.call(
             args=[
@@ -145,4 +150,17 @@ if __name__ == "__main__":
         subprocess.call(
             args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."]
         )
-    sys.exit(1 if failed else 0)
+
+
+def main() -> int:
+    """Apply the active theme now: patch every app, reload them, report."""
+    with open(os.path.expanduser("~/.config/config.json")) as input_handle:
+        configuration = json.load(input_handle)
+    failed = patch_all(configuration)
+    reload_applications(configuration)
+    report(failed)
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -40,6 +40,31 @@ The helpers fall into three roles:
 
 `hooks/` holds the git hooks rather than a Python module, so the generated inventory above does not list it: `hooks/pre-commit` is the gate, `hooks/enable` arms it for a clone. See [../docs/dependencies.md](../docs/dependencies.md#the-pre-commit-gate).
 
+## Module Shape
+
+Every module here keeps its logic in named functions and puts nothing but
+`sys.exit(main())` under `if __name__ == "__main__"`. A leaf patcher's guard is two lines —
+load `~/.config/config.json`, call the one function — and nothing else exceeds that.
+
+The rule is not tidiness. Code under the guard cannot be imported, called, or exercised:
+every local is a module global and the only way to reach any part of it is to run the whole
+thing. `install.py` held 255 of its 365 lines there, so nothing could check that it installs
+what it claims without actually installing it. `patch_plymouth.py` held all of its, which is
+why it could not be registered as a patcher at all — there was no function to register.
+
+```python
+def main() -> int:
+    ...
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+Return an exit status rather than calling `sys.exit` inside the work: a caller that imports
+the module gets a value it can act on, and the shell still gets its status.
+
 ## Patcher Pattern
 
 A patcher takes the active configuration (`~/.config/config.json`), extracts the bits it needs (palette, font, state), and writes them into an app-specific format. The canonical minimal patcher is `patch_web_greeter.py`: it iterates over web-greeter themes, reads each theme's `theme.json#role_map`, and emits a `theme.css` containing the mapped palette tokens as CSS variables.

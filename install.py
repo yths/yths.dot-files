@@ -15,6 +15,7 @@ import platform
 import subprocess
 import sys
 import time
+from typing import Any
 
 try:
     import loguru
@@ -30,7 +31,6 @@ import helper.screen_configuration
 from helper.utils import (
     install_credentials,
     install_file,
-    install_files,
     install_folder,
 )
 
@@ -107,7 +107,153 @@ def report_display_calibration() -> None:
     logger.info("Create ~/.config/icc/disabled to run uncalibrated without changing anything.")
 
 
-if __name__ == "__main__":
+#: Everything installed verbatim out of ``configuration/``, as (path under configuration/,
+#: destination, label). A directory is linked whole, a file on its own. Expressed as data
+#: because it was 90 lines of near-identical call pairs, in which a missing entry looked
+#: exactly like the entries around it.
+STATIC_INSTALLS = (
+    ("bash/.bashrc", "~/.bashrc", "bash"),
+    ("bash/.dircolors", "~/.dircolors", "dircolors"),
+    ("xorg/.xinitrc", "~/.xinitrc", "xorg"),
+    ("xorg/.Xresources", "~/.Xresources", "xorg"),
+    ("hardware/icc", "~/.config/icc", "icc"),
+    ("vim/.vimrc", "~/.vimrc", "vim"),
+    ("starship/starship.toml", "~/.config/starship.toml", "starship"),
+    ("qtile", "~/.config/qtile", "qtile"),
+    ("picom", "~/.config/picom", "picom"),
+    ("tmux", "~/.config/tmux", "tmux"),
+    ("kitty", "~/.config/kitty", "kitty"),
+    ("dunst", "~/.config/dunst", "dunst"),
+    ("rofi", "~/.config/rofi", "rofi"),
+    ("qutebrowser/config.py", "~/.config/qutebrowser/config.py", "qutebrowser"),
+    ("mpv", "~/.config/mpv", "mpv"),
+    ("vscode/settings.json", "~/.config/Code/User/settings.json", "Visual Studio Code settings"),
+)
+
+#: The four wallpaper variants, as (key in the `wallpapers` block, filename in the bundle).
+WALLPAPERS = (
+    ("dark", "wallpaper-dark.png"),
+    ("light", "wallpaper-light.png"),
+    ("dark-highlight", "wallpaper-dark-highlight.png"),
+    ("light-highlight", "wallpaper-light-highlight.png"),
+)
+
+#: Written into every fresh configuration, replacing whatever the bundle carried.
+DEFAULT_FONT = {"size": 14, "family": "Iosevka NF"}
+DEFAULT_STATE = {"theme": "light", "condition": "normal", "theme_mode": "automatic"}
+
+#: Credentials the installer offers to collect. See helper/utils.py:install_credentials.
+CREDENTIALS = ["IPINFO_TOKEN"]
+
+
+def discover_themes(assets_folder_path: str) -> dict[str, str]:
+    """Map every bundled theme's name to its directory.
+
+    Sorted so the numbering the prompt shows is the same on every machine; ``os.listdir``
+    order is not.
+    """
+    theme_paths = {}
+    for entry in sorted(os.listdir(assets_folder_path)):
+        theme_path = os.path.join(assets_folder_path, entry)
+        if not entry.startswith("theme-") or not os.path.isdir(theme_path):
+            continue
+        with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
+            theme_paths[json.load(handle)["name"]] = theme_path
+    return theme_paths
+
+
+def select_theme(theme_paths: dict[str, str], requested: str | None) -> str:
+    """Return the theme to install, prompting only when one was not named.
+
+    Resolved before anything is installed, so an unknown ``--theme`` exits without having
+    already replaced half the configuration.
+    """
+    theme_names = sorted(theme_paths)
+    if requested is not None:
+        if requested not in theme_paths:
+            sys.exit(
+                f"Unknown theme {requested!r}. Available: {', '.join(theme_names)}."
+            )
+        return requested
+
+    for index, name in enumerate(theme_names):
+        print(f"[{index}] {name}")
+    while True:
+        user_input = input(
+            f"Select a theme by number or name (default = {theme_names[0]}): "
+        ).strip()
+        if not user_input:
+            return theme_names[0]
+        if user_input.isdigit() and int(user_input) < len(theme_names):
+            return theme_names[int(user_input)]
+        if user_input in theme_paths:
+            return user_input
+        print(
+            f"  Not a valid choice. Enter 0-{len(theme_names) - 1}, "
+            f"or one of: {', '.join(theme_names)}."
+        )
+
+
+def install_static_configuration(configuration_folder_path: str) -> None:
+    """Link every per-app configuration into place. Nothing here depends on the theme."""
+    for relative_path, destination, label in STATIC_INSTALLS:
+        source = os.path.join(configuration_folder_path, relative_path)
+        install = install_folder if os.path.isdir(source) else install_file
+        install(source, os.path.expanduser(destination), label)
+
+
+def install_wallpapers(bundle_path: str) -> dict[str, str]:
+    """Link the bundle's wallpapers into place and return the `wallpapers` block for them."""
+    wallpapers = {}
+    for key, filename in WALLPAPERS:
+        destination = f"~/.config/qtile/{filename}"
+        install_file(
+            os.path.join(bundle_path, "wallpapers", filename),
+            os.path.expanduser(destination),
+            f"wallpaper {key}",
+        )
+        wallpapers[key] = destination
+    return wallpapers
+
+
+def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict[str, Any]:
+    """Build ``~/.config/config.json`` from the bundle plus what this machine reports.
+
+    Only ``name`` survives from the bundle's own manifest. Monitors come from the detected
+    hardware, the palette from the installed ``palette.pkl``, and the wallpaper paths from
+    wherever the installer just put them -- which is why a bundle's copy of any of these
+    can rot without anything failing. See docs/architecture.md for the contract.
+    """
+    with open(os.path.join(bundle_path, "config.json"), encoding="utf-8") as handle:
+        configuration = json.load(handle)
+    configuration.pop("colors", None)
+
+    configuration["monitors"] = helper.screen_configuration.get()
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
+    ) as handle:
+        configuration["palette"] = pickle.load(handle)
+
+    configuration["wallpapers"] = wallpapers
+    configuration["font"] = dict(DEFAULT_FONT)
+    configuration["state"] = dict(DEFAULT_STATE)
+    return configuration
+
+
+def write_configuration(configuration: dict[str, Any]) -> None:
+    """Write ``~/.config/config.json``, backing up whatever was there first."""
+    path = os.path.expanduser(os.path.join("~", ".config", "config.json"))
+    if os.path.exists(path):
+        logger.info(f"Global configuration already exists at {path}.")
+        timestamp = int(time.time())
+        os.rename(path, f"{path}.{timestamp}.bak")
+        logger.info(f"Backed up existing global configuration to {path}.{timestamp}.bak.")
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(configuration, handle, indent=4)
+    logger.info(f"Installed global configuration to {path}.")
+
+
+def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Install the yths dot files and one of the bundled themes."
     )
@@ -117,249 +263,44 @@ if __name__ == "__main__":
         default=None,
         help="Install this theme by name, without prompting (e.g. --theme yths).",
     )
-    arguments = parser.parse_args()
+    return parser.parse_args(argv)
 
+
+def main(argv: list[str] | None = None) -> int:
+    arguments = parse_arguments(argv)
     enable_git_hooks()
 
-    repository_folder_path = os.environ.get(
-        "DOTFILES_REPOSITORY_PATH",
-        os.path.join("~", "repositories", "yths.dot-files"),
+    repository_folder_path = os.path.expanduser(
+        os.environ.get(
+            "DOTFILES_REPOSITORY_PATH",
+            os.path.join("~", "repositories", "yths.dot-files"),
+        )
     )
-    repository_folder_path = os.path.expanduser(repository_folder_path)
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")
 
-    # Resolved before anything is installed, so `--theme <unknown>` fails without
-    # having already replaced half the configuration.
-    # Discover the theme bundles. Sorted by name so the numbering is the same on every
-    # machine -- os.listdir order is not.
-    theme_paths = {}
-    for entry in sorted(os.listdir(assets_folder_path)):
-        theme_path = os.path.join(assets_folder_path, entry)
-        if not entry.startswith("theme-") or not os.path.isdir(theme_path):
-            continue
-        with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
-            theme_paths[json.load(handle)["name"]] = theme_path
-
+    theme_paths = discover_themes(assets_folder_path)
     if not theme_paths:
         sys.exit(f"No theme bundles found under {assets_folder_path}.")
-
-    theme_names = sorted(theme_paths)
-    if arguments.theme is not None:
-        if arguments.theme not in theme_paths:
-            sys.exit(
-                f"Unknown theme {arguments.theme!r}. "
-                f"Available: {', '.join(theme_names)}."
-            )
-        selected_theme = arguments.theme
-    else:
-        for index, name in enumerate(theme_names):
-            print(f"[{index}] {name}")
-        selected_theme = None
-        while selected_theme is None:
-            user_input = input(
-                f"Select a theme by number or name (default = {theme_names[0]}): "
-            ).strip()
-            if not user_input:
-                selected_theme = theme_names[0]
-            elif user_input.isdigit() and int(user_input) < len(theme_names):
-                selected_theme = theme_names[int(user_input)]
-            elif user_input in theme_paths:
-                selected_theme = user_input
-            else:
-                print(
-                    f"  Not a valid choice. Enter 0-{len(theme_names) - 1}, "
-                    f"or one of: {', '.join(theme_names)}."
-                )
-
+    selected_theme = select_theme(theme_paths, arguments.theme)
     print(f"Selected theme: {selected_theme}")
+    bundle_path = theme_paths[selected_theme]
 
-    assets_folder_path = theme_paths[selected_theme]
-
-    # install bash configuration
-    source_file_path = os.path.join(configuration_folder_path, "bash", ".bashrc")
-    destination_file_path = os.path.join(os.path.expanduser("~"), ".bashrc")
-    install_file(source_file_path, destination_file_path, "bash")
-    source_file_path = os.path.join(configuration_folder_path, "bash", ".dircolors")
-    destination_file_path = os.path.join(os.path.expanduser("~"), ".dircolors")
-    install_file(source_file_path, destination_file_path, "dircolors")
-
-    # install xorg configuration
-    files_paths = {
-        os.path.join(configuration_folder_path, "xorg", ".xinitrc"): os.path.join(
-            os.path.expanduser("~"), ".xinitrc"
-        ),
-        os.path.join(configuration_folder_path, "xorg", ".Xresources"): os.path.join(
-            os.path.expanduser("~"), ".Xresources"
-        ),
-    }
-    install_files(files_paths, "xorg")
-    source_folder_path = os.path.join(configuration_folder_path, "hardware", "icc")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "icc")
-    install_folder(source_folder_path, destination_folder_path, "icc")
+    install_static_configuration(configuration_folder_path)
     report_display_calibration()
 
-    # install vim configuration
-    source_file_path = os.path.join(configuration_folder_path, "vim", ".vimrc")
-    destination_file_path = os.path.join(os.path.expanduser("~"), ".vimrc")
-    install_file(source_file_path, destination_file_path, "vim")
-
-    # install starship configuration
-    source_file_path = os.path.join(
-        configuration_folder_path, "starship", "starship.toml"
-    )
-    destination_file_path = os.path.join(
-        os.path.expanduser("~"), ".config", "starship.toml"
-    )
-    install_file(source_file_path, destination_file_path, "starship")
-
-    # install qtile configuration
-    source_folder_path = os.path.join(configuration_folder_path, "qtile")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "qtile")
-    install_folder(source_folder_path, destination_folder_path, "qtile")
-
-    # install picom configuration
-    source_folder_path = os.path.join(configuration_folder_path, "picom")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "picom")
-    install_folder(source_folder_path, destination_folder_path, "picom")
-
-    # install tmux configuration
-    source_folder_path = os.path.join(configuration_folder_path, "tmux")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "tmux")
-    install_folder(source_folder_path, destination_folder_path, "tmux")
-
-    # install kitty configuration
-    source_folder_path = os.path.join(configuration_folder_path, "kitty")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "kitty")
-    install_folder(source_folder_path, destination_folder_path, "kitty")
-
-    # install dunst configuration
-    source_folder_path = os.path.join(configuration_folder_path, "dunst")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "dunst")
-    install_folder(source_folder_path, destination_folder_path, "dunst")
-
-    # install rofi configuration
-    source_folder_path = os.path.join(configuration_folder_path, "rofi")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "rofi")
-    install_folder(source_folder_path, destination_folder_path, "rofi")
-
-    # install qutebrowser configuration
-    source_file_path = os.path.join(
-        configuration_folder_path, "qutebrowser", "config.py"
-    )
-    destination_file_path = os.path.join(
-        os.path.expanduser("~"), ".config", "qutebrowser", "config.py"
-    )
-    install_file(source_file_path, destination_file_path, "qutebrowser")
-
-    #install mpv configuration
-    source_folder_path = os.path.join(configuration_folder_path, "mpv")
-    destination_folder_path = os.path.join(os.path.expanduser("~"), ".config", "mpv")
-    install_folder(source_folder_path, destination_folder_path, "mpv")
-
-    # install Visual Studio Code configuration
-    source_folder_path = os.path.join(configuration_folder_path, "vscode")
-    destination_folder_path = os.path.join(
-        os.path.expanduser("~"), ".config", "Code", "User"
-    )
-    install_file(
-        os.path.join(source_folder_path, "settings.json"),
-        os.path.join(destination_folder_path, "settings.json"),
-        "Visual Studio Code settings",
-    )
-
-    # install credentials
-    # check if user wants to install credentials
-    user_input = input("Do you want to install credentials? (y/n): ")
-    if user_input.lower() == "y":
-        credentials = ["IPINFO_TOKEN"]
-        install_credentials(credentials)
-
-    # configure theme
-
-    # install configuration
-    source_file_path = os.path.join(assets_folder_path, "palette.pkl")
-    destination_file_path = os.path.join(
-        os.path.expanduser("~"), ".config", "palette.pkl"
-    )
-    install_file(source_file_path, destination_file_path, "palette")
-
-    with open(
-        os.path.join(assets_folder_path, "config.json"), encoding="utf-8"
-    ) as handle:
-        configuration = json.load(handle)
-    configuration.pop("colors", None)
-
-    monitors = helper.screen_configuration.get()
-    configuration["monitors"] = monitors
-
-    with open(
-        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
-    ) as handle:
-        palette = pickle.load(handle)
-    configuration["palette"] = palette
-
-    configuration["wallpapers"] = {}
-    configuration["wallpapers"]["dark"] = "~/.config/qtile/wallpaper-dark.png"
-    configuration["wallpapers"]["light"] = "~/.config/qtile/wallpaper-light.png"
-    configuration["wallpapers"]["dark-highlight"] = (
-        "~/.config/qtile/wallpaper-dark-highlight.png"
-    )
-    configuration["wallpapers"]["light-highlight"] = (
-        "~/.config/qtile/wallpaper-light-highlight.png"
-    )
-
+    if input("Do you want to install credentials? (y/n): ").lower() == "y":
+        install_credentials(CREDENTIALS)
 
     install_file(
-        os.path.join(assets_folder_path, "wallpapers", "wallpaper-dark.png"),
-        os.path.expanduser("~/.config/qtile/wallpaper-dark.png"),
-        "wallpaper dark",
+        os.path.join(bundle_path, "palette.pkl"),
+        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")),
+        "palette",
     )
+    wallpapers = install_wallpapers(bundle_path)
+    write_configuration(assemble_configuration(bundle_path, wallpapers))
+    return 0
 
-    install_file(
-        os.path.join(assets_folder_path, "wallpapers", "wallpaper-light.png"),
-        os.path.expanduser("~/.config/qtile/wallpaper-light.png"),
-        "wallpaper light",
-    )
 
-    install_file(
-        os.path.join(assets_folder_path, "wallpapers", "wallpaper-dark-highlight.png"),
-        os.path.expanduser("~/.config/qtile/wallpaper-dark-highlight.png"),
-        "wallpaper dark highlight",
-    )
-
-    install_file(
-        os.path.join(assets_folder_path, "wallpapers", "wallpaper-light-highlight.png"),
-        os.path.expanduser("~/.config/qtile/wallpaper-light-highlight.png"),
-        "wallpaper light highlight",
-    )
-
-    configuration["font"] = {}
-    configuration["font"]["size"] = 14
-    configuration["font"]["family"] = "Iosevka NF"
-
-    configuration["state"] = {}
-    configuration["state"]["theme"] = "light"
-    configuration["state"]["condition"] = "normal"
-    configuration["state"]["theme_mode"] = "automatic"
-
-    # if configuration file already exists, back it up
-    global_configuration_path = os.path.expanduser(
-        os.path.join("~", ".config", "config.json")
-    )
-    if os.path.exists(global_configuration_path):
-        logger.info(
-            f"Global configuration already exists at {global_configuration_path}."
-        )
-        # Backing up the existing configuration
-        timestamp = int(time.time())
-        os.rename(
-            global_configuration_path,
-            f"{global_configuration_path}.{timestamp}.bak",
-        )
-        logger.info(
-            f"Backed up existing global configuration to {global_configuration_path}.{timestamp}.bak."
-        )
-    with open(global_configuration_path, "w", encoding="utf-8") as handle:
-        json.dump(configuration, handle, indent=4)
-    logger.info(f"Installed global configuration to {global_configuration_path}.")
+if __name__ == "__main__":
+    sys.exit(main())

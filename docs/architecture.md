@@ -48,7 +48,7 @@ Each preset's color palette is described in [palette-semantics.md](palette-seman
 
 ## Installer Flow (`install.py`)
 
-`install.py` runs the desktop install in two phases:
+`install.py` runs the desktop install in two phases, each a named step in the file rather than a stretch of script — `discover_themes`, `select_theme`, `install_static_configuration`, `install_wallpapers`, `assemble_configuration`, `write_configuration`:
 
 1. **Static configuration**: every per-app config tree under `configuration/` is *symlinked* into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc., with anything already there renamed to `*.<timestamp>.bak` first. No palette is involved, and nothing is copied. That last part is worth stating plainly, because everything downstream depends on it: the installed configuration **is** this repository. Editing `~/.config/qtile/config.py` edits tracked source, and anything written into an installed path lands on a tracked file — which is why the theme wallpapers are gitignored rather than committed.
 2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Only `name` is carried over from the bundle's own manifest; see the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes).
