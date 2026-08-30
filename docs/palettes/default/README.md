@@ -1,12 +1,12 @@
 # Default Palette
 
-The detailed colour reference for the theme this repository ships../nuunamnir/README.md](../nuunamnir/README.md), which `docs/issues.md` had tracked as
-missing. Each PNG in this directory is a flat colour swatch named after its hex code, used
-by the table below for visual reference.
+The detailed colour reference for the theme this repository ships. Each PNG in this
+directory is a flat colour swatch named after its hex code, used by the table below for
+visual reference.
 
-Generated from `assets/theme-c767bc2b-384f-428d-b4fe-1761d6b6e4a6/palette.pkl`, which is
-the same file qtile and the patchers read, so the table cannot drift from what the desktop
-actually renders without the bundle itself changing.
+Generated from `assets/default/palette.pkl`, which is the same file qtile and the patchers
+read, so the table cannot drift from what the desktop actually renders without the bundle
+itself changing.
 
 For the palette contract that all presets must honour (the minimum required tokens and how
 consumers read them), see [../../palette-semantics.md](../../palette-semantics.md). For the reasoning behind it, see [../../notes.md](../../notes.md#palette-design).

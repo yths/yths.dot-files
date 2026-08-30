@@ -111,6 +111,58 @@ def unresolvable_module_references() -> list[str]:
     return sorted(unresolved)
 
 
+#: A markdown inline link, capturing its target: ``[text](target)``. Also matches the image
+#: form, whose leading ``!`` is outside the capture and does not change what has to resolve.
+MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)")
+
+#: A ``](target)`` with no bracket still open before it on the line. That is not a broken
+#: link but damaged text, and no link checker reports it, because it is not a link -- there
+#: is nothing to resolve. One reached the tree exactly this way, from a bulk replacement that
+#: took the opening bracket with the words it replaced.
+DANGLING_LINK = re.compile(r"\]\(")
+
+#: Directories whose markdown is not this repository's to maintain.
+UNMAINTAINED = {".git", "backup", "node_modules", ".pytest_cache"}
+
+
+def documentation_files() -> list[Path]:
+    """Every markdown file this repository maintains."""
+    return sorted(
+        path
+        for path in REPO_ROOT.rglob("*.md")
+        if not UNMAINTAINED & set(path.parts)
+    )
+
+
+def broken_documentation_links() -> list[str]:
+    """Relative links that do not resolve, and link syntax that was damaged rather than moved.
+
+    This documentation is held together by cross-references -- ``docs/style.md`` requires
+    them, and the generated blocks emit them -- so a rename that misses one leaves a reader
+    at a dead end with nothing to say so. External links are not fetched: reachability is
+    somebody else's uptime, not a property of this commit.
+
+    Anchors are checked as far as the file: ``notes.md#palette-design`` has to name a file
+    that exists, not a heading that does.
+    """
+    problems = []
+    for path in documentation_files():
+        relative = path.relative_to(REPO_ROOT)
+        text = path.read_text()
+        for number, line in enumerate(text.splitlines(), 1):
+            for match in DANGLING_LINK.finditer(line):
+                before = line[: match.start()]
+                if before.count("[") <= before.count("]"):
+                    problems.append(f"{relative}:{number} — a link lost its opening bracket")
+        for target in MARKDOWN_LINK.findall(text):
+            if target.startswith(("http://", "https://", "mailto:", "#")):
+                continue
+            destination = target.partition("#")[0]
+            if destination and not (path.parent / destination).exists():
+                problems.append(f"{relative} — {target}")
+    return sorted(problems)
+
+
 def stale_preview() -> list[str]:
     """Whether docs/preview/ was rendered from the palette that ships today.
 
@@ -155,6 +207,12 @@ def invariants() -> list[tuple[str, list[str], str]]:
             "The rendered preview no longer matches the palette it shows:",
             stale_preview(),
             "Run `python helper/render_preview.py` and commit the images.",
+        ),
+        (
+            "Documentation links that do not resolve:",
+            broken_documentation_links(),
+            "Fix the path, or the bracket. A `](target)` whose opening `[` is gone is not a\n"
+            "link, so nothing but this check will ever mention it.",
         ),
         (
             "Not widgets, but sitting in configuration/qtile/widgets/:",
