@@ -11,7 +11,7 @@
 # Which bundled theme to install without prompting. `install.py --theme <name>` overrides it,
 # and an empty string restores the interactive prompt. Run `python helper/list_themes.py` to
 # see what is available.
-theme = "yths"
+theme = "default"
 
 # The font the whole desktop derives from: the bar, the terminal, the launcher, the boot
 # splash. Every other size is computed from `size`, so changing it rescales everything

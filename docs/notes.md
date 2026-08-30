@@ -62,14 +62,15 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 - **vpn** — Qtile widget: VPN connection state with country/city.
 <!-- END: WIDGETS -->
 
-## Palette Design: nuunamnir
+## Palette Design
 
-The `nuunamnir` palette is designed to exploit the correlation between lightness and colorfulness with perceptual saliency, so the hue carries semantic meaning rather than arbitrary preference. Background and foreground tokens stay desaturated; cues that need attention escalate toward the saturated and colorful end of the gamut.
+Lightness and colorfulness correlate with perceptual saliency: the colours that should draw
+the eye are both lighter and more saturated than the ones that should recede, so the
+hierarchy survives being seen out of the corner of an eye at the edge of a bar.
 
-The dark variant is the photonegative reflection of the light variant: corresponding tokens swap hue/lightness rather than re-pick a new color. This keeps recognition consistent across mode switches.
+The dark variant is the photonegative reflection of the light one. Corresponding tokens swap
+lightness rather than re-picking a new colour, which is what keeps a token recognisable
+across a theme switch — the same role stays the same hue.
 
-The detailed palette table (visual swatches plus sRGB values for every token in both modes) is co-located with the swatch PNGs at [palettes/nuunamnir/README.md](palettes/nuunamnir/README.md). The full philosophical derivation is at [nuunamnir.color-scheme](https://www.github.com/nuunamnir/nuunamnir.color-scheme).
-
-## Palette Design: yths
-
-The `yths` palette uses the same semantic token names as `nuunamnir` (see [palette-semantics.md](palette-semantics.md)) so widgets and configuration files can switch between presets without code changes. The concrete colors are tuned differently. The visual reference, with swatches and sRGB values for every token in both modes, is at [palettes/yths/README.md](palettes/yths/README.md).
+The visual reference, with swatches and sRGB values for every token in both modes, is at
+[palettes/default/README.md](palettes/default/README.md).

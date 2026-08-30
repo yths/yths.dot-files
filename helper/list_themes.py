@@ -1,4 +1,4 @@
-"""List every theme bundle under ``assets/theme-*/``.
+"""List every theme bundle under ``assets/``.
 
 Prints each bundle's path, its ``config.json``, and its unpickled ``palette.pkl`` to stdout.
 Useful for inspecting what ``install.py`` would offer at install time. Honours the
@@ -36,7 +36,7 @@ def main() -> int:
     root = assets_folder()
     for entry in sorted(os.listdir(root)):
         theme_path = os.path.join(root, entry)
-        if entry.startswith("theme-") and os.path.isdir(theme_path):
+        if os.path.isfile(os.path.join(theme_path, "config.json")):
             print(describe_theme(theme_path))
     return 0
 

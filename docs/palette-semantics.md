@@ -44,14 +44,13 @@ Adding new consumers (a new widget, a new patcher) widens this set; track change
 
 Beyond the minimum, bundles are free to ship additional tokens for use by their own patchers, web-greeter themes, or future widgets. The current presets carry different supersets:
 
-- The `yths` preset adds `success`, `failure`, plus a `*_variant` family for softer hue versions (`red_variant`, `blue_variant`, `foreground_variant`, ...).
-- The `nuunamnir` preset adds `positive`, `negative`, `cursor`, `grey`, `pastel_*`, `effect_*` from its source colour scheme.
+- The shipped preset adds `success`, `failure`, plus a `*_variant` family for softer hue versions (`red_variant`, `blue_variant`, `foreground_variant`, ...).
 
 The two vocabularies do not perfectly overlap. A widget that needs a token outside the minimum set should fall back gracefully (read with `.get(token, default)`) so it can run against either preset.
 
 ## Light vs Dark Variants
 
-Both `light` and `dark` keys must be present with the same token set. The active variant is selected by `state.theme` in `~/.config/config.json`. The light/dark relationship is a per-preset design decision — `nuunamnir` uses a strict photonegative mapping; `yths` is tuned independently.
+Both `light` and `dark` keys must be present with the same token set. The active variant is selected by `state.theme` in `~/.config/config.json`. How the two relate is a per-preset design decision; the shipped preset maps them photonegatively, so a token keeps its hue and swaps its lightness.
 
 ## Where Tokens Are Consumed
 

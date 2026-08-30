@@ -1,7 +1,6 @@
-# yths Palette
+# Default Palette
 
-The detailed color reference for the `yths` theme preset — the counterpart to
-[../nuunamnir/README.md](../nuunamnir/README.md), which `docs/issues.md` had tracked as
+The detailed colour reference for the theme this repository ships../nuunamnir/README.md](../nuunamnir/README.md), which `docs/issues.md` had tracked as
 missing. Each PNG in this directory is a flat colour swatch named after its hex code, used
 by the table below for visual reference.
 
@@ -10,8 +9,7 @@ the same file qtile and the patchers read, so the table cannot drift from what t
 actually renders without the bundle itself changing.
 
 For the palette contract that all presets must honour (the minimum required tokens and how
-consumers read them), see [../../palette-semantics.md](../../palette-semantics.md). For how
-this preset relates to `nuunamnir`, see [../../notes.md](../../notes.md#palette-design-yths).
+consumers read them), see [../../palette-semantics.md](../../palette-semantics.md). For the reasoning behind it, see [../../notes.md](../../notes.md#palette-design).
 
 | Name | light sRGB String | light sRGB Numeric | light Patch | dark Patch | dark sRGB Numeric | dark sRGB String |
 | --------------- | -------------------- | --------------------- | -------------- | ------------- | -------------------- | -------------------- |

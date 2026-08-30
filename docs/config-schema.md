@@ -6,7 +6,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 
 ```json
 {
-  "name": "nuunamnir",
+  "name": "default",
   "monitors": {
     "HDMI-1": {
       "width": 3840, "width_mm": 620, "width_dpi": 157,
