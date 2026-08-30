@@ -68,7 +68,7 @@ The widgets, and the Redis contract they share, are described in [notes.md](note
 
 Each application that cannot read `~/.config/config.json` natively has one patcher module, `helper/patch_<app>.py`, exposing `patch_<app>(configuration)` and runnable on its own. `helper/patch_configurations.py` is the registry that runs them; it holds no patching logic.
 
-Seven are in the registry and run on every theme switch: **rofi**, **xorg** (the average DPI into `~/.Xresources`), **kitty**, **tmux**, **starship**, **dunst**, and **web-greeter** — which walks `configuration/web-greeter/themes/` and emits a `theme.css` per theme, driven by the theme's own `theme.json#role_map`.
+Eight are in the registry and run on every theme switch: **rofi**, **xorg** (the average DPI into `~/.Xresources`), **kitty**, **lock** (the xsecurelock environment), **tmux**, **starship**, **dunst**, and **web-greeter** — which walks `configuration/web-greeter/themes/` and emits a `theme.css` per theme, driven by the theme's own `theme.json#role_map`.
 
 Two are outside it, for different reasons.
 

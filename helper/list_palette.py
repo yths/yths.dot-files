@@ -201,7 +201,7 @@ def _plymouth_section() -> str:
 
 
 def _kitty_pairs() -> list:
-    path = REPO_ROOT / "configuration" / "kitty" / "current-theme.conf"
+    path = REPO_ROOT / "configuration" / "kitty" / "kitty.conf"
     pairs = []
     for raw in path.read_text().splitlines():
         match = re.match(r"^(\S+)\s+(#[0-9a-fA-F]{6})\b", raw)
@@ -255,7 +255,7 @@ def _rofi_pairs() -> list:
 
 
 DRIFT_TOOLS = [
-    ("kitty", "configuration/kitty/current-theme.conf", _kitty_pairs),
+    ("kitty", "configuration/kitty/kitty.conf", _kitty_pairs),
     ("tmux", "configuration/tmux/tmux.conf", _tmux_pairs),
     ("starship", "configuration/starship/starship.toml", _starship_pairs),
     ("dunst", "configuration/dunst/dunstrc", _dunst_pairs),

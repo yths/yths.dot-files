@@ -113,12 +113,14 @@ def reload_applications(configuration: dict[str, Any]) -> None:
             os.path.expanduser(os.path.join("~", ".config", "tmux", "tmux.conf")),
         ]
     )
-    subprocess.call(
-        args=["kitty", "+kitten", "themes", "--reload-in=all", configuration["name"]]
-    )
+    # kitty is deliberately absent: helper/patch_kitty.py writes ~/.config/kitty/kitty.conf,
+    # and kitty watches that file and re-reads it on its own. Calling
+    # `kitty +kitten themes --reload-in=all` here did reload it, but the kitten also rewrote
+    # kitty.conf to add an `include` and left a kitty.conf.bak beside it -- inside the
+    # repository, since ~/.config/kitty is a symlink to it.
     reload_qutebrowser()
     # A subprocess rather than a registry entry: patch_vsc takes CLI arguments, and keeping
-    # it out of the registry keeps the heavyweight `colour` import off the path of the seven
+    # it out of the registry keeps the heavyweight `colour` import off the path of the eight
     # patchers that do not need it.
     subprocess.call(
         args=[

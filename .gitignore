@@ -22,14 +22,18 @@ configuration/qtile/wallpaper-light.png
 configuration/qtile/wallpaper-dark-highlight.png
 configuration/qtile/wallpaper-light-highlight.png
 
-# kitty's whole configuration is generated. helper/patch_kitty.py writes kitty.conf and
-# themes/<preset>.conf from the palette on every theme switch, and `kitty +kitten themes`
-# writes current-theme.conf -- all through the ~/.config/kitty symlink, which lands them on
-# tracked paths. Committing them meant the tree went dirty at every dawn and dusk. The
-# settings that are not palette-derived live in helper/patch_kitty.py, not in these files.
+# kitty's whole configuration is generated: helper/patch_kitty.py writes kitty.conf -- base
+# settings and the palette in one file -- on every theme switch, through the ~/.config/kitty
+# symlink, which lands it on a tracked path. kitty re-reads that file by itself, so nothing
+# else writes here. Settings that are not palette-derived live in helper/patch_kitty.py, not
+# in this file.
 configuration/kitty/kitty.conf
+# Not written by anything here. `kitty +kitten themes`, if it is ever run by hand, backs
+# kitty.conf up and keeps its own copy of the theme beside it; these keep that out of
+# git status rather than leaving it to be found later.
+configuration/kitty/kitty.conf.bak
 configuration/kitty/current-theme.conf
-configuration/kitty/themes/*.conf
+configuration/kitty/themes/
 
 # rofi's colour variables, written whole by helper/patch_rofi.py. theme.rasi @imports this
 # file; theme.rasi and config.rasi are the source and stay tracked.
