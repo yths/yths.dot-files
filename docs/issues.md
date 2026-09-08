@@ -71,6 +71,11 @@
 
 ## Configurations
 
+- [ ] The `inhibit-bridge` tray icon does not render (needs a `dbus-fast` fix)
+    - (2026-09-08) the bridge itself works: it holds `org.freedesktop.ScreenSaver` and opens a matching logind idle inhibitor for each inhibit taken, verified end to end with `systemd-inhibit --list`. Only the indicator is missing.
+    - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.
+    - (2026-09-08) an error reply with no body is legal D-Bus, so the fix belongs in `dbus-fast`. qtile catching a non-`DBusError` around the optional icons would also do it. Nothing in this repository can close it.
+
 - [ ] Map all colors for `qutebrowser`
 - [x] Handle monitor plug/unplug events gracefully in `qtile`
     - (2026-08-30) `config.py` subscribes to `screen_change`. The geometry every scaled size derives from was read once by `install.py` and never again, so a new display got the old one's scaling factor until qtile was restarted by hand.

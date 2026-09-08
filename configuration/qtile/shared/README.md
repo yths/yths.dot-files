@@ -31,6 +31,11 @@ Neither directory needs an `__init__.py`.
   a widget is on *both* sides of the move. One crossing of that strip left a cell expanded
   with the pointer elsewhere. `HoverBar` bounds the hit test to where widgets are actually
   drawn and dispatches on every change, including to and from nothing.
+- **`session.py`** — `start_programs()` starts what cannot start before qtile does, skipping
+  anything already running. `~/.xinitrc` starts everything else and starts it earlier; what
+  lands here needs something qtile provides. Guarded rather than unconditional because the
+  hook fires on every start, and qtile restarts twice a day on the theme switch — so an
+  unguarded start would leave a copy behind each time.
 - **`spectrum.py`** — the FFT-to-block-glyph maths behind the audio level meter. Pure: it
   takes samples and returns numbers or a string, with no reference to PortAudio, qtile or
   the bar. `widgets/audio.py` renders through it, and so does

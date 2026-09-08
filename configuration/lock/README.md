@@ -36,6 +36,34 @@ there to challenge. Everything it displays is offered to them.
 `--transfer-sleep-lock`, which holds the sleep inhibitor until the locker is actually up — so
 the machine cannot suspend into a state where it wakes unlocked.
 
+## What Stops It
+
+A film is the case where locking on idle is wrong, and the X idle timer cannot see one:
+playing video is not input. Browsers and video players say so over D-Bus instead, on
+`org.freedesktop.ScreenSaver` — which logind, and therefore `xss-lock`, never hears.
+
+`inhibit-bridge` carries the one to the other: it holds an `org.freedesktop.ScreenSaver`
+name, and for each inhibit taken there it opens a matching logind idle inhibitor. qtile starts
+it from `startup_complete` (see [`shared/session.py`](../qtile/shared/README.md)) rather than
+`~/.xinitrc`, because it publishes a `StatusNotifierItem` and needs the bar's tray to register
+with — and the bar does not exist until qtile has drawn it.
+
+Checking it works, without waiting for the idle timer:
+
+```bash
+systemd-inhibit --list | grep inhibit-bridge
+```
+
+Nothing there means nothing is asking; play a video and look again.
+
+> The tray **icon** does not render, though the bridge itself works. qtile reads three icon
+> properties from every item — `IconPixmap`, `AttentionIconPixmap`, `OverlayIconPixmap` — and
+> `inhibit-bridge` implements only the first, answering the other two with a D-Bus error that
+> carries no message body. `dbus-fast` builds its exception from `msg.body[0]` unconditionally
+> and raises `IndexError` instead, which qtile treats as a failed item. An error reply with no
+> body is legal, so the fix belongs in `dbus-fast`. Until then the bridge runs and inhibits
+> correctly; it just has no visible indicator.
+
 ## Changing It
 
 Edit `helper/patch_lock.py`, then:

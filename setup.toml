@@ -47,6 +47,11 @@ core = [
     # asks for a session lock. xsecurelock fails closed: if it cannot grab the screen it
     # refuses to exit, rather than leaving an unlocked desktop behind.
     "xsecurelock", "xss-lock",
+    # Without this, xss-lock locks the screen during a film. Browsers and video players ask
+    # for a D-Bus screensaver inhibit; logind, which xss-lock obeys, never hears about it.
+    # inhibit-bridge is what carries the one to the other. qtile starts it -- it docks in the
+    # bar's system tray, which does not exist until qtile has drawn the bar.
+    "inhibit-bridge-git",
 ]
 
 # The login screen and the boot splash.

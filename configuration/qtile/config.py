@@ -66,6 +66,7 @@ except redis.exceptions.ConnectionError:
 
 import shared.hover_bar
 import shared.monitors
+import shared.session
 import widgets.audio
 import widgets.bluetooth
 import widgets.broadcast
@@ -328,6 +329,13 @@ def apply_screen_change() -> None:
     )
     logger.warning("Monitor layout changed; reloading the configuration.")
     qtile.reload_config()
+
+
+@hook.subscribe.startup_complete
+def start_session_programs() -> None:
+    """Start the programs that could not start before qtile did; see ``shared.session``."""
+    for name in shared.session.start_programs():
+        logger.info(f"Started {name}.")
 
 
 @hook.subscribe.startup_complete
@@ -641,6 +649,33 @@ screens = [
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
                     ),
+                ),
+                # StatusNotifier, not Systray. The two are different protocols: Systray is
+                # XEmbed, where the application docks its own X window in the bar, and
+                # StatusNotifier is the freedesktop D-Bus specification. inhibit-bridge
+                # publishes org.kde.StatusNotifierItem and needs a host to register with --
+                # with only a Systray in the bar it logged "systray error: failed to
+                # register: The name is not activatable" and showed nothing.
+                #
+                # On every bar, unlike Systray, which qtile allows only once: the host behind
+                # this widget is a module-level singleton that every instance shares, so the
+                # tray is reachable from whichever monitor is in front of you.
+                widget.StatusNotifier(
+                    icon_size=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    ),
+                    padding=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                        * 0.5
+                    ),
+                ),
+                widget.Spacer(
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    )
                 ),
                 widgets.claude_usage.WidgetClaudeUsage(
                     r=r,
