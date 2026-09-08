@@ -34,6 +34,8 @@ PURPOSE = {
     "kitty": "terminal",
     "lock": "screen lock",
     "dunst": "notifications",
+    "gtk 3": "application toolkit",
+    "gtk 4": "application toolkit",
     "rofi": "launcher",
     "qutebrowser": "browser",
     "mpv": "video",

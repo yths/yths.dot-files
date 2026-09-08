@@ -15,6 +15,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **list_themes** — List every theme bundle under ``assets/``.
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
+- **patch_gtk** — Patch GTK: what GTK 3 and GTK 4 applications draw with, and how their file chooser opens.
 - **patch_kitty** — Patch kitty: the terminal's settings and its sixteen ANSI colours, in one file.
 - **patch_lock** — Patch the lock screen: its colours, font and what it is willing to display.
 - **patch_plymouth** — Patch plymouth: the boot splash's palette, fonts and rendered assets.

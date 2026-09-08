@@ -25,6 +25,8 @@ The bar, the terminal, the launcher and the notifications above are drawn from t
 | kitty | `~/.config/kitty` | terminal |
 | lock | `~/.config/lock` | screen lock |
 | dunst | `~/.config/dunst` | notifications |
+| gtk 3 | `~/.config/gtk-3.0` | application toolkit |
+| gtk 4 | `~/.config/gtk-4.0` | application toolkit |
 | rofi | `~/.config/rofi` | launcher |
 | qutebrowser | `~/.config/qutebrowser/config.py` | browser |
 | mpv | `~/.config/mpv` | video |
