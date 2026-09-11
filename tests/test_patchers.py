@@ -14,6 +14,8 @@ raise aborted `patch_all`, leaving every later app on the previous palette.
 import configparser
 import os
 import pathlib
+import shutil
+import subprocess
 
 import patch_dunst
 import patch_rofi
@@ -200,6 +202,76 @@ def test_dunst_still_themes_without_geometry(configuration: dict, home: pathlib.
 def test_dunst_offset_scales_with_the_monitors(configuration: dict, home: pathlib.Path) -> None:
     patch_dunst.patch_dunst(configuration)
     assert _dunstrc(home)["global"]["offset"] == "0x63"        # 14 * 1.5 * 3, rounded
+
+
+def test_dunst_accepts_the_generated_file_without_complaint(
+    configuration: dict, home: pathlib.Path
+) -> None:
+    """Ask dunst, because only dunst knows which settings it still has.
+
+    The template had accumulated four it no longer accepts -- `gaps` and
+    `startup_notification`, both removed, and `gap_size` and `msg_urgency` in the urgency
+    sections, where one is global-only and the other is a filter a special section refuses.
+    All four were silently ignored, so nothing broke and nothing said so either.
+
+    Run against an unreachable display: dunst parses its configuration before it opens X, so
+    it reports on the file and then aborts, rather than starting a second notification daemon
+    inside the test suite.
+    """
+    if shutil.which("dunst") is None:
+        pytest.skip("dunst is not installed")
+    patch_dunst.patch_dunst(configuration)
+    process = subprocess.Popen(
+        ["dunst", "-conf", str(home / ".config" / "dunst" / "dunstrc"), "-print"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+        env={**os.environ, "DISPLAY": ":99"},
+    )
+    try:
+        stderr = process.communicate(timeout=10)[1]
+    except subprocess.TimeoutExpired:
+        process.kill()
+        stderr = process.communicate()[1]
+    complaints = [
+        line for line in stderr.splitlines()
+        if line.startswith("WARNING:") and "X11" not in line
+    ]
+    assert complaints == []
+
+
+def test_the_settings_dunst_dropped_are_not_written_back(
+    configuration: dict, home: pathlib.Path
+) -> None:
+    """Named individually so a reintroduction says which one, even without dunst installed."""
+    patch_dunst.patch_dunst(configuration)
+    written = _dunstrc(home)
+    assert "gaps" not in written["global"]
+    assert "startup_notification" not in written["global"]
+
+
+def test_the_urgency_sections_hold_only_what_they_may(
+    configuration: dict, home: pathlib.Path
+) -> None:
+    """`gap_size` is global-only, and a special section already selects its urgency -- a
+    `msg_urgency` filter in one is refused rather than narrowed."""
+    patch_dunst.patch_dunst(configuration)
+    written = _dunstrc(home)
+    for section in ("urgency_normal", "urgency_critical", "urgency_low"):
+        assert "gap_size" not in written[section], section
+        assert "msg_urgency" not in written[section], section
+
+
+def test_each_urgency_still_gets_its_own_colour(
+    configuration: dict, home: pathlib.Path
+) -> None:
+    """The per-urgency `format` survives all of that -- verified by rendering the three
+    notifications and reading the titles back: critical olive, normal orange, low grey."""
+    patch_dunst.patch_dunst(configuration)
+    written = _dunstrc(home)
+    colours = {
+        section: written[section]["format"]
+        for section in ("urgency_normal", "urgency_critical", "urgency_low")
+    }
+    assert len(set(colours.values())) == 3
 
 
 def test_no_patcher_writes_outside_home(configuration: dict, home: pathlib.Path) -> None:
