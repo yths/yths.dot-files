@@ -49,6 +49,23 @@ row reads `Keyboard: Caps Lock` and fits.
 Anything added to that row has to stay short for the same reason. A test in
 `tests/test_lock.py` holds the line.
 
+## What A Wrong Password Looks Like
+
+Nothing, and that is not this configuration's doing. The dialog shows `Processing...`, then
+returns to `Password:` with an empty field. No error appears.
+
+xsecurelock only draws what the PAM conversation hands it, and `pam_unix` returns an
+authentication failure with no message attached — so there is nothing to draw. `authproto_pam`
+writes `pam_authenticate: Authentication failure.` to the session log instead. A message
+reaches the screen only when some module in the stack produces one, which on this machine
+means `pam_faillock` once it actually locks the account.
+
+Measured rather than assumed: sampling the screen every 0.3 s for six seconds after a wrong
+password, the warning colour — the only colour an error is drawn in — never appears anywhere.
+
+Nothing here can change that. It needs a PAM stack that emits a message on failure, which is
+system configuration, not a dotfile.
+
 ## What Stops It
 
 A film is the case where locking on idle is wrong, and the X idle timer cannot see one:
