@@ -31,6 +31,11 @@ Neither directory needs an `__init__.py`.
   a widget is on *both* sides of the move. One crossing of that strip left a cell expanded
   with the pointer elsewhere. `HoverBar` bounds the hit test to where widgets are actually
   drawn and dispatches on every change, including to and from nothing.
+- **`idle_guard.py`** — `guard()` resets X's idle counter while anything holds a logind idle
+  inhibitor, so a playing film does not get locked over. `xss-lock` locks from the X screen
+  saver, which counts input; logind's idle clock is a separate one, and nothing joined the
+  two. It also re-arms the screen saver timeout when it finds it at zero, which is how other
+  software silently disables this session's automatic lock.
 - **`session.py`** — `start_programs()` starts what cannot start before qtile does, skipping
   anything already running. `~/.xinitrc` starts everything else and starts it earlier; what
   lands here needs something qtile provides. Guarded rather than unconditional because the

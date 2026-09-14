@@ -70,29 +70,48 @@ system configuration, not a dotfile.
 
 A film is the case where locking on idle is wrong, and the X idle timer cannot see one:
 playing video is not input. Browsers and video players say so over D-Bus instead, on
-`org.freedesktop.ScreenSaver` — which logind, and therefore `xss-lock`, never hears.
+`org.freedesktop.ScreenSaver`.
 
-`inhibit-bridge` carries the one to the other: it holds an `org.freedesktop.ScreenSaver`
-name, and for each inhibit taken there it opens a matching logind idle inhibitor. qtile starts
-it from `startup_complete` (see [`shared/session.py`](../qtile/shared/README.md)) rather than
-`~/.xinitrc`, because it publishes a `StatusNotifierItem` and needs the bar's tray to register
-with — and the bar does not exist until qtile has drawn it.
+Two pieces carry that to the lock, and the second one is the half that does the work.
+
+`inhibit-bridge` holds the `org.freedesktop.ScreenSaver` name and opens a matching **logind**
+idle inhibitor for each request. qtile starts it from `startup_complete` (see
+[`shared/session.py`](../qtile/shared/README.md)) rather than `~/.xinitrc`, because it
+publishes a `StatusNotifierItem` and needs the bar's tray to register with.
+
+That alone stops nothing here, which is worth being blunt about. `xss-lock` locks from the **X
+screen saver**, and its manual page is explicit that the session's idle state is "directly
+linked to user activity as reported by X" — it uses logind's inhibition logic only to hold off
+*sleep* until the locker is up. logind's idle clock and X's idle counter are separate, and
+this machine's `logind.conf` sets `IdleAction=ignore`, so a logind inhibitor here holds back
+nothing at all. Measured with two of them held, the X counter ran straight on: 237156 ms, then
+240156 ms three seconds later.
+
+[`shared/idle_guard.py`](../qtile/shared/README.md) joins them. Once a minute it asks logind
+what is inhibiting, and if anything is, resets X's counter before it can reach the timeout.
+That defers the lock and the monitor's power-down together, because DPMS hangs off the same
+counter. `inhibit-bridge` is still what makes an application's request visible to ask about.
+
+It also puts the screen saver timeout back when it finds it at zero, and says so in the log.
+Zero is not a longer wait, it is no automatic lock at all, and other people's software sets
+it: this machine was found at `timeout: 0` with Steam running, having quietly stopped locking
+itself. A deliberate non-zero timeout is left alone.
 
 Checking it works, without waiting for the idle timer:
 
 ```bash
-systemd-inhibit --list | grep inhibit-bridge
+systemd-inhibit --list | grep idle      # what is asking
+xset q | grep -A1 'Screen Saver'        # the timeout that is armed
+xprintidle                              # the counter; it should stop climbing while inhibited
 ```
-
-Nothing there means nothing is asking; play a video and look again.
 
 > The tray **icon** does not render, though the bridge itself works. qtile reads three icon
 > properties from every item — `IconPixmap`, `AttentionIconPixmap`, `OverlayIconPixmap` — and
 > `inhibit-bridge` implements only the first, answering the other two with a D-Bus error that
 > carries no message body. `dbus-fast` builds its exception from `msg.body[0]` unconditionally
-> and raises `IndexError` instead, which qtile treats as a failed item. An error reply with no
-> body is legal, so the fix belongs in `dbus-fast`. Until then the bridge runs and inhibits
-> correctly; it just has no visible indicator.
+> and raises `IndexError` instead, which qtile treats as a failed item. NordVPN's tray item is
+> dropped the same way, so this is not about one application. An error reply with no body is
+> legal, so the fix belongs in `dbus-fast`.
 
 ## Changing It
 
