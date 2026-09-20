@@ -22,6 +22,7 @@ import re
 import sys
 from pathlib import Path
 
+import list_color_distance
 import list_configured
 import list_dependencies
 import list_keybindings
@@ -372,6 +373,10 @@ GENERATORS = {
     "SYMBOLS": (
         "docs/symbols.md",
         list_symbols.generate_markdown,
+    ),
+    "COLOR_DISTANCE": (
+        "docs/color-distance.md",
+        list_color_distance.generate_markdown,
     ),
 }
 
