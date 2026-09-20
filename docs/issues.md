@@ -72,6 +72,21 @@
     - (2026-09-13) `patch_plymouth.py` renders the splash from `configuration/plymouth/themes/<name>/` and `patch_web_greeter.py` fills the login theme's variables from its own role map, both from the palette alone. The two entries described output of the generator's plymouth and web-greeter steps, which had no reader on this side and are gone over there (its ADR-0004). `docs/notes.md` lists what a bundle is now: the manifest, `palette.pkl`, four wallpapers and, optionally, `wallpapers.json`.
     - (2026-09-13) the generator's manifest also stops carrying a `schema_version` this repository never documented or read, and its `state` block gained `audio_mode` to match `config-schema.md`. `assets/default/` is unchanged: it already satisfied the contract as it now stands.
 
+## Themes
+
+- [ ] `yths.themes` does not emit the `symbols` and `strings` blocks
+    - (2026-09-19) the bundle manifest gained two optional keys, and the generator writes
+      neither, so every exported bundle currently falls back to the ASCII vocabulary. That is
+      the designed behaviour rather than a break — a bundle that omits both gets a desktop
+      that renders without a Nerd Font — but it means a generated theme cannot yet ship its
+      own icons the way the tracked `assets/default/` does.
+    - (2026-09-19) `docs/notes.md` says a schema change lands in both repositories at once,
+      and this is the half that did not. The contract to mirror is in `docs/symbols.md`:
+      the key vocabulary is closed, values are a string or a ramp of a declared length, and
+      an override is partial. `helper/symbols.py` holds the list; `gendocs.py` already
+      refuses a bundle here that overrides a key nothing declares, so the generator emitting
+      an unknown key fails the gate on this side rather than silently doing nothing.
+
 ## Configurations
 
 - [x] Caps lock warning left its ends behind on the lock screen

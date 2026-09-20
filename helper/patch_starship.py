@@ -12,8 +12,10 @@ import toml
 
 # Resolves whether this runs as ``helper.patch_starship`` or as a script; see helper/README.md.
 try:
+    from helper import symbols
     from helper.utils import logger, template_path
 except ImportError:
+    import symbols
     from utils import logger, template_path
 
 
@@ -30,6 +32,20 @@ def patch_starship(configuration: dict[str, Any]) -> None:
     starship_configuration["palettes"]["theme"]["color2"] = configuration["palette"][theme]["success"]
     starship_configuration["palettes"]["theme"]["color3"] = configuration["palette"][theme]["failure"]
     starship_configuration["palettes"]["theme"]["color4"] = configuration["palette"][theme]["highlight"]
+
+    # The prompt's own four characters. starship's forty-three distro logos and its
+    # per-language icons are deliberately not here: they are its vocabulary rather than the
+    # desktop's, and they stay in starship.toml.template where they can be edited directly.
+    glyphs, _ = symbols.resolve(configuration)
+    character = starship_configuration.setdefault("character", {})
+    character["success_symbol"] = f"[{glyphs['starship.prompt']}](fg:color2)"
+    character["error_symbol"] = f"[{glyphs['starship.prompt']}](fg:color3)"
+    starship_configuration.setdefault("directory", {})["read_only"] = (
+        f" {glyphs['starship.read_only']}"
+    )
+    starship_configuration.setdefault("git_branch", {})["symbol"] = (
+        f"{glyphs['starship.git_branch']} "
+    )
 
     with open(configuration_path, "w") as output_handle:
         toml.dump(starship_configuration, output_handle)

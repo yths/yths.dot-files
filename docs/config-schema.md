@@ -49,6 +49,16 @@ The single configuration file that every downstream consumer (qtile, the patcher
 | `palette` | object | bundle `palette.pkl` | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
 | `wallpapers` | object | rewritten by `install.py` to installed paths | qtile, web-greeter (via `wallpaper_key`) |
 | `state` | object | initialised by `install.py`; mutated at runtime | qtile, patchers — drives the active light/dark variant |
+| `symbols` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#symbols` merged over them | qtile widgets, plymouth, dunst, rofi, starship, web-greeter — see [symbols.md](symbols.md) |
+| `strings` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#strings` merged over them | plymouth's boot messages, tmux, the bar's one widget with words |
+
+## Symbols and Strings
+
+The two non-colour things a theme sets. Every default is ASCII so the desktop renders without
+a Nerd Font; a bundle overrides what it cares about, and an override is partial — naming one
+key keeps the rest. A value is either a string (one icon, one message) or a list (a ramp
+indexed by a level, such as the battery's eleven rungs). See [symbols.md](symbols.md) for the
+full vocabulary, what each key falls back to, and which file reads it.
 
 ## Palette
 

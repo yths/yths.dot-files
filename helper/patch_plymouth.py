@@ -37,8 +37,10 @@ import PIL.Image
 
 # Resolves whether this runs as ``helper.patch_plymouth`` or as a script; see helper/README.md.
 try:
+    from helper import symbols
     from helper.utils import logger, root_prefix
 except ImportError:
+    import symbols
     from utils import logger, root_prefix
 
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
@@ -143,17 +145,18 @@ SOLID_ASSETS = (
 )
 
 #: Glyphs drawn on transparency: (filename, surface size, palette token, font size, origin,
-#: character). These were six near-identical cairo incantations; only these six values ever
-#: differed. The characters are escaped rather than inlined because they are nerd-font
-#: private-use codepoints — invisible in an editor and silently dropped by anything that
-#: rewrites the line.
+#: symbol key). These were six near-identical cairo incantations; only these six values ever
+#: differed. The character itself is no longer one of them: it comes from the active
+#: vocabulary, so a theme can change what the splash draws -- and a machine whose font has no
+#: private use area gets the ASCII stand-in instead. This is the one place a missing glyph is
+#: baked into a file rather than merely displayed, so an empty box here survives the reboot.
 GLYPH_ASSETS = (
-    ("capslock.png", (24, 28), "highlight", 24, (6, 22), "\U000f030e"),      # md-keyboard_caps
-    ("bullet.png", (10, 10), "foreground", 16, (1, 11), "\u2022"),           # bullet
-    ("throbber-01.png", (64, 64), "foreground", 32, (24, 44), "\ueb10"),     # cod-loading
-    ("throbber-02.png", (64, 64), "neutral", 32, (24, 44), "\ueb10"),        # cod-loading, dimmed
-    ("keyboard.png", (36, 36), "neutral", 32, (2, 30), "\uf11c"),            # fa-keyboard
-    ("lock.png", (35, 34), "neutral", 32, (3, 29), "\U000f07f5"),            # md-lock_outline
+    ("capslock.png", (24, 28), "highlight", 24, (6, 22), "plymouth.capslock"),
+    ("bullet.png", (10, 10), "foreground", 16, (1, 11), "plymouth.bullet"),
+    ("throbber-01.png", (64, 64), "foreground", 32, (24, 44), "plymouth.throbber"),
+    ("throbber-02.png", (64, 64), "neutral", 32, (24, 44), "plymouth.throbber"),
+    ("keyboard.png", (36, 36), "neutral", 32, (2, 30), "plymouth.keyboard"),
+    ("lock.png", (35, 34), "neutral", 32, (3, 29), "plymouth.lock"),
 )
 
 
@@ -165,7 +168,13 @@ def _rgb(hex_colour: str) -> tuple[float, float, float]:
 def render_configuration(
     configuration: dict[str, Any], theme_path: str, theme: str, name: str
 ) -> None:
-    """Rewrite the theme's ``.plymouth`` INI with the active palette, fonts and name."""
+    """Rewrite the theme's ``.plymouth`` INI with the active palette, fonts, name and text.
+
+    The messages are the newest of those. Until the vocabulary existed they were the one part
+    of the splash a theme could not reach: this function rewrote the fonts and the colours
+    around them and left the words in the checked-in INI, so every bundle booted to the same
+    seven titles no matter what else it changed.
+    """
     # Found rather than derived: theme_path is a staging directory whose name has nothing
     # to do with the theme's, and the previous code hardcoded "yths.plymouth", which would
     # have silently produced an empty config for any other preset.
@@ -203,19 +212,36 @@ def render_configuration(
     header["Name"] = name
     header["Description"] = f"Boot splash for the {name} preset."
 
+    # One title and one subtitle per mode plymouth can boot, shut down or update in. A
+    # section the INI does not carry is skipped rather than created: the section list is
+    # plymouth's, and inventing one would put a mode in the file that this theme never
+    # declared an animation for.
+    _, strings = symbols.resolve(configuration)
+    for section, prefix in symbols.PLYMOUTH_SECTIONS.items():
+        if section not in plymouth_configuration:
+            continue
+        # ``SubTitle``, not ``Subtitle``: the spelling is plymouth's, and optionxform is off
+        # above, so a wrong capital adds a second key rather than replacing the first.
+        for field, ini_key in (("title", "Title"), ("subtitle", "SubTitle")):
+            value = strings.get(f"plymouth.{prefix}.{field}")
+            if value is not None:
+                plymouth_configuration[section][ini_key] = value
+
     with open(ini_path, "w") as handle:
         plymouth_configuration.write(handle, space_around_delimiters=False)
 
 
 def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
-    """Re-render every image the theme draws, in the active palette."""
+    """Re-render every image the theme draws, in the active palette and symbols."""
     palette = configuration["palette"][theme]
     font_family = configuration["font"]["family"]
+    glyphs, _ = symbols.resolve(configuration)
 
     for filename, size, token in SOLID_ASSETS:
         PIL.Image.new("RGB", size, palette[token]).save(os.path.join(theme_path, filename))
 
-    for filename, size, token, font_size, origin, glyph in GLYPH_ASSETS:
+    for filename, size, token, font_size, origin, key in GLYPH_ASSETS:
+        glyph = glyphs[key]
         with cairo.ImageSurface(cairo.FORMAT_ARGB32, *size) as surface:
             context = cairo.Context(surface)
             context.set_source_rgb(*_rgb(palette[token]))

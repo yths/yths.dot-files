@@ -17,6 +17,7 @@ import libqtile.widget.base
 import redis
 import shared.state
 import shared.stream
+import symbols as vocabulary
 
 #: Repository root, resolved through the ~/.config/qtile symlink qtile loads this file
 #: through. Reaching helper/ directly is what lets the patcher symlinks in this directory
@@ -29,15 +30,13 @@ REPOSITORY_ROOT = os.path.dirname(
 class WidgetLocation(libqtile.widget.base.InLoopPollText):
     # Nerd Font Private Use Area glyphs. They render as blank in most editors and
     # diffs, so they are named here rather than inlined into the format strings below.
-    SUNRISE_ICON = ""  # U+E34D
-    SUNSET_ICON = ""  # U+E34C
-    MANUAL_ICON = ""  # U+F456, shown when the theme switch is pinned
 
     def __init__(
         self,
         r: redis.Redis | None,
         notification_color: str = "#ff0000",
         configuration_file_path: str | None = None,
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
@@ -49,6 +48,9 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         )
 
         self.notification_color = notification_color
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
         self.add_callbacks(
             {"Button2": self.toggle_mode, "Button3": self.toggle_theme_manually}
@@ -113,16 +115,16 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         if theme != state.get("theme") and state.get("theme_mode") == "automatic":
             self.apply_theme(theme)
 
-        mode_icon = f" {self.MANUAL_ICON}" if state.get("theme_mode") == "manual" else ""
+        mode_icon = f" {self.symbols['location.manual']}" if state.get("theme_mode") == "manual" else ""
 
         if is_night:
             return (
                 f"<span color='{self.notification_color}'>"
-                f"{self.SUNRISE_ICON} {sunrise}</span> "
-                f"{self.SUNSET_ICON} {sunset}{mode_icon}"
+                f"{self.symbols['location.sunrise']} {sunrise}</span> "
+                f"{self.symbols['location.sunset']} {sunset}{mode_icon}"
             )
         return (
-            f"{self.SUNRISE_ICON} {sunrise} "
+            f"{self.symbols['location.sunrise']} {sunrise} "
             f"<span color='{self.notification_color}'>"
-            f"{self.SUNSET_ICON} {sunset}</span>{mode_icon} "
+            f"{self.symbols['location.sunset']} {sunset}</span>{mode_icon} "
         )

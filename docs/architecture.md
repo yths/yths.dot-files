@@ -11,7 +11,7 @@ yths.themes (external)
        │
        ▼  emits a self-contained bundle
 assets/<name>/
-  ├── config.json           # name, font, wallpapers, state
+  ├── config.json           # name, font, wallpapers, state, symbols, strings
   ├── palette.pkl           # {mode: {token: hex}}, consumed by qtile + patchers
   └── wallpapers/*.png      # 4 wallpapers (light/dark, plain/highlight)
        │
@@ -50,11 +50,22 @@ Each preset's color palette is described in [palette-semantics.md](palette-seman
 `install.py` runs the desktop install in two phases, each a named step in the file rather than a stretch of script — `discover_themes`, `select_theme`, `install_static_configuration`, `install_wallpapers`, `assemble_configuration`, `write_configuration`:
 
 1. **Static configuration**: every per-app config tree under `configuration/` is *symlinked* into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc., with anything already there renamed to `*.<timestamp>.bak` first. No palette is involved, and nothing is copied. That last part is worth stating plainly, because everything downstream depends on it: the installed configuration **is** this repository. Editing `~/.config/qtile/config.py` edits tracked source, and anything written into an installed path lands on a tracked file — which is why the theme wallpapers are gitignored rather than committed.
-2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Only `name` is carried over from the bundle's own manifest; see the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes).
+2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Carried over from the bundle's own manifest: `name`, and the optional `symbols` and `strings` blocks, which are merged over the ASCII vocabulary in `helper/symbols.py` rather than read as values. See the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes) and [symbols.md](symbols.md).
 
-3. **Generation**: `patch_all` runs, producing the palette-derived half of each app's configuration — kitty's and rofi's outright, and the generated fields of tmux, starship and dunst from their tracked templates. These outputs are gitignored, so a fresh clone does not have them and an install that stopped at phase 2 would leave rofi with no colour variables to import.
+3. **Generation**: `patch_all` runs, producing the palette- and symbol-derived half of each app's configuration — kitty's and rofi's theme variables outright, and the generated fields of tmux, starship, dunst and rofi's own settings from their tracked templates. These outputs are gitignored, so a fresh clone does not have them and an install that stopped at phase 2 would leave rofi with no colour variables to import.
 
 Re-running the installer picks a (possibly different) theme without disturbing the static configuration; the existing `~/.config/config.json` is renamed to `…json.<timestamp>.bak` before being replaced. It also resets `state` to its defaults, so a manually pinned theme reverts to automatic switching.
+
+That reset is why there are two ways in. A new machine has no state to lose and wants the full run: symlinks, credentials, hardware detection, and a configuration with the chosen theme fully applied. A machine already installed, after the repository gains a field, wants only the file refreshed:
+
+```bash
+python install.py --migrate          # keep the installed theme
+python install.py --migrate --theme <name>
+```
+
+`--migrate` re-derives what the repository owns — the bundle's name, the palette, the font from `setup.toml`, and the symbol and string vocabulary — keeps what this machine owns (`state`, `monitors`, `wallpapers`), drops fields the schema no longer has, and re-runs the patchers. It symlinks nothing and prompts for nothing, and it reports each change rather than rewriting the file silently. The theme it migrates to is the one already installed unless `--theme` names another, because on a machine that has been running a while the installed theme and `setup.toml`'s need not agree.
+
+It exists because a missing field is *not* a failure: every consumer falls back, which is the behaviour that keeps a desktop usable and also the reason nothing announces that half of it is running on defaults. The symbol vocabulary was the first field to make that concrete — an install predating it produced a correct, fully ASCII desktop.
 
 Theme selection is interactive by default. `install.py --theme <name>` selects one without prompting, for provisioning (see [tips.md](tips.md)).
 

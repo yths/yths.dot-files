@@ -31,6 +31,7 @@
 import json
 import os
 import subprocess
+import sys
 
 from libqtile import bar, hook, layout, qtile, widget
 from libqtile.config import (
@@ -46,6 +47,17 @@ from libqtile.config import (
 )
 from libqtile.lazy import lazy
 from libqtile.log_utils import logger
+
+#: This file's repository, resolved through the ~/.config/qtile symlink qtile loads it
+#: through, so the hooks below can reach helper/ without depending on where it was cloned.
+REPOSITORY_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+)
+
+# Put helper/ on the path before the widget modules below are imported: several of them read
+# the symbol vocabulary, and an import that resolved only under pytest -- whose conftest adds
+# the same directory -- would fail at qtile startup and take the bar down with it.
+sys.path.insert(0, os.path.join(REPOSITORY_ROOT, "helper"))
 
 try:
     import redis
@@ -68,6 +80,7 @@ import shared.hover_bar
 import shared.idle_guard
 import shared.monitors
 import shared.session
+import symbols as vocabulary
 import widgets.audio
 import widgets.bluetooth
 import widgets.broadcast
@@ -95,18 +108,22 @@ FOCUS_BORDER_WIDTH = 3
 FOCUS_BORDER_ACTIVE = configuration["palette"][theme]["highlight"]
 FOCUS_BORDER_INACTIVE = configuration["palette"][theme]["background"]
 
-#: This file's repository, resolved through the ~/.config/qtile symlink qtile loads it
-#: through, so the hooks below can reach helper/ without depending on where it was cloned.
-REPOSITORY_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-)
-
 mod = "mod4"
 terminal = "kitty"  # guess_terminal()
 
+# The symbols every cell below draws, resolved the way its colours already are: from
+# ~/.config/config.json, which the installer wrote by merging the active bundle's overrides
+# over the ASCII vocabulary in helper/symbols.py. Reached through REPOSITORY_ROOT rather than
+# imported outright, the same way the hooks below reach helper/ -- and *resolved* rather than
+# read straight out of the dict, so a configuration file written before the vocabulary
+# existed still brings the bar up in ASCII instead of raising KeyError in every cell.
+SYMBOLS, STRINGS = vocabulary.resolve(configuration)
+
+# Trailing space because the ink of a nerd-font glyph overruns its advance width; an ASCII
+# fallback does not need it but is not harmed by it.
 icons = {
-    "monitor": "󰍹 ",
-    "group": " "
+    "monitor": f"{SYMBOLS['bar.monitor']} ",
+    "group": f"{SYMBOLS['bar.group']} ",
 }
 
 keys = [
@@ -599,6 +616,7 @@ screens = [
                     )
                 ),
                 widgets.broadcast.WidgetBroadcast(
+                    symbols=SYMBOLS,
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
                     warning_color=configuration["palette"][theme]["warning"],
@@ -719,6 +737,7 @@ screens = [
                     )
                 ),
                 widgets.claude_usage.WidgetClaudeUsage(
+                    symbols=SYMBOLS,
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     notification_color=configuration["palette"][theme]["notification"],
@@ -735,6 +754,7 @@ screens = [
                     )
                 ),
                 widgets.audio.WidgetAudio(
+                    symbols=SYMBOLS,
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
                     fontsize=round(
@@ -750,8 +770,12 @@ screens = [
                     )
                 ),
                 widgets.bluetooth.WidgetBluetooth(
+                    symbols=SYMBOLS,
                     r=r,
-                    icons={"CC:98:8B:99:F4:E5": "󰋎", "AC:80:0A:A4:66:EB": "󰋎"},
+                    icons=dict.fromkeys(
+                        ("CC:98:8B:99:F4:E5", "AC:80:0A:A4:66:EB"),
+                        SYMBOLS["bluetooth.headphones"],
+                    ),
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
@@ -766,6 +790,7 @@ screens = [
                     )
                 ),
                 widgets.updates.WidgetUpdates(
+                    symbols=SYMBOLS,
                     r=r,
                     notification_color=configuration["palette"][theme]["highlight"],
                     warning_color=configuration["palette"][theme]["notification"],
@@ -782,6 +807,7 @@ screens = [
                     )
                 ),
                 widgets.power_supply.WidgetPowerSupply(
+                    symbols=SYMBOLS,
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(
@@ -797,6 +823,7 @@ screens = [
                     )
                 ),
                 widgets.location.WidgetLocation(
+                    symbols=SYMBOLS,
                     r=r,
                     notification_color=configuration["palette"][theme]["highlight"],
                     fontsize=round(
@@ -812,6 +839,7 @@ screens = [
                     )
                 ),
                 widgets.vpn.WidgetVPN(
+                    symbols=SYMBOLS,
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(
@@ -840,6 +868,7 @@ screens = [
                     )
                 ),
                 widgets.service_state.WidgetServiceState(
+                    symbols=SYMBOLS,
                     service="backend.service",
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(

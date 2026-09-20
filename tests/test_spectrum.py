@@ -1,29 +1,55 @@
 """``shared.spectrum``: the block ladder, and the maths behind the level meter."""
 
+import json
+import pathlib
+
 import numpy
 import pytest
+import symbols
 from shared import spectrum
+
+#: What the shipped bundle overrides ``meter.ramp`` with -- the block elements the meter was
+#: built around, now supplied by the theme rather than computed.
+BUNDLE_RAMP = tuple(
+    json.loads(
+        (pathlib.Path(__file__).resolve().parent.parent / "assets/default/config.json")
+        .read_text()
+    )["symbols"]["meter.ramp"]
+)
 
 
 def stereo(rows: int, amplitude: float = 1.0, seed: int = 0) -> numpy.ndarray:
     return numpy.random.default_rng(seed).normal(0, amplitude, size=(rows, 2))
 
 
-# The ladder is offset from U+2580 so that height 1 lands on the one-eighth block. Offsetting
-# from U+2581 -- which looks like the obvious choice -- skips it and lands a full bar on
-# U+2589, a *horizontal* seven-eighths block that fills the wrong way.
-def test_the_ladder_covers_every_block_from_one_eighth_to_full() -> None:
-    heights = numpy.arange(1, spectrum.BLOCK_STEPS + 1) / spectrum.BLOCK_STEPS
-    assert spectrum.render(heights) == "▁▂▃▄▅▆▇█"
+# The ladder used to be computed as `chr(BLOCK_BASE + height)`, offset from U+2580 so that
+# height 1 landed on the one-eighth block: offsetting from U+2581 -- which looks like the
+# obvious choice -- skips it and lands a full bar on U+2589, a *horizontal* seven-eighths
+# block that fills the wrong way. The ladder is now the theme's, so the property is asserted
+# of what the shipped bundle installs rather than of the arithmetic that replaced it.
+def test_the_shipped_ladder_covers_every_block_from_one_eighth_to_full() -> None:
+    ramp = BUNDLE_RAMP
+    heights = numpy.arange(1, len(ramp) + 1) / len(ramp)
+    assert spectrum.render(heights, ramp) == "▁▂▃▄▅▆▇█"
+    assert ord(ramp[-1]) == spectrum.BLOCK_BASE + spectrum.BLOCK_STEPS
 
 
 def test_silence_is_a_space_not_a_block() -> None:
     assert spectrum.render(numpy.zeros(4)) == "    "
+    assert spectrum.render(numpy.zeros(4), BUNDLE_RAMP) == "    "
 
 
-def test_a_full_bar_is_the_vertical_full_block() -> None:
-    assert spectrum.render(numpy.ones(1)) == "█"
-    assert ord("█") == spectrum.BLOCK_BASE + spectrum.BLOCK_STEPS
+def test_a_full_bar_is_the_last_rung_of_whatever_ramp_it_was_given() -> None:
+    assert spectrum.render(numpy.ones(1), BUNDLE_RAMP) == "█"
+    assert spectrum.render(numpy.ones(1), tuple("abcdefgh")) == "h"
+
+
+# The meter is one of the surfaces that breaks worst without a Nerd Font, so the ramp it
+# falls back to when a theme supplies none must not itself need one.
+def test_the_default_ramp_is_ascii_and_is_the_vocabularys() -> None:
+    assert all(rung.isascii() for rung in spectrum.DEFAULT_RAMP)
+    assert symbols.SYMBOLS["meter.ramp"] == spectrum.DEFAULT_RAMP
+    assert spectrum.render(numpy.ones(1)).isascii()
 
 
 def test_render_returns_one_character_per_bar() -> None:
@@ -62,10 +88,13 @@ def test_near_silence_stays_near_the_bottom() -> None:
     assert spectrum.render(quiet).strip() == ""
 
 
-def test_a_real_signal_reaches_the_upper_blocks() -> None:
-    loud = spectrum.render(spectrum.levels(stereo(2048, amplitude=3.0), 16))
+@pytest.mark.parametrize("ramp", [None, BUNDLE_RAMP], ids=["ascii", "bundle"])
+def test_a_real_signal_reaches_the_upper_rungs(ramp: tuple[str, ...] | None) -> None:
+    """Whatever ladder is in use, a loud signal has to reach the top of it."""
+    rungs = ramp or spectrum.DEFAULT_RAMP
+    loud = spectrum.render(spectrum.levels(stereo(2048, amplitude=3.0), 16), ramp)
     assert loud.strip() != ""
-    assert any(character in loud for character in "▆▇█")
+    assert any(rung in loud for rung in rungs[-3:])
 
 
 # The left channel is mirrored so its low frequencies sit at the centre; the meter opens

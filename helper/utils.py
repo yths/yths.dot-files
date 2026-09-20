@@ -81,6 +81,18 @@ def template_path(app: str, filename: str) -> str:
     return os.path.join(REPOSITORY_ROOT, "configuration", app, filename)
 
 
+def merge_overrides(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    """``base`` with ``overrides`` on top, one level deep, leaving ``base`` untouched.
+
+    The rule a partial override needs: a key the override omits keeps the base's value rather
+    than disappearing. ``patch_web_greeter`` has relied on that since it let a login theme pin
+    its font size without also having to restate the family, and the symbol and string
+    vocabularies need the same thing -- a bundle overriding one glyph must not blank the other
+    eighty.
+    """
+    return {**base, **overrides}
+
+
 def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
     """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
 

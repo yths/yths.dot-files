@@ -6,12 +6,15 @@ the rest of the file untouched, so hand-written bindings survive a theme switch.
 
 import json
 import os
+import re
 from typing import Any
 
 # Resolves whether this runs as ``helper.patch_tmux`` or as a script; see helper/README.md.
 try:
+    from helper import symbols
     from helper.utils import logger, template_path
 except ImportError:
+    import symbols
     from utils import logger, template_path
 
 
@@ -20,12 +23,16 @@ def patch_tmux(configuration: dict[str, Any]) -> None:
     configuration_path = os.path.expanduser("~/.config/tmux/tmux.conf")
 
     theme = configuration["state"]["theme"]
+    _, messages = symbols.resolve(configuration)
     output = []
     with open(source_path) as input_handle:
         for line in input_handle:
             if line.startswith("color"):
                 continue
-            output.append(line)
+            # The one sentence tmux says out loud, so a theme can reword it.
+            output.append(
+                re.sub(r'display "[^"]*"', f'display "{messages["tmux.reload"]}"', line)
+            )
 
     patched_configuration = {
         "color0": configuration["palette"][theme]["background"],

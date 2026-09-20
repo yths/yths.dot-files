@@ -52,8 +52,12 @@ configuration/gtk/gtk-4.0/gtk.css
 configuration/gtk/gtk-4.0/settings.ini
 
 # rofi's colour variables, written whole by helper/patch_rofi.py. theme.rasi @imports this
-# file; theme.rasi and config.rasi are the source and stay tracked.
+# file; theme.rasi stays tracked and is the source.
 configuration/rofi/theme_config.rasi
+# rofi's settings, written from config.rasi.template by the same patcher. The two mode
+# prompts are the theme's symbols; the rest of the file is hand-written and lives in the
+# template, which stays tracked.
+configuration/rofi/config.rasi
 
 # The lock screen's colours, written whole by helper/patch_lock.py. lock.sh is the source and
 # stays tracked.
@@ -68,6 +72,9 @@ configuration/dunst/dunstrc
 ### web-greeter generated artifacts ###
 # Produced by helper/patch_web_greeter.py — should not be committed.
 configuration/web-greeter/themes/*/theme.css
+# The desktop's symbols and strings, written per theme from the active bundle and
+# merged under each theme.json by _shared/logic.js.
+configuration/web-greeter/themes/*/vocabulary.json
 configuration/web-greeter/themes/*/wallpaper.png
 configuration/web-greeter/themes/*/wallpaper.jpg
 configuration/web-greeter/themes/*/wallpaper.jpeg

@@ -26,7 +26,9 @@ import list_configured
 import list_dependencies
 import list_keybindings
 import list_palette
+import list_symbols
 import render_preview
+import symbols
 from utils import read_setup
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -179,7 +181,12 @@ def stale_preview() -> list[str]:
         return ["docs/preview/ has never been rendered"]
     with (bundle / "palette.pkl").open("rb") as handle:
         palette = pickle.load(handle)
-    expected = render_preview.palette_digest(palette, setup["desktop"]["font_family"])
+    # The bundle's symbols are part of the picture too: the bar in the preview draws them,
+    # so a bundle that changes a glyph changes the image the README serves.
+    glyphs, _ = symbols.resolve(json.loads((bundle / "config.json").read_text()))
+    expected = render_preview.palette_digest(
+        palette, setup["desktop"]["font_family"], glyphs
+    )
     if digest_path.read_text().strip() != expected:
         return [f"rendered from a different palette than assets/{setup['desktop']['theme']}/"]
     return []
@@ -264,6 +271,23 @@ def invariants() -> list[tuple[str, list[str], str]]:
             "Code shared between widgets belongs in configuration/qtile/shared/; "
             "standalone tools belong in helper/.",
         ),
+        (
+            "Symbol or string keys a bundle overrides that nothing declares:",
+            sorted(
+                key
+                for manifest in sorted(REPO_ROOT.glob("assets/*/config.json"))
+                for key in symbols.undeclared(json.loads(manifest.read_text()))
+            ),
+            "Declare the key in helper/symbols.py with an ASCII default, or drop it from the\n"
+            "bundle. An override nothing declares is silent: the bundle looks like it set\n"
+            "something and no surface changes.",
+        ),
+        (
+            "Symbol or string keys nothing reads:",
+            list_symbols.unread(),
+            "Read it somewhere, or drop it from helper/symbols.py. A key read through a\n"
+            "namespace rather than by name needs a row in list_symbols.NAMESPACE_CONSUMERS.",
+        ),
     ]
 
 
@@ -344,6 +368,10 @@ GENERATORS = {
     "PALETTE": (
         "docs/palette-reference.md",
         list_palette.generate_markdown,
+    ),
+    "SYMBOLS": (
+        "docs/symbols.md",
+        list_symbols.generate_markdown,
     ),
 }
 

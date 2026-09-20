@@ -8,18 +8,28 @@ to PortAudio, qtile or the bar. That is what lets the harness preview exactly wh
 draws, rather than something that resembles it.
 """
 
+from collections.abc import Sequence
+
 import numpy
+import symbols as vocabulary
 
 #: ``chr(BLOCK_BASE + height)`` for ``height`` in 1..8 walks U+2581 LOWER ONE EIGHTH BLOCK
-#: through U+2588 FULL BLOCK. Height 0 is a space, so the ladder is offset from U+2580 to
-#: put height 1 on ``▁`` rather than skipping it.
+#: through U+2588 FULL BLOCK. Kept because ``tests/test_spectrum.py`` pins the block ladder
+#: to those codepoints, and because it is what the shipped bundle overrides ``meter.ramp``
+#: with -- but ``render`` no longer computes from it: a ladder a theme cannot replace is
+#: exactly what the symbol vocabulary exists to undo.
 BLOCK_BASE = 0x2580
 
 #: Number of distinct bar heights above silence.
 BLOCK_STEPS = 8
 
-#: Drawn for a bar with no signal. A space, not ``▁``, so silence reads as empty.
-SILENCE = " "
+#: Used when no ramp is passed in. Taken from the vocabulary rather than restated, so there
+#: is one ASCII ladder rather than two that can drift apart.
+DEFAULT_RAMP = vocabulary.SYMBOLS["meter.ramp"]
+
+#: Drawn for a bar with no signal. A space, not ``▁``, so silence reads as empty -- and in
+#: the vocabulary rather than here, so a theme that wants a visible floor can set one.
+SILENCE = vocabulary.SYMBOLS["meter.silence"]
 
 #: Only the lowest eighth of the FFT is summed into the bars. Above that is mostly
 #: inaudible content that flattens the visible range of everything below it.
@@ -59,7 +69,14 @@ def levels(samples: numpy.ndarray, num_bars: int) -> numpy.ndarray:
     return combined / numpy.max([numpy.max(combined), NOISE_FLOOR])
 
 
-def render(bar_levels: numpy.ndarray) -> str:
-    """Block glyphs for normalised levels, one character per bar."""
-    heights = numpy.round(bar_levels * BLOCK_STEPS).astype(int)
-    return "".join(chr(BLOCK_BASE + h) if h > 0 else SILENCE for h in heights)
+def render(bar_levels: numpy.ndarray, ramp: Sequence[str] | None = None) -> str:
+    """One character per bar, taken from ``ramp`` by height.
+
+    ``ramp`` is the active vocabulary's ``meter.ramp``, passed down from config.py the way
+    the colours are. Without one it falls back to ASCII rather than to the block elements:
+    the whole point of the vocabulary is that a machine with no suitable font still draws a
+    meter, and a computed ``chr(BLOCK_BASE + h)`` cannot be overridden by a theme.
+    """
+    rungs = tuple(ramp) if ramp else DEFAULT_RAMP
+    heights = numpy.round(bar_levels * len(rungs)).astype(int)
+    return "".join(rungs[h - 1] if h > 0 else SILENCE for h in heights)

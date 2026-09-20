@@ -9,33 +9,39 @@ from typing import Any
 import libqtile.widget.base
 import redis
 import shared.stream
+import symbols as vocabulary
 
 
 class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
-    GRID_SYMBOL = "󰚥"
-    #: Indexed by ``capacity // 10``, so entry *n* covers n0–n9 % and the last covers 100 %.
-    #: These are the Material Design Icons battery ramps in full; the previous if/elif
-    #: ladders repeated several glyphs and skipped others, losing granularity.
-    DISCHARGING_SYMBOLS = ("󰁺", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹")
-    CHARGING_SYMBOLS = ("󰢜", "󰢜", "󰂆", "󰂇", "󰂈", "󰂉", "󰂊", "󰂋", "󰂌", "󰂍", "󰁹")
-    #: Below this the discharging glyph is tinted with ``warning_color``.
+    #: Below this the discharging symbol is tinted with ``warning_color``.
     WARNING_CAPACITY = 20
 
     def __init__(
         self,
         r: redis.Redis | None,
         warning_color: str = "#ff0000",
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.warning_color = warning_color
+        #: The active vocabulary, from ~/.config/config.json via config.py -- the same route
+        #: the colours take. Falls back to the ASCII defaults so a widget built without one
+        #: still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
     def _symbol(self, capacity: float, charging: bool) -> str:
+        """The rung of the battery ladder this capacity sits on.
+
+        Indexed by ``capacity // 10``, so entry *n* covers n0-n9 % and the last covers 100 %.
+        The ladders are in the vocabulary rather than here: a theme swaps them, and a machine
+        without the font gets ASCII instead of eleven empty boxes.
+        """
         capacity = min(max(capacity, 0), 100)
-        symbols = self.CHARGING_SYMBOLS if charging else self.DISCHARGING_SYMBOLS
-        symbol = symbols[int(capacity) // 10]
+        key = "battery.charging" if charging else "battery.discharging"
+        symbol = self.symbols[key][int(capacity) // 10]
         if not charging and capacity < self.WARNING_CAPACITY:
             return f"<span color='{self.warning_color}'>{symbol}</span>"
         return symbol
@@ -47,7 +53,7 @@ class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
 
         output = []
         if measurement.get("grid"):
-            output.append(self.GRID_SYMBOL)
+            output.append(self.symbols["battery.grid"])
 
         batteries = measurement.get("batteries")
         if isinstance(batteries, dict):

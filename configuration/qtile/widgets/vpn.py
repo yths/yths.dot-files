@@ -10,24 +10,24 @@ from typing import Any
 import libqtile.widget.base
 import redis
 import shared.stream
+import symbols as vocabulary
 
 
 class WidgetVPN(libqtile.widget.base.BackgroundPoll):
-    # qtile clips each cell to the width derived from the text's advance, and this
-    # glyph's ink runs past its advance, so a lone icon needs a trailing space or its
-    # right edge is cut off.
-    DISCONNECTED_ICON = "󰲝 "
-
     def __init__(
         self,
         r: redis.Redis | None,
         warning_color: str = "#ff0000",
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.warning_color = warning_color
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
     def poll(self) -> str:
         measurement = shared.stream.read_measurement(self.r, "vpn")
@@ -35,8 +35,11 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
             return ""
 
         if not measurement.get("connected"):
-            return self.DISCONNECTED_ICON
-        output = [f"<span color='{self.warning_color}'>󰛳</span>"]
+            # qtile clips each cell to the width derived from the text's advance, and the
+            # nerd-font glyph's ink runs past its advance, so a lone icon needs a trailing
+            # space or its right edge is cut off. Harmless for an ASCII stand-in.
+            return f"{self.symbols['vpn.off']} "
+        output = [f"<span color='{self.warning_color}'>{self.symbols['vpn.on']}</span>"]
         country = measurement.get("country")
         city = measurement.get("city")
         if country:

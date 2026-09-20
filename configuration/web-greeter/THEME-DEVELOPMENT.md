@@ -56,8 +56,22 @@ The contract between the theme and `helper/patch_web_greeter.py`:
 | `role_map` | Maps the theme's internal role names (left) to palette tokens (right). The patcher generates `--<role>: <hex>` CSS variables. |
 | `layout` | Free-form layout hints the theme's own CSS/JS consumes. The patcher does not interpret these. |
 | `font_overrides` | Per-theme overrides on top of `configuration.font` (e.g. `{"family": "monospace"}`). |
-| `symbols` | Glyph strings the theme injects via `[data-symbol="<key>"]` selectors. |
-| `strings` | Localised user-facing strings injected via `[data-string="<key>"]` selectors. |
+| `symbols` | Glyph strings the theme injects via `[data-symbol="<key>"]` selectors. Optional: the desktop's own vocabulary is merged underneath, so name only what this theme changes. |
+| `strings` | Localised user-facing strings injected via `[data-string="<key>"]` selectors. Optional, and merged the same way. |
+
+### Where the Defaults Come From
+
+`helper/patch_web_greeter.py` writes `vocabulary.json` beside each theme on every theme
+switch: the desktop's symbols and strings, under the unprefixed names this file already uses
+(`shutdown`, `auth_failed`, …). `_shared/logic.js` loads it **before** `theme.json` and merges
+this file over it, so a theme still has the last word on anything it names and inherits the
+rest — an icon the bar and the login screen share is now declared once, in
+[../../helper/symbols.py](../../helper/symbols.py).
+
+`vocabulary.json` is generated and gitignored. It is also ASCII by default, which is what the
+inline HTML captions, the CSS `var()` fallbacks and the `|| "…"` reads in `logic.js` already
+were for — keep all three when adding a symbol, because they are what renders when JavaScript
+does not run. See [../../docs/symbols.md](../../docs/symbols.md).
 
 Add a role under `role_map` whenever the theme needs a new colour-bound CSS variable. Reach for semantic palette tokens (`positive`, `negative`, `neutral`, `effect_*`) from [../../docs/palette-semantics.md](../../docs/palette-semantics.md), not raw hue names — themes that hardcode `red` or `blue` will not survive a palette redesign.
 

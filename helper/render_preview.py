@@ -24,8 +24,10 @@ from typing import Any
 import cairo
 
 try:
+    from helper import symbols
     from helper.utils import logger, read_setup
 except ImportError:
+    import symbols
     from utils import logger, read_setup
 
 #: This file's repository, resolved through any symlink used to invoke it.
@@ -42,17 +44,29 @@ MARGIN = 32
 BAR_HEIGHT = 34
 RADIUS = 8
 
-#: The bar's cells, as (glyph, palette token). Nerd-font private-use codepoints are escaped
-#: with the glyph named alongside: they are invisible in an editor and dropped by anything
-#: that rewrites the line.
+#: The bar's cells, as (symbol key, suffix, palette token). The characters are looked up in
+#: the active vocabulary rather than written here, so the preview draws whatever the bundle
+#: being rendered actually installs -- a README screenshot showing glyphs the theme replaced
+#: would be a picture of a desktop nobody has.
 BAR_CELLS = (
-    (" 06:32", "foreground"),        # sunrise
-    (" 20:15", "highlight"),         # sunset
-    ("\U000f02ce ▅", "foreground"),   # headphones + level
-    ("\U000f0c9d", "foreground_variant"),  # shield-off, VPN
-    ("\U000f06a5", "success"),             # battery-charging
-    ("\U000f06b0 3", "notification"),      # package-up, updates
+    ("location.sunrise", " 06:32", "foreground"),
+    ("location.sunset", " 20:15", "highlight"),
+    ("bluetooth.headphones", None, "foreground"),   # suffix is the meter's fifth rung
+    ("vpn.off", "", "foreground_variant"),
+    ("battery.grid", "", "success"),
+    ("updates.available", " 3", "notification"),
 )
+
+
+def bar_cells(glyphs: dict[str, Any]) -> tuple[tuple[str, str], ...]:
+    """(text, palette token) per cell, with the vocabulary's symbols filled in."""
+    cells = []
+    for key, suffix, token in BAR_CELLS:
+        # The headphone cell pairs its icon with a battery level drawn from the same ladder
+        # the bluetooth widget uses, so the preview and the bar cannot disagree.
+        text = suffix if suffix is not None else f" {glyphs['meter.ramp'][4]}"
+        cells.append((f"{glyphs[key]}{text}", token))
+    return tuple(cells)
 
 #: The sixteen terminal slots, in the order helper/patch_kitty.py assigns them.
 ANSI_TOKENS = (
@@ -131,7 +145,7 @@ class Painter:
         self.surface.write_to_png(path)
 
 
-def draw_bar(painter: Painter) -> None:
+def draw_bar(painter: Painter, glyphs: dict[str, Any]) -> None:
     """The qtile bar: group labels on the left, widget cells on the right."""
     x = MARGIN
     for index, label in enumerate("jkl;"):
@@ -139,7 +153,7 @@ def draw_bar(painter: Painter) -> None:
         x = painter.text((x, 23), label, token) + 14
 
     right = WIDTH - MARGIN
-    for glyph, token in reversed(BAR_CELLS):
+    for glyph, token in reversed(bar_cells(glyphs)):
         right -= painter.measure(glyph, 15) + 22
         painter.text((right, 23), glyph, token)
 
@@ -197,14 +211,17 @@ def draw_palette(painter: Painter, position: tuple[float, float]) -> None:
         painter.context.stroke()
 
 
-def render(palette: dict[str, str], font: str, path: str) -> None:
+def render(
+    palette: dict[str, str], font: str, path: str, glyphs: dict[str, Any] | None = None
+) -> None:
     """Draw every surface in one palette variant and save it."""
+    glyphs = glyphs if glyphs is not None else symbols.SYMBOLS
     painter = Painter(palette, font)
     terminal = (MARGIN, BAR_HEIGHT + 44, 640, 300)
     aside_x = MARGIN + 640 + 32
     aside_width = WIDTH - MARGIN - aside_x
 
-    draw_bar(painter)
+    draw_bar(painter, glyphs)
     draw_terminal(painter, terminal)
     draw_notification(painter, (aside_x, terminal[1], aside_width, 118))
     draw_palette(painter, (aside_x, terminal[1] + 150))
@@ -213,9 +230,25 @@ def render(palette: dict[str, str], font: str, path: str) -> None:
     painter.save(path)
 
 
-def palette_digest(palette: dict[str, Any], font: str) -> str:
-    """A stable fingerprint of everything the preview is drawn from."""
-    material = json.dumps({"palette": palette, "font": font}, sort_keys=True)
+def palette_digest(
+    palette: dict[str, Any], font: str, glyphs: dict[str, Any] | None = None
+) -> str:
+    """A stable fingerprint of everything the preview is drawn from.
+
+    The symbols are part of that: a bundle that changes what the bar draws changes the
+    picture, and a digest that ignored them would let the checked-in preview go stale
+    without gendocs noticing.
+    """
+    material = json.dumps(
+        {
+            "palette": palette,
+            "font": font,
+            "symbols": {key: glyphs[key] for key, _suffix, _token in BAR_CELLS}
+            if glyphs
+            else None,
+        },
+        sort_keys=True,
+    )
     return hashlib.sha256(material.encode()).hexdigest()
 
 
@@ -229,17 +262,19 @@ def main() -> int:
     bundle = os.path.join(_REPOSITORY_ROOT, "assets", setup["desktop"]["theme"])
     with open(os.path.join(bundle, "palette.pkl"), "rb") as handle:
         palette: dict[str, Any] = pickle.load(handle)
+    with open(os.path.join(bundle, "config.json")) as handle:
+        glyphs, _ = symbols.resolve(json.load(handle))
 
     font = setup["desktop"]["font_family"]
     os.makedirs(OUTPUT_ROOT, exist_ok=True)
     modes = [arguments.mode] if arguments.mode else ["light", "dark"]
     for mode in modes:
         path = os.path.join(OUTPUT_ROOT, f"{mode}.png")
-        render(palette[mode], font, path)
+        render(palette[mode], font, path, glyphs)
         logger.info(f"Rendered {path}")
     if len(modes) == 2:
         with open(DIGEST_PATH, "w") as handle:
-            handle.write(palette_digest(palette, font) + "\n")
+            handle.write(palette_digest(palette, font, glyphs) + "\n")
     return 0
 
 

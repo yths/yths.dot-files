@@ -78,3 +78,13 @@ max-returns = 12
 # module's private helpers, which is what a unit test does; routing every one through a public
 # wrapper that exists only for the test would be worse than the rule it satisfies.
 "tests/*" = ["S101", "SLF001"]
+# qtile loads this file through a symlink, so helper/ has to go on sys.path before the widget
+# modules are imported -- several of them read the symbol vocabulary that lives there. That
+# one statement makes every import after it "out of order" as far as E402 is concerned, and
+# the alternative is a `# noqa: E402` on each of the fourteen. The imports are in fact
+# ordered; what precedes them is the path they need to resolve against.
+"configuration/qtile/config.py" = ["E402"]
+# Widgets are constructed from config.py with one keyword per themeable thing -- the colours,
+# the font size, the update interval and now the symbol vocabulary. That is the widget
+# contract rather than a signature that grew: every one of them is passed by name.
+"configuration/qtile/widgets/*.py" = ["PLR0913", "PLR0917"]

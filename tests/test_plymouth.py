@@ -19,6 +19,7 @@ import shutil
 
 import patch_plymouth
 import pytest
+import symbols
 
 PALETTE = {"background": "#322f2f", "foreground": "#d5d1d1", "neutral": "#afabab",
            "highlight": "#4d91c7"}
@@ -141,3 +142,68 @@ def test_staging_copies_rather_than_rendering_in_place(tmp_path: pathlib.Path) -
         assert "original" in (source / "default.plymouth").read_text()
     finally:
         shutil.rmtree(staged, ignore_errors=True)
+
+
+# --------------------------------------------------------------- the themeable messages
+#
+# Until the symbol vocabulary existed these were the one part of the splash a theme could not
+# reach: the patcher rewrote the fonts and colours around them and left the words in the
+# checked-in INI, so every bundle booted to the same seven titles.
+
+
+def test_every_mode_gets_its_title_and_subtitle_from_the_vocabulary(
+    configuration: dict, staged: pathlib.Path
+) -> None:
+    patch_plymouth.render_configuration(
+        configuration, str(staged), patch_plymouth.PALETTE_VARIANT, "default"
+    )
+    parser = _ini(staged)
+    _, strings = symbols.resolve(configuration)
+    for section, prefix in symbols.PLYMOUTH_SECTIONS.items():
+        assert parser[section]["Title"] == strings[f"plymouth.{prefix}.title"]
+        assert parser[section]["SubTitle"] == strings[f"plymouth.{prefix}.subtitle"]
+
+
+def test_a_theme_can_change_one_message_without_touching_the_rest(
+    configuration: dict, staged: pathlib.Path
+) -> None:
+    configuration["strings"] = {"plymouth.reboot.title": "See you shortly."}
+    patch_plymouth.render_configuration(
+        configuration, str(staged), patch_plymouth.PALETTE_VARIANT, "default"
+    )
+    parser = _ini(staged)
+    assert parser["reboot"]["Title"] == "See you shortly."
+    assert parser["boot-up"]["Title"] == symbols.STRINGS["plymouth.boot.title"]
+
+
+# optionxform is off, so `Subtitle` and `SubTitle` are two keys rather than one. Writing the
+# wrong capital leaves the original in place and adds a second the splash never reads.
+def test_the_subtitle_spelling_is_plymouths(
+    configuration: dict, staged: pathlib.Path
+) -> None:
+    patch_plymouth.render_configuration(
+        configuration, str(staged), patch_plymouth.PALETTE_VARIANT, "default"
+    )
+    for section in symbols.PLYMOUTH_SECTIONS:
+        keys = [key for key in _ini(staged)[section] if key.lower() == "subtitle"]
+        assert keys == ["SubTitle"], f"[{section}] ended up with {keys}"
+
+
+def test_a_section_the_ini_does_not_carry_is_not_invented(
+    configuration: dict, staged: pathlib.Path
+) -> None:
+    """The section list is plymouth's. Adding one declares a mode with no animation."""
+    before = set(_ini(staged).sections())
+    patch_plymouth.render_configuration(
+        configuration, str(staged), patch_plymouth.PALETTE_VARIANT, "default"
+    )
+    assert set(_ini(staged).sections()) == before
+
+
+# The splash is the one surface where a missing glyph is baked into a PNG rather than merely
+# displayed, so it survives until the next theme switch.
+def test_the_rendered_glyphs_come_from_the_vocabulary() -> None:
+    declared = {key for *_rest, key in patch_plymouth.GLYPH_ASSETS}
+    assert declared <= set(symbols.SYMBOLS), f"undeclared: {declared - set(symbols.SYMBOLS)}"
+    for key in declared:
+        assert symbols.SYMBOLS[key].isascii(), f"{key} falls back to a glyph, not ascii"

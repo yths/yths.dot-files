@@ -7,8 +7,8 @@ configuration {
         directories-first:true;
         sorting-method: "name";
     }
-    display-run: " ";
-    display-window: "  ";
+    display-run: "> ";
+    display-window: " # ";
     window-format: "[{w}]  {c}   {t}";
     window-match-fields: "title,class,desktop";
 }

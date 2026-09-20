@@ -10,21 +10,28 @@ from typing import Any
 
 import libqtile.log_utils
 import libqtile.widget.base
+import symbols as vocabulary
 
 
 class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
     # Trailing space: qtile clips the cell to the text's advance width and this glyph's
     # ink runs 0.418em past it, so a lone icon would be cut off on the right.
-    DOWN_ICON = "󰒲 "
 
     def __init__(
-        self, service: str, warning_color: str = "#ff0000", **config: Any
+        self,
+        service: str,
+        warning_color: str = "#ff0000",
+        symbols: dict[str, Any] | None = None,
+        **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.service = service
         self.warning_color = warning_color
 
         self.tick_visible = False
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
     def poll(self) -> str:
         # A failure to even run systemctl must read as "service down", not freeze the cell
@@ -38,12 +45,12 @@ class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
             )
         except OSError:
             libqtile.log_utils.logger.exception("could not run systemctl")
-            return f"<span color='{self.warning_color}'>{self.DOWN_ICON}</span>"
+            return f"<span color='{self.warning_color}'>{self.symbols['service.down']} </span>"
 
         if result.returncode == 0:
-            output = "·" if self.tick_visible else " "
+            output = self.symbols["service.tick"] if self.tick_visible else " "
             self.tick_visible = not self.tick_visible
         else:
-            output = f"<span color='{self.warning_color}'>{self.DOWN_ICON}</span>"
+            output = f"<span color='{self.warning_color}'>{self.symbols['service.down']} </span>"
 
         return output
