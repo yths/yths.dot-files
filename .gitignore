@@ -68,6 +68,11 @@ configuration/lock/environment
 configuration/tmux/tmux.conf
 configuration/starship/starship.toml
 configuration/dunst/dunstrc
+# Visual Studio Code is the fourth, and was the exception until now: settings.json was both
+# the hand-written source of a handful of scalars and the generated home of 487 colours, on a
+# tracked path -- so every theme switch dirtied a 76 KB tracked file, and one commit once
+# hand-edited generated colours into it instead of fixing the generator.
+configuration/vscode/settings.json
 
 ### web-greeter generated artifacts ###
 # Produced by helper/patch_web_greeter.py — should not be committed.
