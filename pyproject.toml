@@ -6,8 +6,15 @@
 line-length = 120
 target-version = "py314"
 extend-exclude = [
-    # Vendor-generated; `c = c` and `# noqa: F821` are qutebrowser idioms.
+    # Both are qutebrowser's own, not this repository's, and are written in its conventions
+    # rather than these: `c = c`, `# noqa: F821`, and documentation lines far past the column
+    # limit. Linting them would be asking upstream to adopt a style it has never had.
+    #
+    # `config.py` is the live configuration, edited here. `template_config.py` is the stock
+    # dump `qutebrowser --config-py` writes, kept beside it as the reference for what the
+    # defaults are and what a setting is called -- every line of it is commented out.
     "configuration/qutebrowser/config.py",
+    "configuration/qutebrowser/template_config.py",
 ]
 
 [tool.ruff.lint]
