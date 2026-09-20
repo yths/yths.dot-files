@@ -290,12 +290,31 @@ def test_every_declared_target_appears_in_the_source_it_is_claimed_for() -> None
         )
 
 
+#: Registered patchers the usage map cannot contain, and why. The map is recovered by reading
+#: which palette *token* a patcher names, so a patcher that names none cannot appear in it.
+DECLARES_NO_TOKEN = {
+    # Scales the X server's DPI to the monitors and reads no theme value at all.
+    "xorg",
+    # Resolves its colours perceptually instead of naming tokens: every qutebrowser default is
+    # replaced by whichever token is nearest it. What it maps to is in docs/color-distance.md
+    # and the vscode section of docs/palette-reference.md, both of which compute the match
+    # rather than reading it out of the source.
+    "qutebrowser",
+}
+
+
 def test_every_patcher_that_reads_the_theme_is_in_the_map() -> None:
     mapped = {record.app for record in list_palette.usages()}
-    # xorg is the one registered patcher that reads no theme value: it scales the X server's
-    # DPI to the monitors and nothing else.
-    expected = {name for name, _ in PATCHERS} - {"xorg"}
+    expected = {name for name, _ in PATCHERS} - DECLARES_NO_TOKEN
     assert expected <= mapped, f"missing from the usage map: {sorted(expected - mapped)}"
+
+
+def test_the_patchers_that_declare_no_token_really_declare_none() -> None:
+    """Otherwise the exclusion above becomes a way to hide a patcher that broke."""
+    mapped = {record.app for record in list_palette.usages()}
+    assert not (DECLARES_NO_TOKEN & mapped), (
+        f"{sorted(DECLARES_NO_TOKEN & mapped)} names tokens after all; drop it from the set"
+    )
 
 
 def test_every_palette_token_reaches_at_least_one_consumer() -> None:

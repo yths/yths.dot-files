@@ -23,6 +23,7 @@ try:
     from helper.patch_gtk import patch_gtk
     from helper.patch_kitty import patch_kitty
     from helper.patch_lock import patch_lock
+    from helper.patch_qutebrowser import patch_qutebrowser
     from helper.patch_rofi import patch_rofi
     from helper.patch_starship import patch_starship
     from helper.patch_tmux import patch_tmux
@@ -37,6 +38,7 @@ except ImportError:
     from patch_gtk import patch_gtk
     from patch_kitty import patch_kitty
     from patch_lock import patch_lock
+    from patch_qutebrowser import patch_qutebrowser
     from patch_rofi import patch_rofi
     from patch_starship import patch_starship
     from patch_tmux import patch_tmux
@@ -79,6 +81,7 @@ PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
     ("dunst", patch_dunst),
     ("gtk", patch_gtk),
     ("web-greeter", patch_web_greeter),
+    ("qutebrowser", patch_qutebrowser),
 )
 
 

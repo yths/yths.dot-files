@@ -115,7 +115,20 @@
     - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.
     - (2026-09-08) an error reply with no body is legal D-Bus, so the fix belongs in `dbus-fast`. qtile catching a non-`DBusError` around the optional icons would also do it. Nothing in this repository can close it.
 
-- [ ] Map all colors for `qutebrowser`
+- [x] Map all colors for `qutebrowser`
+    - (2026-09-20) twenty-eight of its hundred-and-five colour settings were themed, by
+      `config.py` reading the palette at startup and indexing it for tokens chosen by hand.
+      The other seventy-seven were stock: the completion popup yellow on grey, the hints the
+      stock yellow gradient, caret mode purple. Naming those by hand is the work that never
+      happened, which is why the ticket stayed open.
+    - (2026-09-20) `helper/patch_qutebrowser.py` reads the value qutebrowser itself would use
+      out of `template_config.py` and replaces it with the nearest colour in the palette, the
+      same way the VSCode patcher has always worked. 82 settings are written to a generated
+      `~/.config/qutebrowser/theme.py` that `config.py` sources; the 23 that are gradients,
+      `rgba()`, `None` or enums keep qutebrowser's own, and `--report-unmapped` names them.
+    - (2026-09-20) 62 of the stock defaults are CSS colour names rather than hex, which is why
+      this could not simply reuse the VSCode path: `colour.notation.CSS_COLOR_3` resolves them,
+      so no table is written down here.
 - [x] Handle monitor plug/unplug events gracefully in `qtile`
     - (2026-08-30) `config.py` subscribes to `screen_change`. The geometry every scaled size derives from was read once by `install.py` and never again, so a new display got the old one's scaling factor until qtile was restarted by hand.
     - (2026-08-30) detection moved to `configuration/qtile/shared/monitors.py`, which qtile reaches natively and `helper/screen_configuration.py` reaches the way `helper/preview_audio.py` reaches `shared.spectrum` — one definition of what a monitor's geometry is, rather than one for the installer and one for the bar.
