@@ -32,6 +32,10 @@ def bundle(tmp_path: pathlib.Path) -> str:
     (directory / "config.json").write_text(
         json.dumps({"name": "abundle", "symbols": {"vpn.off": "GONE"}})
     )
+    # The bundle carries its own palette, because that is where a migration reads it from --
+    # reading the installed symlink instead is what made switching bundles silently wrong.
+    with (directory / "palette.pkl").open("wb") as handle:
+        pickle.dump(PALETTE, handle)
     return str(directory)
 
 
@@ -96,7 +100,7 @@ def test_migrating_drops_a_field_the_schema_no_longer_has(
 # Each of these is a copy taken at install time that goes stale when the repository moves.
 def test_migrating_re_derives_what_the_repository_owns(bundle: str, installed: dict) -> None:
     migrated, _ = install.migrate_configuration(bundle, installed)
-    assert migrated["palette"] == PALETTE, "the palette is re-read from the installed pickle"
+    assert migrated["palette"] == PALETTE, "the palette is re-read from the bundle"
     assert migrated["font"]["family"] == install.SETUP["desktop"]["font_family"]
     assert migrated["font"] != installed["font"]
 
@@ -137,6 +141,8 @@ def test_the_installed_theme_is_migrated_when_none_is_named(
     (assets / "abundle" / "config.json").write_text(
         json.dumps({"name": "abundle", "symbols": {"vpn.off": "GONE"}})
     )
+    with (assets / "abundle" / "palette.pkl").open("wb") as handle:
+        pickle.dump(PALETTE, handle)
     (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
     monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
 
@@ -145,3 +151,69 @@ def test_the_installed_theme_is_migrated_when_none_is_named(
     assert written["name"] == "abundle"
     assert written["symbols"]["vpn.off"] == "GONE"
     assert written["state"]["theme_mode"] == "manual"
+
+
+# --------------------------------------------------------------- switching bundles, not just
+#
+# `--migrate --theme other` is how a personal bundle gets applied without resetting the state a
+# full install would. It shipped broken: `migrate_configuration` read the palette from
+# `~/.config/palette.pkl`, which points at whichever bundle was installed *last*, so the result
+# was a configuration named for the new theme wearing the old one's colours. Silently, because
+# both are valid palettes and nothing downstream can tell which was asked for.
+
+
+@pytest.fixture
+def two_bundles(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Two bundles whose palettes are unmistakably different."""
+    assets = tmp_path / "assets"
+    for name, colour in (("installed", "#111111"), ("wanted", "#222222")):
+        directory = assets / name
+        (directory / "wallpapers").mkdir(parents=True)
+        (directory / "config.json").write_text(json.dumps({"name": name}))
+        with (directory / "palette.pkl").open("wb") as handle:
+            pickle.dump({"dark": {"background": colour}, "light": {"background": colour}}, handle)
+        for filename in ("wallpaper-dark.png", "wallpaper-light.png",
+                         "wallpaper-dark-highlight.png", "wallpaper-light-highlight.png"):
+            (directory / "wallpapers" / filename).write_bytes(b"png")
+    return assets
+
+
+def test_migrating_to_another_bundle_takes_its_palette(
+    two_bundles: pathlib.Path, installed: dict
+) -> None:
+    migrated, _ = install.migrate_configuration(str(two_bundles / "wanted"), installed)
+    assert migrated["name"] == "wanted"
+    assert migrated["palette"]["dark"]["background"] == "#222222", (
+        "the palette came from the previously installed bundle, not the one asked for"
+    )
+
+
+def test_the_palette_is_read_from_the_bundle_not_the_installed_symlink(
+    two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path
+) -> None:
+    """The symlink points at whichever bundle went in last; the bundle is the truth."""
+    stale = tmp_path / ".config" / "palette.pkl"
+    with stale.open("wb") as handle:
+        pickle.dump({"dark": {"background": "#deadbe"}, "light": {}}, handle)
+    migrated, _ = install.migrate_configuration(str(two_bundles / "wanted"), installed)
+    assert migrated["palette"]["dark"]["background"] != "#deadbe"
+
+
+def test_switching_relinks_the_palette_and_the_wallpapers(
+    two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A config naming a new theme while the symlinks point at the old one is the same mismatch."""
+    installed["name"] = "installed"
+    (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
+    (tmp_path / ".config" / "qtile").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
+
+    assert install.run_migration(str(two_bundles), "wanted") == 0
+
+    palette = tmp_path / ".config" / "palette.pkl"
+    assert palette.is_symlink()
+    assert palette.resolve() == (two_bundles / "wanted" / "palette.pkl").resolve()
+    wallpaper = tmp_path / ".config" / "qtile" / "wallpaper-dark.png"
+    assert wallpaper.resolve() == (two_bundles / "wanted" / "wallpapers"
+                                   / "wallpaper-dark.png").resolve()

@@ -335,9 +335,11 @@ def migrate_configuration(
     # Re-derived: the bundle names it, setup.toml sizes it, palette.pkl colours it. Each is a
     # copy taken at install time, and each goes stale when the repository moves under it.
     migrated["name"] = bundle.get("name", existing.get("name"))
-    with open(
-        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
-    ) as handle:
+    # From the bundle, not from ``~/.config/palette.pkl``. That symlink points at whichever
+    # bundle was installed last, so reading it made ``--migrate --theme other`` produce a
+    # configuration named for one theme wearing another's colours -- silently, because both are
+    # valid palettes and nothing downstream can tell which it asked for.
+    with open(os.path.join(bundle_path, "palette.pkl"), "rb") as handle:
         migrated["palette"] = pickle.load(handle)
     migrated["font"] = {
         "family": SETUP["desktop"]["font_family"],
@@ -437,7 +439,20 @@ def run_migration(assets_folder_path: str, theme: str | None) -> int:
         )
         return 1
 
-    configuration, changes = migrate_configuration(theme_paths[selected], existing)
+    bundle_path = theme_paths[selected]
+    if selected != existing.get("name"):
+        # Switching bundles, not just refreshing one. The palette and the four wallpapers are
+        # symlinks into `assets/<name>/`, and a configuration that named a new theme while they
+        # still pointed at the old one is the same silent mismatch as reading the stale palette.
+        logger.info(f"Switching from {existing.get('name')!r} to {selected!r}.")
+        install_file(
+            os.path.join(bundle_path, "palette.pkl"),
+            os.path.expanduser(os.path.join("~", ".config", "palette.pkl")),
+            "palette",
+        )
+        existing["wallpapers"] = install_wallpapers(bundle_path)
+
+    configuration, changes = migrate_configuration(bundle_path, existing)
     logger.info(f"Migrating {path} against the {selected} bundle:")
     for change in changes:
         logger.info(f"  {change}")
