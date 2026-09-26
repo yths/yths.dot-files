@@ -45,6 +45,43 @@ The user-visible artefact of every install is `~/.config/config.json` — the si
 
 Each preset's color palette is described in [palette-semantics.md](palette-semantics.md); the visual references are at [docs/palettes/](palettes/), one directory per preset.
 
+## The Lock Screen's PAM Service
+
+xsecurelock draws only what the PAM conversation gives it, and Arch builds it with
+`--with-pam-service-name=system-auth` — whose auth stack answers a wrong password with no
+message at all. So the screen showed `Processing...`, then an empty field, and nothing to say
+why.
+
+`configuration/lock/pam/` fixes that without going near the stack the rest of the system logs
+in through. It is a `PKGBUILD` and one file:
+
+```bash
+cd configuration/lock/pam && makepkg --syncdeps --install
+# or
+python helper/patch_lock.py --install-pam
+```
+
+The stack is system-auth's auth section with a single `pam_echo` on the failure path; the
+account, password and session phases are `include`d from system-auth rather than copied, so an
+Arch update to those reaches the lock screen without an edit here. `XSECURELOCK_PAM_SERVICE`
+selects it, and `helper/patch_lock.py` sets that variable **only when the file is installed** —
+naming a service with no file in `/etc/pam.d` falls through to `/etc/pam.d/other`, which on
+Arch denies everything, and that is a worse failure than the silence it replaces.
+
+A package rather than a `cp`, unlike the plymouth and web-greeter install stages, because this
+file decides whether a screen unlocks: pacman names its owner, removes it cleanly, and leaves a
+`.pacnew` rather than replacing a stack somebody edited by hand.
+
+PAM counts jumps in lines, so inserting that one line moved every target that skips past it.
+`tests/test_lock_pam.py` exercises both branches in a bubblewrap sandbox with a fake
+`/etc/pam.d` — which is also the only way to check the success path without a real password —
+and demonstrates what a blind insertion costs: with system-auth's original counts, a *correct*
+password is refused.
+
+**If the screen ever refuses a correct password**: switch to another terminal with
+`Ctrl-Alt-F1`, log in, and run `killall xsecurelock`. Then `pacman -R yths-lock-pam` and re-run
+the patcher to fall back to `system-auth`. Upstream's README gives the same recovery.
+
 ## Installer Flow (`install.py`)
 
 `install.py` runs the desktop install in two phases, each a named step in the file rather than a stretch of script — `discover_themes`, `select_theme`, `install_static_configuration`, `install_wallpapers`, `assemble_configuration`, `write_configuration`:

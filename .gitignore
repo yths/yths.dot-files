@@ -78,6 +78,14 @@ configuration/dunst/dunstrc
 # hand-edited generated colours into it instead of fixing the generator.
 configuration/vscode/settings.json
 
+### makepkg build artifacts ###
+# configuration/lock/pam/ is a real PKGBUILD, so makepkg leaves its scratch directories and
+# the built package beside it. Only the PKGBUILD and the .pam file it installs are source.
+configuration/lock/pam/pkg/
+configuration/lock/pam/src/
+configuration/lock/pam/*.pkg.tar.*
+configuration/lock/pam/*.log
+
 ### web-greeter generated artifacts ###
 # Produced by helper/patch_web_greeter.py — should not be committed.
 configuration/web-greeter/themes/*/theme.css

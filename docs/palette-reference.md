@@ -82,7 +82,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | dunst | `~/.config/dunst/dunstrc` | `global.font` | direct | `helper/patch_dunst.py:40` |
 | gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:128` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_family` | direct | `helper/patch_kitty.py:56` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:76` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:90` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | direct, always dark | `helper/patch_plymouth.py:195` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | direct, always dark | `helper/patch_plymouth.py:197` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | direct, always dark | `helper/patch_plymouth.py:196` |
@@ -97,7 +97,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | dunst | `~/.config/dunst/dunstrc` | `global.offset` | × average_scaling_factor, × 3, embedded | `helper/patch_dunst.py:48` |
 | gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:128` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_size` | × 0.714 | `helper/patch_kitty.py:57` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:76` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:90` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | × 1.25, always dark | `helper/patch_plymouth.py:195` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:197` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | × 1.25, always dark | `helper/patch_plymouth.py:196` |
@@ -128,8 +128,8 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | kitty | `~/.config/kitty/kitty.conf` | `background` | direct | `helper/patch_kitty.py:58` |
 | kitty | `~/.config/kitty/kitty.conf` | `color7` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | kitty | `~/.config/kitty/kitty.conf` | `selection_foreground` | direct | `helper/patch_kitty.py:61` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:72` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:71` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:86` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:85` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundEndColor` | direct, always dark | `helper/patch_plymouth.py:201` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundStartColor` | direct, always dark | `helper/patch_plymouth.py:200` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:204` |
@@ -201,7 +201,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | kitty | `~/.config/kitty/kitty.conf` | `color8` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | kitty | `~/.config/kitty/kitty.conf` | `foreground` | direct | `helper/patch_kitty.py:59` |
 | kitty | `~/.config/kitty/kitty.conf` | `selection_background` | direct | `helper/patch_kitty.py:60` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_FOREGROUND_COLOR` | direct | `helper/patch_lock.py:73` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_FOREGROUND_COLOR` | direct | `helper/patch_lock.py:87` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:203` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `bullet.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-01.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
@@ -330,7 +330,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | dunst | `~/.config/dunst/dunstrc` | `urgency_critical.format` | embedded | `helper/patch_dunst.py:57` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color warning` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `warning_color` | via role `warning` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:75` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:89` |
 | qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(warning_color=)` | direct | `configuration/qtile/config.py:779` |
 | qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(warning_color=)` | direct | `configuration/qtile/config.py:622` |
 | qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | direct | `configuration/qtile/config.py:742` |

@@ -105,10 +105,49 @@
     - (2026-09-14) `configuration/qtile/shared/idle_guard.py` is the join. Once a minute it asks logind what is inhibiting and, if anything is, resets X's counter — which defers the lock and DPMS together, since both hang off it. Verified live: with an inhibitor held the counter sawtoothed 54s → 6s → 54s and never approached the 512s timeout; with none held it climbed straight through a tick.
     - (2026-09-14) found while investigating: the X screen saver timeout was **0**, so this session had no automatic lock at all. Steam was running and is the usual cause. The guard re-arms it when it finds a zero and logs a warning, and leaves a deliberate non-zero timeout alone.
 
-- [ ] A wrong password on the lock screen shows no error (needs PAM, not this repository)
+- [x] A wrong password on the lock screen shows no error
     - (2026-09-11) the dialog shows `Processing...` then resets to `Password:` with an empty field. What reads as "a grey box" is that field: `cursor` mode draws a long row of `_`, which on 4K — and doubly so on HDMI-0, downscaled 2:1 by `.xinitrc` — looks like a solid bar.
     - (2026-09-11) xsecurelock draws only what the PAM conversation gives it. `pam_unix` returns an auth failure with no message, so there is nothing to draw; `authproto_pam` logs it to stderr instead. Verified by sampling the screen every 0.3s for six seconds after a real failure: the warning colour never appears. Reproduced in a nested X server against `pam_unix` via the `chfn` service, which has no `pam_faillock`, so nothing was counted against the account.
     - (2026-09-11) closing it means a PAM stack that emits a message on failure — an `/etc/pam.d/xsecurelock` this repository would have to install as root. Deliberately not done: a lock screen's authentication stack is the last thing that should be quietly replaced by a dotfiles installer.
+    - (2026-09-26) that note named the wrong file. Arch builds xsecurelock with
+      `--with-pam-service-name=system-auth`, so an `/etc/pam.d/xsecurelock` on its own is read
+      by nothing — the stack in use is the one login, sudo and su share. Confirmed from the
+      binary (`strings authproto_pam` yields `system-auth`) and from Arch's PKGBUILD.
+    - (2026-09-26) what makes it safe is `XSECURELOCK_PAM_SERVICE`, which selects the service
+      at runtime. `configuration/lock/pam/` now ships a stack of its own — system-auth's auth
+      section with one `pam_echo` on the failure path, and the account, password and session
+      phases *included* from system-auth rather than copied, so an Arch update reaches them.
+      `system-auth` itself is never touched, and a mistake can affect nothing but the screen.
+    - (2026-09-26) installed as a package rather than copied: `makepkg --syncdeps --install` in
+      that directory, or `python helper/patch_lock.py --install-pam`. pacman then owns the
+      file, names its owner, removes it cleanly, and leaves a `.pacnew` instead of replacing a
+      stack edited by hand — none of which a `cp` from an installer offers for a file that
+      decides whether a screen unlocks. `patch_lock` sets the variable only when the file is
+      present, because naming a service that has no file falls through to `/etc/pam.d/other`,
+      which on Arch denies everything.
+    - (2026-09-26) the jump counts were the whole risk and are tested rather than reasoned
+      about. PAM counts jumps in lines, so inserting one moves every target that skips past it,
+      and `tests/test_lock_pam.py` shows what a blind insertion costs: with system-auth's
+      original counts a *correct* password is refused. Both branches are exercised by swapping
+      `pam_permit` and `pam_deny` for `pam_unix` inside a bubblewrap sandbox with a fake
+      `/etc/pam.d`, which is also the only way the success path can be checked without a real
+      password.
+    - (2026-09-26) still open, separately: the field itself. What reads as a grey box is
+      `cursor` mode's 32-character row of underscores, which is hardcoded — `auth_x11` exposes
+      no width setting — so only a different `XSECURELOCK_PASSWORD_PROMPT` changes it. See the
+      entry below.
+
+- [ ] The lock screen's password field reads as a graphics artefact
+    - (2026-09-26) `XSECURELOCK_PASSWORD_PROMPT=cursor` draws a 32-character row of
+      underscores with a cursor jumping around inside it. Underscores are contiguous glyphs, so
+      the row is an unbroken line at any size, and on 4K — doubly so on HDMI-0, downscaled 2:1
+      by `.xinitrc` — it reads as a solid grey bar rather than as a text field.
+    - (2026-09-26) not fixable by configuration: the 32 is hardcoded in xsecurelock's
+      `auth_x11`, which exposes no width option. The levers are a different prompt mode,
+      a patched build, or accepting it. `time` is the interesting alternative — upstream calls
+      it the most secure mode, it keeps the keystroke feedback `cursor` was chosen for, and it
+      is short enough not to form a bar — but it is a bare epoch timestamp, which is its own
+      kind of odd. Left to a decision rather than changed unilaterally.
 
 - [ ] The `inhibit-bridge` tray icon does not render (needs a `dbus-fast` fix)
     - (2026-09-08) the bridge itself works: it holds `org.freedesktop.ScreenSaver` and opens a matching logind idle inhibitor for each inhibit taken, verified end to end with `systemd-inhibit --list`. Only the indicator is missing.
