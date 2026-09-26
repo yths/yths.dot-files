@@ -16,6 +16,7 @@ import pathlib
 
 import patch_plymouth
 import pytest
+import utils
 from utils import read_setup
 
 import install
@@ -81,8 +82,17 @@ def test_one_bad_bundle_does_not_hide_the_good_ones_silently(tmp_path: pathlib.P
 
 
 def test_the_shipped_bundle_is_consistent() -> None:
-    """The contract, against the bundle this repository actually tracks."""
-    assert install.discover_themes("assets") == {"default": "assets/default"}
+    """The contract, against the bundle this repository actually tracks.
+
+    Asserted as a subset rather than an equality. `.gitignore` carries `assets/*` with
+    `!assets/default/` so a personal bundle can sit beside the shipped one uncommitted, and
+    discovery has to find it -- that is how one gets installed. An equality here refused a
+    commit on any machine that had exported a theme of its own, which is the documented normal
+    case rather than an odd one.
+    """
+    discovered = install.discover_themes("assets")
+    for name in utils.tracked_bundles():
+        assert discovered.get(name) == f"assets/{name}", f"{name} is tracked but not discovered"
 
 
 def test_the_configured_theme_is_a_bundle_that_exists() -> None:
@@ -91,6 +101,13 @@ def test_the_configured_theme_is_a_bundle_that_exists() -> None:
 
 
 def test_the_shipped_bundle_has_a_boot_splash_where_plymouth_looks() -> None:
-    """The consequence the check exists to prevent, asserted directly."""
-    name = next(iter(install.discover_themes("assets")))
-    assert patch_plymouth.theme_source({"name": name}) is not None
+    """The consequence the check exists to prevent, asserted directly.
+
+    Of the *tracked* bundles. This used to take whichever bundle sorted first, which became a
+    personal one the moment somebody exported a theme whose name begins before "default" --
+    and a personal bundle is not expected to ship a boot splash.
+    """
+    tracked = utils.tracked_bundles()
+    assert tracked, "the repository should ship at least one bundle"
+    for name in tracked:
+        assert patch_plymouth.theme_source({"name": name}) is not None, name

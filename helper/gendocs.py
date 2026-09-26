@@ -30,7 +30,7 @@ import list_palette
 import list_symbols
 import render_preview
 import symbols
-from utils import read_setup
+from utils import read_setup, tracked_bundles
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WIDGETS_DIR = REPO_ROOT / "configuration" / "qtile" / "widgets"
@@ -313,17 +313,24 @@ def generate_helpers() -> str:
 
 
 def generate_presets() -> str:
+    """The bundles this repository ships.
+
+    Tracked ones only. A personal bundle exported into ``assets/`` is gitignored on purpose,
+    and listing it here would put somebody's own theme name into a committed document and make
+    the block stale on every other machine.
+    """
     lines = []
     assets_dir = REPO_ROOT / "assets"
-    for path in sorted(assets_dir.iterdir()):
+    for directory in tracked_bundles():
+        path = assets_dir / directory
         config_path = path / "config.json"
-        if not path.is_dir() or not config_path.is_file():
+        if not config_path.is_file():
             continue
         try:
-            name = json.loads(config_path.read_text()).get("name", "(unnamed)")
+            declared = json.loads(config_path.read_text()).get("name", "(unnamed)")
         except json.JSONDecodeError:
-            name = "(invalid config.json)"
-        lines.append(f"- **{name}** — `{path.relative_to(REPO_ROOT)}`")
+            declared = "(invalid config.json)"
+        lines.append(f"- **{declared}** — `{path.relative_to(REPO_ROOT)}`")
     return "\n".join(lines)
 
 

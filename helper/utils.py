@@ -93,6 +93,23 @@ def merge_overrides(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str
     return {**base, **overrides}
 
 
+def tracked_bundles() -> list[str]:
+    """The theme bundles this repository ships, as directory names.
+
+    Distinct from ``install.discover_themes``, which finds *every* bundle under ``assets/``
+    because that is how a personal theme gets installed. ``.gitignore`` carries ``assets/*``
+    with ``!assets/default/`` precisely so a personal bundle can sit there uncommitted -- so
+    anything that goes into tracked documentation, or that asserts what this repository ships,
+    has to ask git rather than the filesystem. Otherwise exporting a theme of your own puts its
+    name in a generated document and refuses the commit.
+    """
+    listing = subprocess.run(
+        ["git", "-C", REPOSITORY_ROOT, "ls-files", "assets/*/config.json"],
+        capture_output=True, text=True, check=False,
+    ).stdout.split()
+    return sorted({name.split("/")[1] for name in listing})
+
+
 def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
     """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
 
