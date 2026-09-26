@@ -262,7 +262,7 @@ def test_plymouth_is_reported_as_always_dark(
     assert records
     assert all("always dark" in record.how for record in records)
 
-    source = list_palette.REPO_ROOT / "configuration/plymouth/themes/default"
+    source = list_palette.REPO_ROOT / "configuration/plymouth/theme"
     staged = tmp_path / "staged"
     # `background-tile.png` in that directory is a tracked symlink to a wallpaper the
     # installer materialises, and wallpapers are gitignored -- so in a fresh clone it dangles
@@ -273,7 +273,7 @@ def test_plymouth_is_reported_as_always_dark(
     patch_plymouth.render_configuration(light, str(staged), patch_plymouth.PALETTE_VARIANT, "d")
 
     parser = configparser.ConfigParser(interpolation=None)
-    parser.read(str(staged / "default.plymouth"))
+    parser.read(str(staged / "yths.plymouth"))
     written = parser["two-step"]["BackgroundStartColor"]
     assert written == PALETTE["background"].replace("#", "0x"), (
         "the splash followed state.theme; the map says it cannot"

@@ -55,21 +55,33 @@ PALETTE_VARIANT = "dark"
 #: This file's repository, resolved through any symlink used to invoke it.
 _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-#: Theme sources in this repository, one directory per preset that ships a boot splash.
-THEME_SOURCE_ROOT = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", "themes")
+#: The one boot splash this repository ships. Not one per preset, which is what it used to be:
+#: nothing in the directory is bundle-specific. The patcher rewrites the INI's colours and fonts
+#: and re-renders all eight images from the palette, and ``background-tile.png`` is a symlink to
+#: whichever wallpaper the installed bundle put in place -- so a second copy differed from the
+#: first only by the name of its directory.
+#:
+#: That name was the problem rather than a detail. The splash was found by looking for a
+#: directory named after the active preset, so exporting a bundle under any other name silently
+#: got no splash at all: "a preset need not ship one" made a missing directory indistinguishable
+#: from a deliberate omission.
+THEME_SOURCE = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", "theme")
+
+#: What it installs as, and what ``/etc/plymouth/plymouthd.conf`` has to name. A constant, so the
+#: two cannot drift: while this was the preset's name, renaming a preset left plymouthd.conf
+#: pointing at a theme nothing wrote any more, and the splash stayed frozen at whatever had been
+#: installed under the old name.
+THEME_NAME = "yths"
 
 
-def theme_source(configuration: dict[str, Any]) -> str | None:
-    """Source directory of the boot splash for the active preset, or ``None`` if it has none.
+def theme_source(_configuration: dict[str, Any] | None = None) -> str | None:
+    """The boot splash's source directory, or ``None`` if the tree has none.
 
-    A preset need not ship one, so a missing directory is an ordinary outcome rather than a
-    failure. The directory is named for the preset, because that is how it is found.
+    Takes a configuration it no longer reads, because every caller has one to hand and the
+    signature is what the tests and ``main`` reach for. The splash is the same for every bundle;
+    only its colours come from the palette.
     """
-    name = configuration.get("name")
-    if not name:
-        return None
-    path = os.path.join(THEME_SOURCE_ROOT, str(name))
-    return path if os.path.isdir(path) else None
+    return THEME_SOURCE if os.path.isdir(THEME_SOURCE) else None
 
 
 def stage_theme(source: str) -> str:
@@ -270,17 +282,14 @@ def patch_plymouth(configuration: dict[str, Any]) -> None:
     registry: see this module's docstring. Never prompts, so an unattended caller cannot
     block on a password.
     """
-    source = theme_source(configuration)
+    source = theme_source()
     if source is None:
-        logger.info(
-            f"No plymouth theme ships for the {configuration.get('name')!r} preset; skipping."
-        )
+        logger.info(f"No plymouth theme under {THEME_SOURCE}; skipping the boot splash.")
         return
     staged = stage_theme(source)
     try:
-        name = os.path.basename(source)
-        render_theme(configuration, staged, PALETTE_VARIANT, name)
-        install_theme(staged, name, prompt=False)
+        render_theme(configuration, staged, PALETTE_VARIANT, THEME_NAME)
+        install_theme(staged, THEME_NAME, prompt=False)
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 
@@ -298,7 +307,7 @@ def main() -> int:
     )
     parser.add_argument(
         "theme_path", nargs="?", default=None,
-        help="theme source directory (default: the active preset's, under configuration/plymouth/themes/)",
+        help=f"theme source directory (default: {THEME_SOURCE})",
     )
     parser.add_argument(
         "--install", action="store_true",
@@ -313,17 +322,16 @@ def main() -> int:
     with open(os.path.expanduser(arguments.configuration_file_path)) as handle:
         configuration = json.load(handle)
 
-    source = arguments.theme_path or theme_source(configuration)
+    source = arguments.theme_path or theme_source()
     if source is None or not os.path.isdir(source):
-        print(
-            f"No plymouth theme source for preset {configuration.get('name')!r}; "
-            f"looked under {THEME_SOURCE_ROOT}.",
-            file=sys.stderr,
-        )
+        print(f"No plymouth theme source; looked under {THEME_SOURCE}.", file=sys.stderr)
         return 1
     theme = arguments.theme or PALETTE_VARIANT
 
-    name = os.path.basename(os.path.normpath(source))
+    # The constant, not the source directory's name. A theme rendered from a directory given on
+    # the command line still has to install where plymouthd.conf looks, or it is rendered into
+    # nothing -- which is how the installed splash came to be thirteen months old.
+    name = THEME_NAME
     staged = stage_theme(source)
     try:
         logger.info(f"Rendering plymouth theme {source} for the {theme} palette ...")

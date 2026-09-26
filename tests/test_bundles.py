@@ -6,8 +6,8 @@ JSON inside it". `install.py` used to key on the manifest, which made that untru
 `my-bundle` whose manifest said `something-else` answered `--theme my-bundle` with "unknown
 theme" while sitting in plain sight.
 
-The disagreement is not cosmetic. `patch_plymouth.theme_source` looks for a preset's boot
-splash at `configuration/plymouth/themes/<manifest name>`, so a bundle installed from a
+The disagreement is not cosmetic. `--theme <name>` names a directory while everything downstream
+reads the manifest's `name`, so a bundle installed from a
 directory that says something else ships no splash and says nothing about it.
 """
 
@@ -100,14 +100,12 @@ def test_the_configured_theme_is_a_bundle_that_exists() -> None:
     assert read_setup()["desktop"]["theme"] in install.discover_themes("assets")
 
 
-def test_the_shipped_bundle_has_a_boot_splash_where_plymouth_looks() -> None:
-    """The consequence the check exists to prevent, asserted directly.
+def test_the_boot_splash_does_not_depend_on_the_bundle() -> None:
+    """It used to be found by preset name, so a bundle under any other name got none.
 
-    Of the *tracked* bundles. This used to take whichever bundle sorted first, which became a
-    personal one the moment somebody exported a theme whose name begins before "default" --
-    and a personal bundle is not expected to ship a boot splash.
+    That is no longer a property of the bundle at all, so this asserts the absence of the
+    coupling rather than that each bundle satisfies it.
     """
-    tracked = utils.tracked_bundles()
-    assert tracked, "the repository should ship at least one bundle"
-    for name in tracked:
+    for name in [*utils.tracked_bundles(), "a-bundle-nobody-has-exported"]:
         assert patch_plymouth.theme_source({"name": name}) is not None, name
+
