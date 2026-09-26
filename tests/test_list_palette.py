@@ -19,6 +19,7 @@ import ast
 import configparser
 import json
 import pathlib
+import pickle
 import re
 import shutil
 
@@ -35,6 +36,7 @@ import patch_web_greeter
 import pytest
 import toml
 from patch_configurations import PATCHERS
+from utils import read_setup
 
 #: One distinct colour per token, so finding a hex in a file identifies which token wrote it.
 #: The shipped palettes reuse a hex across tokens (`red_variant` and `failure` are the same
@@ -329,17 +331,27 @@ def test_every_palette_token_reaches_at_least_one_consumer() -> None:
     )
 
 
-# The map is what justifies registering this block with gendocs: if it varied per machine,
-# `gendocs.py --check` would fail in the pre-commit hook on every install but this one.
-def test_the_usage_map_does_not_read_the_active_install(
+# What justifies registering this block with gendocs at all: if any of it varied per machine,
+# the pre-commit hook would refuse a commit on every install but the one that generated it --
+# which is exactly what switching themes used to do, back when the hex values were read from
+# `~/.config/config.json`.
+def test_nothing_in_the_block_reads_the_active_install(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    before = list_palette.usages()
+    before = list_palette.generate_markdown()
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setattr(list_palette, "CONFIG_PATH", tmp_path / "nowhere.json")
-    assert list_palette.usages() == before
-    assert list_palette._load_active_config() is None
-    assert "Theme value" in list_palette.generate_markdown()
+    assert list_palette.generate_markdown() == before, (
+        "the block changed when ~/ did, so it describes this machine rather than the repository"
+    )
+
+
+def test_the_palette_shown_is_the_configured_bundles() -> None:
+    """Named rather than inferred: the document says which bundle it is describing."""
+    configured = read_setup()["desktop"]["theme"]
+    with (list_palette.REPO_ROOT / "assets" / configured / "palette.pkl").open("rb") as handle:
+        shipped = pickle.load(handle)
+    config = list_palette._load_active_config()
+    assert config["palette"] == shipped
 
 
 def test_the_markdown_is_the_same_on_a_second_run() -> None:

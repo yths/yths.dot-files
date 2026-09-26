@@ -101,7 +101,36 @@ def patch_all(configuration: dict[str, Any]) -> list[str]:
         except Exception:
             logger.exception(f"Patching {name} failed; continuing with the remaining apps.")
             failed.append(name)
+    if not patch_vsc_subprocess(configuration):
+        failed.append("vscode")
     return failed
+
+
+def patch_vsc_subprocess(configuration: dict[str, Any]) -> bool:
+    """Patch VSCode, which runs as a subprocess rather than a registry entry.
+
+    It takes CLI arguments, and keeping it out of ``PATCHERS`` keeps the heavyweight ``colour``
+    import off the path of the nine patchers that do not need it.
+
+    Called from ``patch_all`` rather than from ``reload_applications``, where it used to live.
+    That put it on the one path ``install.py`` does not take: installing and migrating both call
+    ``patch_all`` alone, so VSCode kept the palette of whatever theme had been installed before
+    -- visibly, and only in VSCode, which reads as an application problem rather than a missing
+    step. Patching is also the right phase for it: it writes a file, it does not reload anything.
+    """
+    result = subprocess.call(
+        args=[
+            sys.executable,
+            os.path.join(_REPOSITORY_ROOT, "helper", "patch_vsc.py"),
+            "--mode",
+            configuration["state"]["theme"],
+            "--input-path",
+            os.path.join(_REPOSITORY_ROOT, "configuration", "vscode"),
+        ]
+    )
+    if result != 0:
+        logger.warning(f"Patching vscode exited {result}; it keeps the previous palette.")
+    return result == 0
 
 
 def reload_applications(configuration: dict[str, Any]) -> None:
@@ -125,19 +154,6 @@ def reload_applications(configuration: dict[str, Any]) -> None:
     # kitty.conf to add an `include` and left a kitty.conf.bak beside it -- inside the
     # repository, since ~/.config/kitty is a symlink to it.
     reload_qutebrowser()
-    # A subprocess rather than a registry entry: patch_vsc takes CLI arguments, and keeping
-    # it out of the registry keeps the heavyweight `colour` import off the path of the eight
-    # patchers that do not need it.
-    subprocess.call(
-        args=[
-            "python",
-            os.path.join(_REPOSITORY_ROOT, "helper", "patch_vsc.py"),
-            "--mode",
-            configuration["state"]["theme"],
-            "--input-path",
-            os.path.join(_REPOSITORY_ROOT, "configuration", "vscode"),
-        ]
-    )
     subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
 
 

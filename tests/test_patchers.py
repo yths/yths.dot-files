@@ -20,6 +20,7 @@ import pathlib
 import shutil
 import subprocess
 
+import patch_configurations
 import patch_dunst
 import patch_rofi
 import patch_starship
@@ -344,3 +345,31 @@ def test_rofi_takes_its_prompts_from_the_vocabulary(
     assert 'display-run: "RUN ";' in written
     assert 'display-window: " WIN ";' in written
     assert "window-format" in written, "the hand-written settings must come through"
+
+
+# VSCode is patched by a subprocess rather than a registry entry, because it takes CLI arguments
+# and pulls in the heavyweight `colour` import. That subprocess used to be called from
+# `reload_applications`, which is the one path `install.py` does not take -- installing and
+# migrating both call `patch_all` alone. So a theme switch through the installer left VSCode on
+# the previous palette, visibly and only there, which reads as an application problem rather
+# than a missing step.
+def test_patching_everything_includes_vscode(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = {}
+    monkeypatch.setattr(patch_configurations, "PATCHERS", ())
+    monkeypatch.setattr(patch_configurations, "patch_vsc_subprocess",
+                        lambda configuration: called.setdefault("configuration", configuration) or True)
+    patch_configurations.patch_all({"state": {"theme": "dark"}})
+    assert "configuration" in called, "patch_all has to reach VSCode, not just the registry"
+
+
+def test_a_failing_vscode_is_named_rather_than_swallowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(patch_configurations, "PATCHERS", ())
+    monkeypatch.setattr(patch_configurations, "patch_vsc_subprocess", lambda _c: False)
+    assert patch_configurations.patch_all({"state": {"theme": "dark"}}) == ["vscode"]
+
+
+def test_reloading_does_not_also_patch(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Patching writes files and is safe anywhere; reloading restarts programs. Keep them apart."""
+    source = pathlib.Path("helper/patch_configurations.py").read_text()
+    reload_body = source[source.index("def reload_applications("):source.index("def main(")]
+    assert "patch_vsc" not in reload_body, "VSCode patching belongs in patch_all"
