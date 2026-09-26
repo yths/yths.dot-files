@@ -217,3 +217,50 @@ def test_switching_relinks_the_palette_and_the_wallpapers(
     wallpaper = tmp_path / ".config" / "qtile" / "wallpaper-dark.png"
     assert wallpaper.resolve() == (two_bundles / "wanted" / "wallpapers"
                                    / "wallpaper-dark.png").resolve()
+
+
+# A migration runs against a desktop that is already up, which is the whole difference from an
+# install. Writing the files and reloading nothing left dunst on the old colours, tmux on the old
+# status line and qtile on the old bar -- reported as "the migration did not refresh kitty",
+# which was the visible half of a switch that refreshed nothing you could see.
+def test_migrating_reloads_the_running_programs(
+    two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    installed["name"] = "installed"
+    (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
+    (tmp_path / ".config" / "qtile").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
+
+    reloaded = []
+    monkeypatch.setattr(install.helper.patch_configurations, "reload_applications",
+                        reloaded.append)
+    assert install.run_migration(str(two_bundles), "wanted") == 0
+    assert reloaded, "a migration that reloads nothing refreshes nothing you can see"
+
+
+def test_no_reload_leaves_the_running_programs_alone(
+    two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """For a scripted run, or a machine whose session is not the one being configured."""
+    installed["name"] = "installed"
+    (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
+    (tmp_path / ".config" / "qtile").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
+
+    reloaded = []
+    monkeypatch.setattr(install.helper.patch_configurations, "reload_applications",
+                        reloaded.append)
+    assert install.run_migration(str(two_bundles), "wanted", reload_applications=False) == 0
+    assert reloaded == []
+
+
+# kitty sets `auto_reload_config` and does watch the file, but relying on that alone left
+# terminals on the previous palette. SIGUSR1 is what kitty's own reload_conf_in_all_kitties
+# sends, so this asserts the mechanism rather than the nudge.
+def test_reloading_signals_kitty_rather_than_trusting_its_watcher() -> None:
+    source = pathlib.Path("helper/patch_configurations.py").read_text()
+    assert "signal.SIGUSR1" in source
+    body = source[source.index("def reload_applications("):source.index("def main(")]
+    assert "reload_kitty()" in body

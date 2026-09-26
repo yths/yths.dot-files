@@ -8,8 +8,10 @@ regenerated.
 """
 
 import argparse
+import contextlib
 import json
 import os
+import signal
 import subprocess
 import sys
 from collections.abc import Callable
@@ -45,6 +47,33 @@ except ImportError:
     from patch_web_greeter import patch_web_greeter
     from patch_xorg import patch_xorg
     from utils import logger
+
+
+def reload_kitty() -> None:
+    """Make every running kitty re-read the configuration just written.
+
+    ``patch_kitty`` sets ``auto_reload_config``, and kitty does watch the file -- but a theme
+    switch that relied on that alone left terminals on the previous palette often enough to be
+    reported as "the migration did not refresh kitty". SIGUSR1 is what kitty's own
+    ``reload_conf_in_all_kitties()`` sends, so this is the mechanism rather than a nudge.
+
+    Not `kitty +kitten themes --reload-in=all`, which reloads but also rewrites kitty.conf to
+    add an ``include`` and leaves a kitty.conf.bak beside it -- inside the repository, since
+    ~/.config/kitty is a symlink to it.
+    """
+    try:
+        result = subprocess.run(
+            ["pgrep", "-x", "kitty"], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        logger.info("pgrep is unavailable; kitty was not reloaded ...")
+        return
+    pids = [pid for pid in result.stdout.split() if pid.isdigit()]
+    if not pids:
+        return
+    for pid in pids:
+        with contextlib.suppress(OSError, ValueError):
+            os.kill(int(pid), signal.SIGUSR1)
 
 
 def reload_qutebrowser() -> None:
@@ -148,11 +177,7 @@ def reload_applications(configuration: dict[str, Any]) -> None:
             os.path.expanduser(os.path.join("~", ".config", "tmux", "tmux.conf")),
         ]
     )
-    # kitty is deliberately absent: helper/patch_kitty.py writes ~/.config/kitty/kitty.conf,
-    # and kitty watches that file and re-reads it on its own. Calling
-    # `kitty +kitten themes --reload-in=all` here did reload it, but the kitten also rewrote
-    # kitty.conf to add an `include` and left a kitty.conf.bak beside it -- inside the
-    # repository, since ~/.config/kitty is a symlink to it.
+    reload_kitty()
     reload_qutebrowser()
     subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
 

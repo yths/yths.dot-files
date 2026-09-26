@@ -400,6 +400,11 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         help="Install this theme by name, overriding setup.toml's [desktop] theme.",
     )
     parser.add_argument(
+        "--no-reload",
+        action="store_true",
+        help="with --migrate, write the files but leave the running programs alone",
+    )
+    parser.add_argument(
         "--migrate",
         action="store_true",
         help="Refresh an existing ~/.config/config.json against the current repository and "
@@ -410,7 +415,9 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def run_migration(assets_folder_path: str, theme: str | None) -> int:
+def run_migration(
+    assets_folder_path: str, theme: str | None, *, reload_applications: bool = True
+) -> int:
     """Refresh this machine's configuration without reinstalling it.
 
     Deliberately explicit and deliberately narrow. It does not symlink, prompt, or detect
@@ -458,7 +465,16 @@ def run_migration(assets_folder_path: str, theme: str | None) -> int:
         logger.info(f"  {change}")
     write_configuration(configuration)
     generate_application_configuration(configuration)
-    logger.info("Migrated. Reload qtile to pick up the refreshed configuration.")
+
+    # Migrating is the one path here that runs against a desktop already up, so the programs
+    # holding the old palette have to be told. Installing does not: on a fresh machine there is
+    # nothing running to reload, and restarting qtile mid-install would be restarting nothing.
+    # Without this a migration wrote every file and refreshed nothing you could see -- dunst
+    # kept its colours, tmux its status line, qtile its bar.
+    if reload_applications:
+        helper.patch_configurations.reload_applications(configuration)
+    else:
+        logger.info("Patched only; the running programs still hold the previous theme.")
     return 0
 
 
@@ -476,7 +492,10 @@ def main(argv: list[str] | None = None) -> int:
     assets_folder_path = os.path.join(repository_folder_path, "assets")
 
     if arguments.migrate:
-        return run_migration(assets_folder_path, arguments.theme)
+        return run_migration(
+            assets_folder_path, arguments.theme,
+            reload_applications=not arguments.no_reload,
+        )
 
     try:
         theme_paths = discover_themes(assets_folder_path)

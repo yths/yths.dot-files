@@ -7,6 +7,7 @@ running the patcher on its own) left the terminal on kitty's own defaults. And t
 when it did run, backed kitty.conf up to kitty.conf.bak inside the repository.
 """
 
+import ast
 import inspect
 import pathlib
 
@@ -80,11 +81,26 @@ def test_the_patcher_writes_one_file_and_no_backup(configuration: dict, tmp_path
 
 
 def test_nothing_calls_the_themes_kitten() -> None:
-    """The kitten is what created kitty.conf.bak; the reload must not reach for it again."""
-    source = inspect.getsource(patch_configurations)
-    called = [line for line in source.splitlines()
-              if "kitten" in line and not line.lstrip().startswith("#")]
-    assert called == []
+    """The kitten is what created kitty.conf.bak; the reload must not reach for it again.
+
+    Asserted of the strings actually passed to a subprocess, not of the text of the file. The
+    text form flagged a docstring that explains *why* the kitten is avoided, which is the
+    opposite of the thing worth preventing.
+    """
+    tree = ast.parse(inspect.getsource(patch_configurations))
+    docstrings = {
+        node.body[0].value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Module | ast.FunctionDef | ast.ClassDef)
+        and node.body and isinstance(node.body[0], ast.Expr)
+        and isinstance(node.body[0].value, ast.Constant)
+    }
+    executable = [
+        node.value for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        and node not in docstrings
+    ]
+    assert [text for text in executable if "kitten" in text] == []
 
 
 def test_kitty_is_still_patched_on_a_theme_switch() -> None:
