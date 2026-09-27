@@ -115,12 +115,22 @@ def apply_profiles(verbose: bool) -> int:
         if not path:
             print(f"profile {name!r} not found; display {index} left uncalibrated")
             continue
-        # The profile is passed positionally: dispwin's `calfile` argument loads the
-        # calibration into the video LUT, which is what a session start wants. `-I` would
-        # additionally register it as the display's system profile, and `-i` -- which the
-        # hand-written .xinitrc lines used -- is actually "run forever with random values".
+        # `-I` installs the profile as well as loading its calibration, and both halves are
+        # needed. The calibration goes into the video LUT and corrects the greyscale response;
+        # the install is what publishes the profile as the display's `_ICC_PROFILE` X atom,
+        # which is the only way an application learns what the panel actually does. Without it
+        # every colour-managed program assumes sRGB and skips the transform, so two panels with
+        # different gamuts keep looking different -- calibrated, and still mismatched.
+        #
+        # This ran without `-I` and the atoms were simply absent. Argyll handles more than one
+        # display properly: `_ICC_PROFILE` for the first, `_ICC_PROFILE_<n>` for the rest, so a
+        # single X screen spanning two monitors gets a profile each.
+        #
+        # Not `-i`, which the hand-written .xinitrc lines used: that is "run forever with
+        # random values".
         outcome = subprocess.run(
-            ["dispwin", "-d", index, path], capture_output=True, text=True, check=False
+            ["dispwin", "-d", index, "-I", path],
+            capture_output=True, text=True, check=False,
         )
         if outcome.returncode == 0:
             if verbose:
