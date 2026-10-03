@@ -143,3 +143,20 @@ def test_it_is_not_the_run_forever_flag() -> None:
     source = pathlib.Path("helper/apply_icc.py").read_text()
     invocation = source[source.index('["dispwin", "-d", index'):]
     assert '"-i"' not in invocation[:120]
+
+
+# With no sudo timestamp and a terminal attached, pkexec used to win because DISPLAY was set.
+# Without a graphical polkit agent it falls back to its text agent, and polkit 127's
+# socket-activated helper rejects that with "No session for cookie" -- logged as a failed
+# authentication, so it reads as a wrong password however many times the right one is typed.
+def test_a_terminal_is_asked_through_sudo_not_pkexec(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(utils.os, "geteuid", lambda: 1000)
+    monkeypatch.setattr(utils.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(
+        utils.subprocess, "run",
+        lambda argv, **_kwargs: subprocess.CompletedProcess(argv, 1, b"", b""),
+    )
+    monkeypatch.setattr(utils.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setenv("DISPLAY", ":0")
+
+    assert utils.root_prefix(prompt=True) == ["sudo"]
