@@ -28,6 +28,7 @@
 # still contains substantial portions of it, which the MIT licence requires the notice to
 # accompany. Everything below the imports is this repository's.
 
+import importlib
 import json
 import os
 import subprocess
@@ -57,7 +58,18 @@ REPOSITORY_ROOT = os.path.dirname(
 # Put helper/ on the path before the widget modules below are imported: several of them read
 # the symbol vocabulary, and an import that resolved only under pytest -- whose conftest adds
 # the same directory -- would fail at qtile startup and take the bar down with it.
-sys.path.insert(0, os.path.join(REPOSITORY_ROOT, "helper"))
+HELPER_DIRECTORY = os.path.join(REPOSITORY_ROOT, "helper")
+sys.path.insert(0, HELPER_DIRECTORY)
+
+# A reload re-executes this file and the modules under ~/.config/qtile, and nothing else: a
+# helper/ module stays at whatever version qtile *started* with. Once that meant a new
+# function in symbols.py did not exist as far as this file was concerned, and every reload
+# was refused as a configuration error until a full restart. Reversed, because a module's
+# own imports enter sys.modules after it, so dependencies are refreshed before dependants.
+for _module in reversed(list(sys.modules.values())):
+    _origin = getattr(_module, "__file__", None)
+    if _origin and os.path.dirname(os.path.realpath(_origin)) == HELPER_DIRECTORY:
+        importlib.reload(_module)
 
 try:
     import redis
@@ -347,6 +359,20 @@ def apply_screen_change() -> None:
     )
     logger.warning("Monitor layout changed; reloading the configuration.")
     qtile.reload_config()
+
+
+@hook.subscribe.startup_complete
+def relabel_groups() -> None:
+    """Put back the labels this file gave the groups, over the ones a restart restored.
+
+    ``lazy.restart()`` pickles every group's label and the new process applies them on top of
+    the freshly loaded configuration, so a theme switch -- which restarts qtile to pick up the
+    new ``bar.group`` glyph -- kept drawing the previous theme's glyph in the group boxes
+    until the next login.
+    """
+    for group in groups:
+        if group.name in qtile.groups_map and qtile.groups_map[group.name].label != group.label:
+            qtile.groups_map[group.name].set_label(group.label)
 
 
 @hook.subscribe.startup_complete
