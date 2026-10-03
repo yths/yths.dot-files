@@ -772,10 +772,7 @@ screens = [
                 widgets.bluetooth.WidgetBluetooth(
                     symbols=SYMBOLS,
                     r=r,
-                    icons=dict.fromkeys(
-                        ("CC:98:8B:99:F4:E5", "AC:80:0A:A4:66:EB"),
-                        SYMBOLS["bluetooth.headphones"],
-                    ),
+                    devices=vocabulary.bluetooth_devices(configuration, SYMBOLS),
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
