@@ -172,3 +172,18 @@ def test_the_base_theme_is_pinned_in_the_settings(
     assert patch_vsc.apply_to_user_settings({"colors": {}}, "Dark Modern")
     written = json.loads((tmp_path / "settings.json").read_text())
     assert written["workbench.colorTheme"] == "Dark Modern"
+
+
+# Both templates are classic Dark+/Light+ exports, and Light+ drew the activity bar dark in
+# light mode too. Mapped faithfully that was a near-black bar of white icons beside a light
+# side bar -- so the base theme, which draws it as part of the surface, decides that group.
+def test_the_base_theme_decides_the_activity_bar() -> None:
+    layered = patch_vsc.with_base_colors(
+        {"light": {"colors": {"activityBar.background": "#2c2c2c", "sideBar.background": "#f3f3f3",
+                              "activityBarBadge.background": "#007acc"}}},
+        {"light": {"activityBar.background": "#f8f8f8", "sideBar.background": "#f8f8f8",
+                   "activityBarBadge.background": "#005fb8"}},
+    )["light"]["colors"]
+    assert layered["activityBar.background"] == "#f8f8f8"
+    assert layered["sideBar.background"] == "#f3f3f3", "elsewhere the template still wins"
+    assert layered["activityBarBadge.background"] == "#007acc", "the badge is not the bar"

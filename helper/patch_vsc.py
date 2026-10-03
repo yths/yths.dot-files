@@ -77,8 +77,9 @@ MODES = ("dark", "light")
 USER_SETTINGS_PATH = os.path.join("~", ".config", "Code", "User", "settings.json")
 
 
-#: The built-in theme each template was exported from, by its file in VSCode's
-#: ``theme-defaults`` extension. Pinned in the settings rather than left to VSCode's default:
+#: The built-in theme pinned underneath each template, by its file in VSCode's
+#: ``theme-defaults`` extension. The templates themselves are exports of the classic Dark+
+#: and Light+; these are their Modern successors. Pinned rather than left to VSCode's default:
 #: every colour the template does not name falls through to whatever theme is active, and
 #: VSCode 1.140 changed the default from Dark Modern to Dark 2026 -- whose grey workbench
 #: borders appeared around a palette that never asked for them.
@@ -133,17 +134,26 @@ def base_theme(
     return None
 
 
+#: Colour keys the base theme decides even where the template names them. Classic Light+
+#: drew the activity bar dark in light mode too -- white icons on #2c2c2c -- so a light
+#: palette mapped it to a near-black bar beside a light side bar. The Modern themes draw it
+#: as part of the surface, in both modes. ``activityBarBadge.*`` is not covered by the prefix.
+BASE_DECIDES = ("activityBar.",)
+
+
 def with_base_colors(defaults: dict[str, dict], bases: dict[str, dict | None]) -> dict[str, dict]:
     """Each template with its base theme's colours underneath, the template winning.
 
     A key the template does not name is one VSCode fills from the active theme, unmapped --
-    so it is mapped here instead, from the theme that would have filled it.
+    so it is mapped here instead, from the theme that would have filled it. The keys under
+    ``BASE_DECIDES`` go the other way: there the base theme wins.
     """
     layered = {}
     for mode, theme in defaults.items():
-        base = bases.get(mode)
+        base = bases.get(mode) or {}
+        decided = {key: value for key, value in base.items() if key.startswith(BASE_DECIDES)}
         layered[mode] = {
-            **theme, "colors": {**(base or {}), **theme.get("colors", {})}
+            **theme, "colors": {**base, **theme.get("colors", {}), **decided}
         }
     return layered
 
