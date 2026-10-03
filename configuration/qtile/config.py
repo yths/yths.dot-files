@@ -362,14 +362,16 @@ def apply_screen_change() -> None:
     qtile.reload_config()
 
 
-@hook.subscribe.startup_complete
+@hook.subscribe.startup
 def relabel_groups() -> None:
     """Put back the labels this file gave the groups, over the ones a restart restored.
 
     ``lazy.restart()`` pickles every group's label and the new process applies them on top of
     the freshly loaded configuration, so a theme switch -- which restarts qtile to pick up the
     new ``bar.group`` glyph -- kept drawing the previous theme's glyph in the group boxes
-    until the next login.
+    until the next login. A config reload restores them the same way. ``startup`` rather
+    than ``startup_complete`` because only it fires on a reload, and it fires after the
+    restore on all three paths.
     """
     for group in groups:
         if group.name in qtile.groups_map and qtile.groups_map[group.name].label != group.label:
@@ -622,8 +624,11 @@ def highlight_focused_screen() -> None:
 
 if FOCUS_BORDER_WIDTH:
     hook.subscribe.current_screen_change(highlight_focused_screen)
-    # Also on startup, so the focused screen is outlined before the pointer first moves.
-    hook.subscribe.startup_complete(highlight_focused_screen)
+    # Also on every load -- startup, restart and a config reload alike -- so the focused
+    # screen is outlined before the pointer first moves. startup_complete fires only on the
+    # first two: a reload rebuilt the bars with every edge inactive and left them so, which
+    # outlined no screen at all until focus next changed.
+    hook.subscribe.startup(highlight_focused_screen)
 
 screens = [
     Screen(
