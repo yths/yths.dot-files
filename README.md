@@ -82,19 +82,18 @@ Starting from a bare disk instead: [docs/os-build.md](docs/os-build.md).
 
 ## Switch Theme
 
-On an installed machine, to apply a bundle from `assets/<bundle>/` and reload the running
-desktop:
+On an installed machine, to apply a bundle from `assets/<bundle>/` everywhere — the running
+desktop, the login screen and the boot splash — in one line:
 
 ```bash
-python helper/patch_lock.py --install-pam             # once: lock-screen PAM service, asks for root
-python install.py --migrate --theme <bundle>          # relink, re-patch, reload; keeps ~/.config/state
-python helper/patch_web_greeter.py --install --activate   # login screen, asks for root
-python helper/patch_plymouth.py --install --rebuild       # boot splash, asks for root
+python install.py --migrate --theme <bundle> && python helper/patch_web_greeter.py --install --activate && python helper/patch_plymouth.py --install --rebuild
 ```
 
-Run them in this order: the lock patcher only uses the PAM service once it exists, and the
-greeter and splash are generated from whichever bundle is active. To make the bundle the
-default for a fresh install too, set `theme` in [setup.toml](setup.toml).
+The migration relinks the bundle, re-patches every application and reloads them, keeping
+`~/.config/state`; the other two ask for sudo once and must come after it, because they are
+generated from whichever bundle is active. Once per machine, before the first switch,
+install the lock screen's PAM service with `python helper/patch_lock.py --install-pam`. To
+make the bundle the default for a fresh install too, set `theme` in [setup.toml](setup.toml).
 
 ## Documentation
 
