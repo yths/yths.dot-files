@@ -33,6 +33,7 @@ import json
 import os
 import subprocess
 import sys
+from typing import Any
 
 from libqtile import bar, hook, layout, qtile, widget
 from libqtile.config import (
@@ -90,6 +91,7 @@ except redis.exceptions.ConnectionError:
 
 import shared.hover_bar
 import shared.idle_guard
+import shared.launcher
 import shared.monitors
 import shared.session
 import shared.task_list
@@ -138,6 +140,20 @@ icons = {
     "monitor": f"{SYMBOLS['bar.monitor']} ",
     "group": f"{SYMBOLS['bar.group']} ",
 }
+
+
+@lazy.function
+def open_launcher(qtile: Any, mode: str) -> None:
+    """Show rofi on the focused screen, inside its outline; see ``shared.launcher``."""
+    screen = qtile.current_screen
+    edges = [edge.size if edge is not None else 0 for edge in (screen.left, screen.right)]
+    top = screen.top.size + screen.top.border_width[0] if screen.top is not None else 0
+    qtile.spawn(shared.launcher.rofi_command(
+        mode,
+        screen.output.port if screen.output else None,
+        shared.launcher.Clearance(screen.width, top, *edges),
+    ))
+
 
 keys = [
     # A list of available commands that can be bound to keys can be found
@@ -198,11 +214,11 @@ keys = [
     ),
     Key([mod, "control"], "r", lazy.restart(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
-    Key([mod], "r", lazy.spawn("rofi -show run"), desc="Spawn a command using rofi"),
+    Key([mod], "r", open_launcher("run"), desc="Spawn a command using rofi"),
     Key(
         [mod, "shift"],
         "r",
-        lazy.spawn("rofi -show window"),
+        open_launcher("window"),
         desc="Switch to any window via rofi (entries prefixed with their group number).",
     ),
     # Through the launcher rather than xsecurelock directly: the launcher sources the
