@@ -195,7 +195,45 @@ def build_themes(
         theme["name"] = f"{name} ({mode})"
         lookup = palette_map["dark"] if method == "reference" and mode == "light" else None
         themes[mode] = dict_replace_value(theme, palette_map[mode], lookup)
+        themes[mode]["colors"] = with_legible_text(
+            themes[mode].get("colors", {}), theme.get("colors", {}),
+            lookup if lookup is not None else palette_map[mode],
+        )
     return themes
+
+
+def _background_for(key: str) -> str | None:
+    """The surface a ``...Foreground`` key is drawn on, by VSCode's naming, or ``None``."""
+    for suffix, replacement in (("Foreground", "Background"), ("foreground", "background")):
+        if key.endswith(suffix):
+            return key[: -len(suffix)] + replacement
+    return None
+
+
+def with_legible_text(colors: dict, originals: dict, candidates: list) -> dict:
+    """``colors`` with every text colour that vanished into its own surface replaced.
+
+    Each colour is matched on its own, so a text colour and the surface it sits on can land
+    on one token: with a light palette of three greys, the explorer's grey label and its pale
+    selection both became #717171. A ``...Foreground`` key whose ``...Background`` sibling it
+    no longer reads on is re-picked by ``color_match.legible``, starting from the colour the
+    template meant. Translucent values are left alone -- what they read against depends on
+    what is underneath, which a key pair cannot say.
+    """
+    legible = dict(colors)
+    for key, value in colors.items():
+        surface = colors.get(_background_for(key) or "")
+        if not (isinstance(value, str) and isinstance(surface, str)):
+            continue
+        if len(value) != 7 or len(surface) != 7 or not value.startswith("#"):
+            continue
+        ratio = color_match.contrast(value, surface)
+        if ratio is None or ratio >= color_match.MIN_TEXT_CONTRAST:
+            continue
+        replacement = color_match.legible(originals.get(key, value), surface, candidates)
+        if replacement is not None:
+            legible[key] = replacement
+    return legible
 
 
 def apply_to_user_settings(theme: dict, base_theme_id: str | None = None) -> bool:

@@ -187,3 +187,20 @@ def test_the_base_theme_decides_the_activity_bar() -> None:
     assert layered["activityBar.background"] == "#f8f8f8"
     assert layered["sideBar.background"] == "#f3f3f3", "elsewhere the template still wins"
     assert layered["activityBarBadge.background"] == "#007acc", "the badge is not the bar"
+
+
+def test_a_label_that_vanished_into_its_selection_is_made_legible() -> None:
+    light = patch_vsc.build_palette_map({"light": {
+        "background": "#e3e3e3", "neutral": "#717171", "foreground": "#000000",
+    }})["light"]
+    colors = {
+        "list.inactiveSelectionBackground": "#717171",
+        "list.inactiveSelectionForeground": "#717171",
+        "editorOverviewRuler.foreground": "#71717166",
+    }
+    fixed = patch_vsc.with_legible_text(
+        colors, {"list.inactiveSelectionForeground": "#616161"}, light
+    )
+    assert fixed["list.inactiveSelectionForeground"] == "#000000"
+    assert fixed["list.inactiveSelectionBackground"] == "#717171", "only the text moves"
+    assert fixed["editorOverviewRuler.foreground"] == "#71717166", "translucent is left alone"
