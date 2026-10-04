@@ -79,7 +79,7 @@ and demonstrates what a blind insertion costs: with system-auth's original count
 password is refused.
 
 **If the screen ever refuses a correct password**: switch to another terminal with
-`Ctrl-Alt-F1`, log in, and run `killall xsecurelock`. Then `pacman -R yths-lock-pam` and re-run
+`Ctrl-Alt-F1`, log in, and run `killall xsecurelock`. Then `pacman -R xsecurelock-pam-feedback` and re-run
 the patcher to fall back to `system-auth`. Upstream's README gives the same recovery.
 
 ## Installer Flow (`install.py`)

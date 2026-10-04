@@ -9,7 +9,7 @@
 #
 # makepkg refuses to run as root and calls pacman for the install step itself, so run it as
 # your own user and let it prompt.
-pkgname=yths-lock-pam
+pkgname=xsecurelock-pam-feedback
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="PAM service for xsecurelock that reports a failed unlock attempt"
