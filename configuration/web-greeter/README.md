@@ -26,8 +26,9 @@ This is also invoked by `helper/patch_configurations.py:patch_all`.
 ## Installing
 
 Themes are authored here and read from `/usr/share/web-greeter/themes/`, which is
-root-owned, so patching and installing are separate stages. `./bootstrap.sh` does both;
-by hand it is:
+root-owned, so patching and installing are separate stages. `./bootstrap.sh` does both, and
+so does a theme switch with `--system` (`python install.py --migrate --theme <bundle>
+--system`). On its own it is:
 
 ```bash
 python helper/patch_web_greeter.py --install --activate

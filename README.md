@@ -83,15 +83,16 @@ Starting from a bare disk instead: [docs/os-build.md](docs/os-build.md).
 ## Switch Theme
 
 On an installed machine, to apply a bundle from `assets/<bundle>/` everywhere — the running
-desktop, the login screen and the boot splash — in one line:
+desktop, the login screen and the boot splash:
 
 ```bash
-python install.py --migrate --theme <bundle> && python helper/patch_web_greeter.py --install --activate && python helper/patch_plymouth.py --install --rebuild
+python install.py --migrate --theme <bundle> --system
 ```
 
-The migration relinks the bundle, re-patches every application and reloads them, keeping
-`~/.config/state`; the other two ask for sudo once and must come after it, because they are
-generated from whichever bundle is active. Once per machine, before the first switch,
+It asks for sudo once, before changing anything. Then it relinks the bundle, re-patches every
+application and reloads them, keeping `~/.config/state`, and installs the login screen and
+boot splash under the bundle's name. Leave out `--system` to switch only the running desktop,
+without root. Once per machine, before the first switch,
 install the lock screen's PAM service with `python helper/patch_lock.py --install-pam`. To
 make the bundle the default for a fresh install too, set `theme` in [setup.toml](setup.toml).
 

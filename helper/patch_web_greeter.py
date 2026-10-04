@@ -227,7 +227,7 @@ def install_theme(
     if prefix is None:
         logger.info(
             f"Patched {name}, but writing {destination} needs root. Run "
-            "`python helper/patch_web_greeter.py --install` to be prompted for it."
+            "`python install.py --migrate --system` to be asked for it."
         )
         return False
 
@@ -250,6 +250,20 @@ def install_theme(
         return True
     logger.info(f"Pass --activate to have LightDM render it; {GREETER_CONFIG} is unchanged.")
     return True
+
+
+def install_system(configuration: dict[str, Any], *, prompt: bool = False) -> bool:
+    """Patch the login screen for ``configuration``, install it and point LightDM at it.
+
+    The system patchers' common entry point; ``patch_plymouth.install_system`` is the other,
+    and ``helper/patch_configurations.SYSTEM_PATCHERS`` lists both. Installs the default
+    source theme under the active theme's name. ``prompt`` decides whether root may be asked
+    for. Returns whether LightDM now renders it.
+    """
+    patch_web_greeter(configuration)
+    return install_theme(
+        DEFAULT_THEME, installed_theme_name(configuration), prompt=prompt, make_active=True
+    )
 
 
 def main() -> int:

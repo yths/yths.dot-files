@@ -25,10 +25,12 @@ try:
     from helper.patch_gtk import patch_gtk
     from helper.patch_kitty import patch_kitty
     from helper.patch_lock import patch_lock
+    from helper.patch_plymouth import install_system as install_boot_splash
     from helper.patch_qutebrowser import patch_qutebrowser
     from helper.patch_rofi import patch_rofi
     from helper.patch_starship import patch_starship
     from helper.patch_tmux import patch_tmux
+    from helper.patch_web_greeter import install_system as install_login_screen
     from helper.patch_web_greeter import patch_web_greeter
     from helper.patch_xorg import patch_xorg
     from helper.utils import logger
@@ -40,10 +42,12 @@ except ImportError:
     from patch_gtk import patch_gtk
     from patch_kitty import patch_kitty
     from patch_lock import patch_lock
+    from patch_plymouth import install_system as install_boot_splash
     from patch_qutebrowser import patch_qutebrowser
     from patch_rofi import patch_rofi
     from patch_starship import patch_starship
     from patch_tmux import patch_tmux
+    from patch_web_greeter import install_system as install_login_screen
     from patch_web_greeter import patch_web_greeter
     from patch_xorg import patch_xorg
     from utils import logger
@@ -112,6 +116,35 @@ PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
     ("web-greeter", patch_web_greeter),
     ("qutebrowser", patch_qutebrowser),
 )
+
+
+#: The patchers that write outside ``~`` and so need root: each renders its theme for the
+#: configuration, installs it under the active theme's name and makes it the one in use.
+#: Not part of ``patch_all``, which runs unattended on every light/dark switch; these run when
+#: the theme itself changes, through ``install.py --system``. Same shape for both:
+#: ``(configuration, *, prompt) -> bool``.
+SYSTEM_PATCHERS: tuple[tuple[str, Callable[..., bool]], ...] = (
+    ("login screen", install_login_screen),
+    ("boot splash", install_boot_splash),
+)
+
+
+def install_system(configuration: dict[str, Any], *, prompt: bool = False) -> list[str]:
+    """Run every system patcher, isolating failures. Returns the names of those that failed.
+
+    The same contract as ``patch_all``: one that raises or reports failure is named and the
+    others still run. ``prompt`` is passed through; ``install.py --system`` asks for root
+    once beforehand, so with sudo neither prompts again.
+    """
+    failed = []
+    for name, install in SYSTEM_PATCHERS:
+        try:
+            if not install(configuration, prompt=prompt):
+                failed.append(name)
+        except Exception:
+            logger.exception(f"Installing the {name} failed; continuing with the rest.")
+            failed.append(name)
+    return failed
 
 
 def patch_all(configuration: dict[str, Any]) -> list[str]:

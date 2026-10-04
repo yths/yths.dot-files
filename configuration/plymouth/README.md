@@ -27,8 +27,9 @@ initramfs, so the files being in place is necessary but not sufficient until
 
 ## Installing and Updating
 
-`./bootstrap.sh` does this as its last step. By hand, one command does all three, prompting
-for root once:
+`./bootstrap.sh` does this as its last step, and a theme switch with `--system` does it
+too (`python install.py --migrate --theme <bundle> --system`). On its own, one command does
+all three, prompting for root once:
 
 ```bash
 python helper/patch_plymouth.py --install --rebuild
