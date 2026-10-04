@@ -2031,11 +2031,16 @@ c.tabs.focus_stack_size = -1
 ## Padding (in pixels) around text for tabs.
 ## Type: Padding
 
-padding_sizes = list()
-for monitor in configuration["monitors"]:
-    padding_sizes.append(round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]))
-
-padding_size = sum(padding_sizes) // len(padding_sizes) // 3
+# A third of the scaled font size, averaged across monitors. With no monitors recorded --
+# installed without a display, or before detection ran -- the font size is used unscaled:
+# dividing by the empty list raised ZeroDivisionError, and qutebrowser started on defaults.
+padding_sizes = [
+    round(monitor["scaling_factor"] * configuration["font"]["size"])
+    for monitor in configuration.get("monitors", {}).values()
+]
+padding_size = (
+    sum(padding_sizes) // len(padding_sizes) if padding_sizes else configuration["font"]["size"]
+) // 3
 c.tabs.padding = {'top': padding_size, 'bottom': padding_size, 'left': padding_size, 'right': padding_size}
 
 ## Force pinned tabs to stay at fixed URL.

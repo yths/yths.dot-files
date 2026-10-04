@@ -276,3 +276,64 @@ def test_the_hand_written_half_still_computes_what_only_it_can(loaded: tuple) ->
     assert applied["fonts.default_family"] == ["Iosevka NF"]
     assert applied["tabs.padding"]["top"] > 0
     assert applied["colors.webpage.darkmode.enabled"] is True
+
+
+# ------------------------------------------------------------------------- config.py itself
+#
+# qutebrowser runs config.py with two objects in scope: `c`, the settings tree, and `config`,
+# the functions. Stand-ins for both let it run here, against a configuration file of choice.
+
+CONFIG_PY = pathlib.Path(__file__).resolve().parent.parent / "configuration/qutebrowser/config.py"
+
+
+class Settings:
+    """`c`: any attribute path can be read and assigned, and assignments are kept."""
+
+    def __init__(self, path: str = "") -> None:
+        object.__setattr__(self, "_path", path)
+        object.__setattr__(self, "assigned", {})
+
+    def __getattr__(self, name: str) -> Settings:
+        child = Settings(f"{self._path}.{name}".lstrip("."))
+        object.__setattr__(child, "assigned", self.assigned)
+        object.__setattr__(self, name, child)
+        return child
+
+    def __setattr__(self, name: str, value: object) -> None:
+        self.assigned[f"{self._path}.{name}".lstrip(".")] = value
+
+
+class Functions:
+    """`config`: every call is accepted and ignored."""
+
+    def __getattr__(self, _name: str) -> object:
+        return lambda *_args, **_kwargs: None
+
+
+def _run_config(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, monitors: dict) -> dict:
+    (tmp_path / ".config").mkdir()
+    (tmp_path / ".config" / "config.json").write_text(json.dumps({
+        "font": {"family": "Iosevka NF", "size": 14},
+        "monitors": monitors,
+        "state": {"theme": "dark"},
+    }))
+    monkeypatch.setenv("HOME", str(tmp_path))
+    settings = Settings()
+    exec(compile(CONFIG_PY.read_text(), str(CONFIG_PY), "exec"),  # noqa: S102
+         {"c": settings, "config": Functions()})
+    return settings.assigned
+
+
+def test_the_tab_padding_is_a_third_of_the_scaled_font(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assigned = _run_config(tmp_path, monkeypatch, {"A": {"scaling_factor": 1.5}})
+    assert assigned["tabs.padding"]["top"] == round(1.5 * 14) // 3
+
+
+# No monitors recorded divided by zero, and qutebrowser fell back to its defaults entirely.
+def test_no_monitors_recorded_still_loads(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assigned = _run_config(tmp_path, monkeypatch, {})
+    assert assigned["tabs.padding"]["top"] == 14 // 3
