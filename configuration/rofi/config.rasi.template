@@ -9,6 +9,7 @@ configuration {
     }
     display-run: "> ";
     display-window: " # ";
+    display-power: " ! ";
     window-format: "[{w}]  {c}   {t}";
     window-match-fields: "title,class,desktop";
 }

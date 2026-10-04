@@ -30,6 +30,7 @@ def patch_rofi_configuration(configuration: dict[str, Any]) -> None:
     prompts = {
         "display-run": f"{glyphs['rofi.run']} ",
         "display-window": f" {glyphs['rofi.window']} ",
+        "display-power": f" {glyphs['rofi.power']} ",
     }
     with open(template_path("rofi", "config.rasi.template")) as input_handle:
         lines = input_handle.readlines()

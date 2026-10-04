@@ -50,6 +50,20 @@ the parser cannot read from the files are summarised from curated knowledge inst
 | `XF86AudioMute` | `lazy.spawn('pactl set-sink-mute @DEFAULT_SINK@ toggle')` | Toggle mute |
 | `XF86AudioLowerVolume` | `lazy.spawn('pactl set-sink-volume @DEFAULT_SINK@ -5%')` | Lower volume |
 | `XF86AudioRaiseVolume` | `lazy.spawn('pactl set-sink-volume @DEFAULT_SINK@ +5%')` | Raise volume |
+| `XF86AudioPlay` | `lazy.spawn('playerctl play-pause')` | Play or pause media |
+| `XF86AudioPause` | `lazy.spawn('playerctl pause')` | Pause media |
+| `XF86AudioStop` | `lazy.spawn('playerctl stop')` | Stop media |
+| `XF86AudioNext` | `lazy.spawn('playerctl next')` | Next track |
+| `XF86AudioPrev` | `lazy.spawn('playerctl previous')` | Previous track |
+| `XF86MonBrightnessUp` | `lazy.spawn('brightnessctl set +5%')` | Raise screen brightness |
+| `XF86MonBrightnessDown` | `lazy.spawn('brightnessctl set 5%-')` | Lower screen brightness |
+| `Print` | `take_screenshot('region')` | Screenshot a region: saved, copied to the clipboard |
+| `Shift + Print` | `take_screenshot('screen')` | Screenshot the focused screen: saved, copied to the clipboard |
+| `Ctrl + Print` | `take_screenshot('window')` | Screenshot the focused window: saved, copied to the clipboard |
+| `Super + p` | `take_screenshot('region')` | Screenshot a region: saved, copied to the clipboard |
+| `Super + Shift + p` | `take_screenshot('screen')` | Screenshot the focused screen: saved, copied to the clipboard |
+| `Super + Ctrl + p` | `take_screenshot('window')` | Screenshot the focused window: saved, copied to the clipboard |
+| `Super + Escape` | `open_launcher('power', POWER_MENU)` | Power menu: lock, suspend, log out, reboot, shut down |
 | `F1` | `lazy.group['kitty'].dropdown_toggle('vim')` | Toggle vim scratchpad |
 | `F2` | `lazy.group['kitty'].dropdown_toggle('pulsemixer')` | Toggle pulsemixer scratchpad |
 | `Super + s` | `chord → Switch focus to screen` | Switch focus to screen using subscript characters |

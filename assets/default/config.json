@@ -72,6 +72,7 @@
         "notification.prefix": "\ueb10",
         "rofi.run": "\uea85",
         "rofi.window": "\ueea8",
+        "rofi.power": "\udb81\udc25",
         "starship.prompt": "\uea85",
         "starship.read_only": "\udb80\udf3e",
         "starship.git_branch": "\ue0a0",

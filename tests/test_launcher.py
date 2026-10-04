@@ -45,3 +45,9 @@ def test_uneven_edges_are_evened_out() -> None:
 
 def test_an_unknown_output_leaves_the_monitor_to_rofi() -> None:
     assert "-m" not in shared.launcher.rofi_command("run", None, Clearance(1000, 10))
+
+
+def test_a_script_mode_is_declared_for_rofi() -> None:
+    command = shared.launcher.rofi_command("power", "HDMI-1", Clearance(1000, 10), "/x/power.sh")
+    assert command[command.index("-modi") + 1] == "power:/x/power.sh"
+    assert command[:3] == ["rofi", "-show", "power"]
