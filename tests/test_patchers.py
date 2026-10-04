@@ -5,10 +5,10 @@ is exercised is the contract each app actually gets -- not a paraphrase of it.
 
 Two behaviours here are not symmetric and are easy to break by making them so. `patch_xorg`
 needs monitor geometry for a DPI it cannot invent, so with none it writes nothing at all;
-`patch_dunst` needs it only for its offset and `patch_rofi` only for its width, so with none
-both still write what they can. `patch_rofi` splitting that way is newer and was a bug first:
-its `config.rasi` is generated rather than tracked and carries `@theme "theme"`, so writing it
-behind the guard left a machine with no displays with no rofi configuration at all.
+`patch_dunst` needs it only for its offset, so with none it still writes what it can.
+`patch_rofi` needs none at all: the qtile key bindings give each launch the focused screen's
+geometry. It used to write an averaged width behind a monitor guard, which once left a
+machine with no displays with no rofi configuration at all.
 And `patch_xorg` resolves its DPI *before* opening `~/.Xresources`, because
 opening first truncated the file and a failure while computing then left it empty -- and the
 raise aborted `patch_all`, leaving every later app on the previous palette.
@@ -87,7 +87,7 @@ def test_xorg_leaves_the_file_alone_without_geometry(
 
 # ------------------------------------------------------------------------------ rofi
 
-def test_rofi_writes_the_palette_and_the_scaled_width(
+def test_rofi_writes_the_palette(
     configuration: dict, home: pathlib.Path
 ) -> None:
     patch_rofi.patch_rofi(configuration)
@@ -98,21 +98,20 @@ def test_rofi_writes_the_palette_and_the_scaled_width(
     # inside the entry that is.
     assert f"MATCH: bold {PALETTE['foreground']};" in written
     assert PALETTE["foreground"] != PALETTE["highlight"]
-    assert "WIDTH: 3200px;" in written          # the mean of 3840 and 2560
     assert '"Iosevka NF 17"' in written         # 14 * 1.214, rounded
+    # Geometry is the launcher's, per screen; an average here would be right for none.
+    assert "WIDTH" not in written and "YOFFSET" not in written
 
 
-def test_rofi_writes_no_theme_without_geometry(
+def test_rofi_is_themed_without_any_monitors(
     configuration: dict, home: pathlib.Path
 ) -> None:
-    """A launcher sized for nothing is worse than the one already installed.
-
-    Only the colours and the width are skipped; the test below holds the other half, that
-    the configuration naming the theme is written regardless.
-    """
+    """Colours need no monitor. The averaged width did, and kept a machine without one
+    unthemed."""
     configuration["monitors"] = {}
     patch_rofi.patch_rofi(configuration)
-    assert not (home / ".config" / "rofi" / "theme_config.rasi").exists()
+    written = (home / ".config" / "rofi" / "theme_config.rasi").read_text()
+    assert f"COLOR0: {PALETTE['background']};" in written
 
 
 # ------------------------------------------------------------------------------ tmux
@@ -327,9 +326,8 @@ def test_no_patcher_writes_outside_home(configuration: dict, home: pathlib.Path)
 
 
 # config.rasi is generated rather than tracked, and it is the file carrying `@theme "theme"`.
-# Writing it behind the monitor-geometry guard left a machine with no detected displays with
-# no rofi configuration at all -- unthemed rather than unscaled, which is worse than the
-# state the guard exists to handle.
+# Writing it behind the old monitor-geometry guard left a machine with no detected displays
+# with no rofi configuration at all.
 def test_rofi_writes_its_configuration_without_any_monitors(
     configuration: dict, home: pathlib.Path
 ) -> None:

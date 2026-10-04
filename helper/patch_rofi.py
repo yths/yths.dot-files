@@ -1,8 +1,11 @@
-"""Patch rofi: the launcher's theme colours, font, width and vertical offset.
+"""Patch rofi: the launcher's theme colours, font and mode prompts.
 
-Writes ``~/.config/rofi/theme_config.rasi``, which the checked-in rofi theme
-``@import``s. Width and offset are scaled to the average monitor, so a machine with
-no detected geometry is left alone rather than given a launcher sized for nothing.
+Writes ``~/.config/rofi/theme_config.rasi``, which the checked-in rofi theme ``@import``s,
+and ``~/.config/rofi/config.rasi``. Geometry is not written here: the qtile key bindings
+pass each launch the focused screen's exact width and offset
+(``configuration/qtile/shared/launcher.py``). This used to write an average across
+monitors as well, which was right for none of them when they differed, and kept rofi
+unthemed on a machine with no monitors recorded.
 """
 
 import json
@@ -13,10 +16,10 @@ from typing import Any
 # Resolves whether this runs as ``helper.patch_rofi`` or as a script; see helper/README.md.
 try:
     from helper import symbols
-    from helper.utils import logger, monitor_average, template_path
+    from helper.utils import logger, template_path
 except ImportError:
     import symbols
-    from utils import logger, monitor_average, template_path
+    from utils import logger, template_path
 
 
 def patch_rofi_configuration(configuration: dict[str, Any]) -> None:
@@ -46,18 +49,9 @@ def patch_rofi_configuration(configuration: dict[str, Any]) -> None:
 def patch_rofi(configuration: dict[str, Any]) -> None:
     theme = configuration["state"]["theme"]
 
-    # Written first, and unconditionally: the two mode prompts are symbols, which need no
-    # monitor to scale against. config.rasi is generated rather than tracked, and it is what
-    # carries `@theme "theme"` -- so a machine that fell through the guard below without
-    # writing it would leave rofi with no configuration at all, unthemed rather than
-    # unscaled. patch_dunst splits on the same line, for the same reason.
+    # config.rasi is generated rather than tracked, and it is what carries `@theme "theme"`:
+    # without it rofi loads no theme at all.
     patch_rofi_configuration(configuration)
-
-    average_width = monitor_average(configuration, "width")
-    average_scaling_factor = monitor_average(configuration, "scaling_factor")
-    if average_width is None or average_scaling_factor is None:
-        logger.info("No monitor geometry available; leaving the rofi theme colours alone.")
-        return
 
     patched_configuration = {
         "FONT": f'"{configuration["font"]["family"]} {round(configuration["font"]["size"] * 1.214)}"',
@@ -69,8 +63,6 @@ def patch_rofi(configuration: dict[str, Any]) -> None:
         # The matched part of an entry. Style and colour travel as one value because rofi
         # will not parse a style followed by a reference (`bold @COLOR3`) in the theme.
         "MATCH": f"bold {configuration['palette'][theme]['foreground']}",
-        "WIDTH": f"{round(average_width)}px",
-        "YOFFSET": f"{round(configuration['font']['size'] * average_scaling_factor * 2.75)}px",
     }
     with open(
         os.path.expanduser("~/.config/rofi/theme_config.rasi"), "w"

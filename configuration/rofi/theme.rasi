@@ -9,8 +9,10 @@ window {
   transparency: "real";
   location: north;
   anchor: north;
-  width: @WIDTH;
-  y-offset: @YOFFSET;
+  /* The full width of the monitor, at its top edge. The qtile key bindings pass each launch
+     the focused screen's width and vertical offset inside its outline, which override this;
+     it is what a launch from anywhere else gets. */
+  width: 100%;
   padding: 8px 16px 8px 16px;
   border: 0px;
   children: [horibox];
