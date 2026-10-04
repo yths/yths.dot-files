@@ -12,10 +12,13 @@ patcher knowing anything about it.
 import json
 import pathlib
 import pickle
+import shutil
+import subprocess
 
 import patch_web_greeter
 import pytest
 import symbols
+import utils
 
 PALETTE = {"background": "#322f2f", "foreground": "#d5d1d1", "highlight": "#4d91c7",
            "neutral": "#afabab", "failure": "#cd6869"}
@@ -145,3 +148,43 @@ def test_the_vocabulary_falls_back_to_ascii(configuration: dict) -> None:
     assert vocabulary["symbols"]
     assert all(value.isascii() for value in vocabulary["symbols"].values())
     assert all(value.isascii() for value in vocabulary["strings"].values())
+
+
+# The login screen installs under the active theme's name, and once LightDM is pointed at it,
+# the ones this repository installed for earlier themes go -- but never the package's own.
+def test_the_login_screen_installs_under_the_theme_name_and_replaces_earlier_ones(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "themes"
+    for name, ours in (("earlier", True), ("simple", False)):
+        (root / name).mkdir(parents=True)
+        if ours:
+            (root / name / utils.INSTALL_MARKER).write_text("")
+    copied, activated = [], []
+
+    def run(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        if argv[0] == "cp":
+            copied.append(argv[-1])
+        if argv[0] == "rm":
+            shutil.rmtree(argv[-1])
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(patch_web_greeter, "SYSTEM_THEME_ROOT", str(root))
+    monkeypatch.setattr(patch_web_greeter, "root_prefix", lambda **_kwargs: [])
+    monkeypatch.setattr(patch_web_greeter.subprocess, "run", run)
+    monkeypatch.setattr(
+        patch_web_greeter, "activate", lambda name, _prefix: activated.append(name) or True
+    )
+
+    assert patch_web_greeter.install_theme(
+        patch_web_greeter.DEFAULT_THEME, "autumn-default", make_active=True
+    )
+    assert copied == [str(root / "autumn-default")]
+    assert activated == ["autumn-default"]
+    assert sorted(path.name for path in root.iterdir()) == ["simple"]
+
+
+def test_the_installed_name_is_the_theme_name_made_safe() -> None:
+    assert utils.installed_theme_name({"name": "Autumn Default"}) == "autumn-default"
+    assert utils.installed_theme_name({"name": "../etc"}) == "etc"
+    assert utils.installed_theme_name({}) == "dot-files"

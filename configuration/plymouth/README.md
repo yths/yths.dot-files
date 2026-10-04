@@ -17,7 +17,9 @@ Every other patcher writes under `~`. Plymouth themes live in
 
 - **Render** — copy the source into a staging directory and rewrite it for the active
   palette. No privileges, nothing here touched.
-- **Install** — copy the staged theme into the system path. Needs root.
+- **Install** — copy the staged theme into the system path, under the active theme's name,
+  and make it plymouth's default theme. Needs root. Once it is the default, splashes this
+  repository installed for earlier themes are removed.
 
 A third step matters for the result to be visible: the splash reads its theme from the
 initramfs, so the files being in place is necessary but not sufficient until
@@ -36,8 +38,9 @@ Drop `--rebuild` to copy the files without the (slow) initramfs rebuild — usef
 several changes are coming and one rebuild at the end will do. Drop `--install` as well to
 render and throw the result away, which is only useful for checking that rendering works.
 
-`--theme light` or `--theme dark` renders a specific variant; the default follows
-`state.theme` in `~/.config/config.json`.
+`--theme light` or `--theme dark` renders a specific variant. The default is dark, whatever
+`state.theme` says: the splash shows before anyone logs in, so there is no session whose
+preference could apply.
 
 ## Always Dark, and Not on a Theme Switch
 

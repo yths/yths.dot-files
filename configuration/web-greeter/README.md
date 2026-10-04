@@ -40,4 +40,8 @@ and nothing else in that file — it is LightDM's, and carries settings this rep
 opinion about. Without `--activate` the theme is installed and whatever is already active
 stays active.
 
-`--theme <name>` installs one other than `standard`.
+The login screen installs under the active theme's name — `/usr/share/web-greeter/themes/<theme>/`
+— so switching themes installs a new copy, and `--activate` points LightDM at it. Once it is
+active, login screens this repository installed for earlier themes are removed; each install
+carries a marker file, so the greeter package's own themes are never touched. `--theme <name>`
+picks a source theme other than `standard`; it still installs under the active theme's name.

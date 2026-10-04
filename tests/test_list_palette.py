@@ -273,7 +273,7 @@ def test_plymouth_is_reported_as_always_dark(
     patch_plymouth.render_configuration(light, str(staged), patch_plymouth.PALETTE_VARIANT, "d")
 
     parser = configparser.ConfigParser(interpolation=None)
-    parser.read(str(staged / "yths.plymouth"))
+    parser.read(str(staged / "d.plymouth"))
     written = parser["two-step"]["BackgroundStartColor"]
     assert written == PALETTE["background"].replace("#", "0x"), (
         "the splash followed state.theme; the map says it cannot"

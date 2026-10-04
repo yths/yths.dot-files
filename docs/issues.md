@@ -179,16 +179,20 @@
     - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.
     - (2026-09-08) an error reply with no body is legal D-Bus, so the fix belongs in `dbus-fast`. qtile catching a non-`DBusError` around the optional icons would also do it. Nothing in this repository can close it.
 
-- [ ] qutebrowser's configuration fails to load on a machine with no monitors recorded
+- [x] qutebrowser's configuration fails to load on a machine with no monitors recorded
     - (2026-10-04) `configuration/qutebrowser/config.py:2038` divides by
       `len(padding_sizes)`, which is zero when `~/.config/config.json` has no `monitors`.
       The tab padding needs a fallback, the way `helper/utils.monitor_average` gives one.
-- [ ] The VSCode patcher recolours `semanticTokenColors` and then discards them
+    - (2026-10-04) fixed: with no monitors the tab padding uses the font size unscaled. `tests/test_qutebrowser.py` now runs `config.py` itself, against stand-ins for qutebrowser's `c` and `config`.
+
+- [x] The VSCode patcher recolours `semanticTokenColors` and then discards them
     - (2026-10-04) both templates carry a `semanticTokenColors` block, which the mapping walk
       recolours, but `apply_to_user_settings` writes only `workbench.colorCustomizations` and
       `editor.tokenColorCustomizations`. Either write
       `editor.semanticTokenColorCustomizations` too or stop computing the block; writing it
       changes what the editor renders, so it wants a look first.
+    - (2026-10-04) fixed: written as `editor.semanticTokenColorCustomizations`, so enum members, constants and built-ins take palette colours instead of the base theme's.
+
 - [ ] The VSCode light template is an export of classic Light+, not Light Modern
     - (2026-10-04) both templates come from the classic themes, while the patcher pins the
       Modern ones underneath. Light+ drew the activity bar dark in light mode, now worked
@@ -200,17 +204,21 @@
       invalid property name, expecting end of file". Loaded through `config.rasi`'s
       `@theme`, the normal path, it parses, so nothing visible breaks — but `rofi -theme`
       is the obvious way to preview it.
-- [ ] rofi's own geometry is an average across monitors
+- [x] rofi's own geometry is an average across monitors
     - (2026-10-04) `helper/patch_rofi.py` writes `WIDTH` and `YOFFSET` from the mean width and
       scaling factor, which is right for no monitor when they differ. The qtile key bindings
       now override both per screen (`configuration/qtile/shared/launcher.py`), so this only
       shows when rofi is started some other way. One source of geometry would be better than
       two.
-- [ ] web-greeter's installed name follows the theme's directory name
+    - (2026-10-04) fixed: `patch_rofi` writes no geometry. The key bindings pass the focused screen's, and the theme's fallback is the monitor's full width. With nothing to average, rofi is also themed on a machine with no monitors recorded.
+
+- [x] web-greeter's installed name follows the theme's directory name
     - (2026-10-04) renaming `configuration/web-greeter/themes/<name>/` installs a new theme
       under the new name and leaves LightDM pointing at the old one until `--activate` runs
       — the same staleness that kept the login screen four months behind once. Plymouth was
       moved to a constant name for this reason; the greeter could follow.
+    - (2026-10-04) fixed: the login screen installs and activates under the active theme's name, as the boot splash does, and each install removes the ones this repository put there for earlier themes.
+
 - [ ] The `nippur` host script positions a monitor relative to itself
     - (2026-10-04) `configuration/hardware/hosts/nippur.sh` runs
       `xrandr --output DP-1-5 --right-of DP-1-5`, carried over unchanged from `~/.xinitrc`.
