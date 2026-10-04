@@ -45,7 +45,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 |---|---|---|---|
 | `name` | string | bundle `config.json#name` | nothing functional; informational |
 | `monitors` | object | `helper/screen_configuration.py` | qtile (bar geometry, per-monitor scaling) |
-| `font` | object | hardcoded by `install.py` (currently `Iosevka NF`, size 14) | qtile, web-greeter (via `font_overrides`) |
+| `font` | object | `setup.toml`'s `[desktop] font_family` and `font_size` | qtile, web-greeter (via `font_overrides`) |
 | `palette` | object | bundle `palette.pkl` | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
 | `wallpapers` | object | rewritten by `install.py` to installed paths | qtile, web-greeter (via `wallpaper_key`) |
 | `state` | object | initialised by `install.py`; mutated at runtime | qtile, patchers — drives the active light/dark variant |

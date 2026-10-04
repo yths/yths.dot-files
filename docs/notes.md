@@ -19,8 +19,8 @@ layout is the contract `install.py` reads:
 
 ```text
 assets/<name>/
-  config.json                       # name, font, wallpapers, state,
-                                    # and optionally symbols and strings
+  config.json                       # name, font, wallpapers, state, and optionally
+                                    # symbols, strings and bluetooth_devices
   palette.pkl                       # {mode: {token: hex}} — the colours everything downstream reads
   wallpapers/
     wallpaper-light.png
@@ -47,10 +47,13 @@ has a contract test asserting the two agree against this repository's tracked bu
 
 Of the manifest, `install.py` consumes `name` and — since the symbol vocabulary — the
 optional `symbols` and `strings` blocks, which it merges over the ASCII defaults in
-[`helper/symbols.py`](../helper/symbols.py) rather than reading as values. Those two are the
-only load-bearing keys besides `name`, and both are optional: a bundle that omits them gets a
-desktop that renders without a Nerd Font, which is the point of shipping ASCII as the default
-rather than as a fallback somebody has to select. See [symbols.md](symbols.md).
+[`helper/symbols.py`](../helper/symbols.py) rather than reading as values. A bundle that
+omits them gets a desktop that renders without a Nerd Font, which is the point of shipping
+ASCII as the default rather than as a fallback somebody has to select. See
+[symbols.md](symbols.md). The optional `bluetooth_devices` block, which maps a device's MAC
+address to the icon the bar draws for it, is copied as it is; see
+[config-schema.md](config-schema.md). The tracked `assets/default/` carries none, since MAC
+addresses belong to somebody's devices. These four are the only load-bearing keys.
 
 Everything else it derives. It detects `monitors` from the hardware,
 loads `palette` from `palette.pkl`, links `wallpapers` from the bundle's own `wallpapers/`
