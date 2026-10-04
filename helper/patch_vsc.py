@@ -268,6 +268,56 @@ def apply_to_user_settings(theme: dict, base_theme_id: str | None = None) -> boo
     return True
 
 
+#: VSCode's own launch arguments. Not a file this repository can own: VSCode writes a
+#: per-install crash-reporter id into it, so it is edited in place, one key at a time.
+ARGV_PATH = os.path.join("~", ".vscode", "argv.json")
+
+#: What tells VSCode the Secret Service is there: the daemon `gnome-keyring` installs.
+KEYRING_DAEMON = "/usr/bin/gnome-keyring-daemon"
+
+
+def use_keyring(argv_path: str = ARGV_PATH, keyring_daemon: str = KEYRING_DAEMON) -> bool:
+    """Point VSCode's secret storage at the keyring, if there is one. Returns whether it did.
+
+    Without a Secret Service VSCode falls back to ``password-store: basic``: its tokens are
+    encrypted with a key built into Electron, which any program running as this user can
+    undo. With ``gnome-keyring`` installed the store is ``gnome-libsecret`` instead, unlocked
+    by the login password. On a machine without the daemon this changes nothing -- pointing
+    VSCode at a keyring that is not there leaves it nowhere to keep a sign-in at all.
+
+    ``argv.json`` is JSON with comments, so the key is replaced or added textually rather
+    than by a parse and rewrite that would drop them.
+    """
+    if not os.path.exists(keyring_daemon):
+        return False
+    path = os.path.expanduser(argv_path)
+    entry = '"password-store": "gnome-libsecret"'
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write("{\n\t" + entry + "\n}\n")
+        return True
+    with open(path) as handle:
+        text = handle.read()
+    # Anchored to the start of a line, so a commented-out example does not count as set.
+    updated, found = re.subn(
+        r'(?m)^(\s*)"password-store"\s*:\s*"[^"]*"', lambda m: m.group(1) + entry, text
+    )
+    if not found:
+        closing = updated.rstrip().rfind("}")
+        if closing < 0:
+            logger.warning(f"{path} is not a JSON object; left it alone.")
+            return False
+        body = updated[:closing].rstrip()
+        separator = "" if body.endswith(("{", ",")) else ","
+        updated = f"{body}{separator}\n\t{entry}\n{updated[closing:]}"
+    if updated != text:
+        with open(path, "w") as handle:
+            handle.write(updated)
+        logger.info("VSCode now keeps its secrets in the keyring; sign in again after a restart.")
+    return True
+
+
 def write_themes(themes: dict[str, dict], output_path: str) -> None:
     """Save both recoloured themes as standalone files, for inspection or reuse."""
     directory = os.path.expanduser(output_path)
@@ -353,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
     logger.info(f"Patching Visual Studio Code settings to {arguments.mode} theme...")
     base = bases[arguments.mode]
     apply_to_user_settings(themes[arguments.mode], base[0] if base else None)
+    use_keyring()
 
     if arguments.output_path is not None:
         write_themes(themes, arguments.output_path)

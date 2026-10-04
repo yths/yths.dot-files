@@ -56,6 +56,15 @@ core = [
     # inhibit-bridge is what carries the one to the other. qtile starts it -- it docks in the
     # bar's system tray, which does not exist until qtile has drawn the bar.
     "inhibit-bridge-git",
+    # The password dialog polkit shows when a program asks to do something privileged --
+    # mounting a disk, pkexec, a GUI settings tool. Without an agent nothing can ask, and
+    # pkexec falls back to a terminal prompt that polkit 127 rejects whatever is typed.
+    "polkit-gnome",
+    # The Secret Service: an encrypted store for tokens and passwords, unlocked by the login
+    # password through the pam_gnome_keyring lines Arch's /etc/pam.d/lightdm already
+    # carries. Without it, VSCode and other Electron apps keep their secrets under a key
+    # built into Electron, which anything running as this user can decrypt.
+    "gnome-keyring", "libsecret",
 ]
 
 # The login screen and the boot splash.

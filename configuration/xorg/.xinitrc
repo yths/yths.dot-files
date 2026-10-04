@@ -63,5 +63,12 @@ if command -v xss-lock >/dev/null 2>&1; then
     xss-lock --transfer-sleep-lock -- "$HOME/.config/lock/lock.sh" &
 fi
 
+# The polkit authentication agent: the password dialog for privileged actions a program
+# asks for. It needs no bar or tray, so it starts here rather than from qtile.
+POLKIT_AGENT=/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+if [ -x "$POLKIT_AGENT" ]; then
+    "$POLKIT_AGENT" &
+fi
+
 # picom -b
 qtile start
