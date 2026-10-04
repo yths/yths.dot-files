@@ -98,9 +98,5 @@
         "greeter.session_prefix": "\ueea8",
         "greeter.session_chevron": "\udb80\udd40",
         "greeter.user_list_prefix": "\uf0c0"
-    },
-    "bluetooth_devices": {
-        "CC:98:8B:99:F4:E5": "bluetooth.headphones",
-        "AC:80:0A:A4:66:EB": "bluetooth.headphones"
     }
 }

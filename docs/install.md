@@ -131,7 +131,7 @@ The theme comes from `[desktop] theme` in [../setup.toml](../setup.toml); `--the
 
 The installer also arms this clone's pre-commit gate, so `ruff` and `helper/gendocs.py` run on every commit — see [CONTRIBUTING.md](../CONTRIBUTING.md). It is reported, never prompted, and a failure to arm it does not stop the install.
 
-The `DOTFILES_REPOSITORY_PATH` environment variable overrides the default repository location (`~/repositories/yths.dot-files`); the installer and the helpers under `helper/` honour it. Hook arming deliberately ignores it, so redirecting where configuration is read from cannot arm a different clone.
+The installer reads configuration and themes from the clone it is run from, wherever that is. The `DOTFILES_REPOSITORY_PATH` environment variable redirects it to another clone; the installer and the helpers under `helper/` honour it. Hook arming deliberately ignores it, so redirecting where configuration is read from cannot arm a different clone.
 
 ## Calibrating the Display
 

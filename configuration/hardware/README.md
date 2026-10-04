@@ -5,6 +5,13 @@ applies to another machine, and none of it is required — the desktop installs 
 without it. It lives in one place so it is distinguishable from the per-application
 configuration beside it, which *is* meant to be portable.
 
+## `hosts/`
+
+One shell fragment per machine, named for its hostname: the monitor layout (`xrandr`) and
+the keyboard (`setxkbmap`). `~/.xinitrc` sources `hosts/$HOSTNAME.sh` before anything else
+starts, and a machine without one keeps X's own defaults. Add a file for your machine, or
+none.
+
 ## `icc/`
 
 Display calibration profiles, one per panel, generated with `displaycal`. `install.py`
