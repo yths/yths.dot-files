@@ -100,7 +100,7 @@ python install.py --migrate          # keep the installed theme
 python install.py --migrate --theme <name>
 ```
 
-`--migrate` re-derives what the repository owns — the bundle's name, the palette, the font from `setup.toml`, and the symbol and string vocabulary — keeps what this machine owns (`state`, `monitors`, `wallpapers`), drops fields the schema no longer has, and re-runs the patchers. It symlinks nothing and prompts for nothing, and it reports each change rather than rewriting the file silently. The theme it migrates to is the one already installed unless `--theme` names another, because on a machine that has been running a while the installed theme and `setup.toml`'s need not agree.
+`--migrate` re-derives what the repository owns — the bundle's name, the palette, the font (the bundle's, or `setup.toml`'s fallback if that font is not installed), and the symbol and string vocabulary — keeps what this machine owns (`state`, `monitors`, `wallpapers`), drops fields the schema no longer has, and re-runs the patchers. It symlinks nothing and prompts for nothing, and it reports each change rather than rewriting the file silently. The theme it migrates to is the one already installed unless `--theme` names another, because on a machine that has been running a while the installed theme and `setup.toml`'s need not agree.
 
 It exists because a missing field is *not* a failure: every consumer falls back, which is the behaviour that keeps a desktop usable and also the reason nothing announces that half of it is running on defaults. The symbol vocabulary was the first field to make that concrete — an install predating it produced a correct, fully ASCII desktop.
 

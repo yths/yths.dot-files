@@ -82,10 +82,9 @@ def test_the_committed_preview_matches_the_committed_palette() -> None:
     bundle = REPO / "assets" / setup["desktop"]["theme"]
     with (bundle / "palette.pkl").open("rb") as handle:
         palette = pickle.load(handle)
-    glyphs, _ = symbols.resolve(json.loads((bundle / "config.json").read_text()))
-    expected = render_preview.palette_digest(
-        palette, setup["desktop"]["font_family"], glyphs
-    )
+    manifest = json.loads((bundle / "config.json").read_text())
+    glyphs, _ = symbols.resolve(manifest)
+    expected = render_preview.palette_digest(palette, manifest["font"]["family"], glyphs)
     recorded = (REPO / "docs" / "preview" / "rendered-from.txt").read_text().strip()
     assert recorded == expected, "run `python helper/render_preview.py`"
 

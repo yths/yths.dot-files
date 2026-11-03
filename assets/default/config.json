@@ -2,7 +2,7 @@
     "name": "default",
     "font": {
         "size": 14,
-        "family": "Iosevka Nerd Font"
+        "family": "Iosevka NF"
     },
     "wallpapers": {
         "dark": "~/.config/qtile/wallpaper-dark.png",

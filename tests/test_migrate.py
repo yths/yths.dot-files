@@ -22,6 +22,7 @@ import symbols
 import install
 
 PALETTE = {"light": {"background": "#ffffff"}, "dark": {"background": "#000000"}}
+BUNDLE_FONT = {"family": "Bundled Font", "size": 11}
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def bundle(tmp_path: pathlib.Path) -> str:
     directory = tmp_path / "abundle"
     directory.mkdir()
     (directory / "config.json").write_text(
-        json.dumps({"name": "abundle", "symbols": {"vpn.off": "GONE"}})
+        json.dumps({"name": "abundle", "font": BUNDLE_FONT, "symbols": {"vpn.off": "GONE"}})
     )
     # The bundle carries its own palette, because that is where a migration reads it from --
     # reading the installed symlink instead is what made switching bundles silently wrong.
@@ -101,7 +102,11 @@ def test_migrating_drops_a_field_the_schema_no_longer_has(
 def test_migrating_re_derives_what_the_repository_owns(bundle: str, installed: dict) -> None:
     migrated, _ = install.migrate_configuration(bundle, installed)
     assert migrated["palette"] == PALETTE, "the palette is re-read from the bundle"
-    assert migrated["font"]["family"] == install.SETUP["desktop"]["font_family"]
+    # "Bundled Font" is on no machine, so this is the fallback -- at the bundle's size, since
+    # the size is the theme's whatever family ends up drawing it.
+    assert migrated["font"] == {
+        "family": install.SETUP["desktop"]["fallback_font_family"], "size": BUNDLE_FONT["size"]
+    }
     assert migrated["font"] != installed["font"]
 
 
@@ -139,7 +144,7 @@ def test_the_installed_theme_is_migrated_when_none_is_named(
     assets = tmp_path / "assets"
     (assets / "abundle").mkdir(parents=True)
     (assets / "abundle" / "config.json").write_text(
-        json.dumps({"name": "abundle", "symbols": {"vpn.off": "GONE"}})
+        json.dumps({"name": "abundle", "font": BUNDLE_FONT, "symbols": {"vpn.off": "GONE"}})
     )
     with (assets / "abundle" / "palette.pkl").open("wb") as handle:
         pickle.dump(PALETTE, handle)

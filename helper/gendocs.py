@@ -183,11 +183,10 @@ def stale_preview() -> list[str]:
     with (bundle / "palette.pkl").open("rb") as handle:
         palette = pickle.load(handle)
     # The bundle's symbols are part of the picture too: the bar in the preview draws them,
-    # so a bundle that changes a glyph changes the image the README serves.
-    glyphs, _ = symbols.resolve(json.loads((bundle / "config.json").read_text()))
-    expected = render_preview.palette_digest(
-        palette, setup["desktop"]["font_family"], glyphs
-    )
+    # so a bundle that changes a glyph changes the image the README serves. So is its font.
+    manifest = json.loads((bundle / "config.json").read_text())
+    glyphs, _ = symbols.resolve(manifest)
+    expected = render_preview.palette_digest(palette, manifest["font"]["family"], glyphs)
     if digest_path.read_text().strip() != expected:
         return [f"rendered from a different palette than assets/{setup['desktop']['theme']}/"]
     return []

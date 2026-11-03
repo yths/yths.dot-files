@@ -7,7 +7,7 @@
 #     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
 # Everything it installs comes from setup.toml. Edit that first if you want a different
-# theme, font, or package set; nothing needs editing here.
+# theme, fallback font, or package set; nothing needs editing here.
 #
 # Safe to re-run: yay skips what is present, and install.py backs up whatever it replaces.
 
@@ -71,18 +71,48 @@ if ! command -v yay >/dev/null 2>&1; then
 fi
 
 # --- packages, read from setup.toml so this script holds no list of its own --------------
+# The fallback font goes in with them: it has to be on the machine before the theme's own
+# font is attempted below, so that attempt failing leaves a desktop that still renders.
 groups="core boot backend python optional"
 $development && groups="$groups development"
 packages="$(python - "$REPOSITORY_PATH/setup.toml" $groups <<'PYEOF'
 import sys, tomllib
 with open(sys.argv[1], "rb") as handle:
-    packages = tomllib.load(handle)["packages"]
-print(" ".join(dict.fromkeys(name for group in sys.argv[2:] for name in packages.get(group, []))))
+    setup = tomllib.load(handle)
+names = [setup["desktop"]["fallback_font_package"]]
+names += [name for group in sys.argv[2:] for name in setup["packages"].get(group, [])]
+print(" ".join(dict.fromkeys(names)))
 PYEOF
 )"
 say "Installing $(printf '%s' "$packages" | wc -w) packages"
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
+
+# --- the theme's font, which the theme decides and this machine may not be able to get -----
+# helper/fonts.py reads the configured theme's bundle and says which package provides its
+# family; nothing when setup.toml leaves the theme to the prompt, or the family is one it has
+# no package for. A failure here is reported and not fatal: install.py sees the family is
+# missing and writes the fallback into the configuration instead.
+theme_font="$(python "$REPOSITORY_PATH/helper/fonts.py" --package 2>/dev/null || true)"
+if [ -n "$theme_font" ]; then
+    say "Installing the theme's font: $theme_font"
+    run yay -S --needed --noconfirm "$theme_font" \
+        || printf 'Could not install %s; the desktop falls back to the font in setup.toml.\n' "$theme_font" >&2
+fi
+
+# --- the greeter, from this repository's PKGBUILD rather than the AUR ----------------------
+# configuration/web-greeter/nody-greeter/ is the AUR package with package.patch applied: the
+# upstream electron rebuild step and npm's script allow-list stop the native module building
+# otherwise. lightdm, which it depends on, is in the boot group above; makepkg -s fetches the
+# make dependencies. Built in a scratch directory so makepkg's src/ and pkg/ never land in the
+# clone, and skipped once installed, since the build is minutes of npm.
+if ! pacman -Q nody-greeter >/dev/null 2>&1; then
+    say "Building nody-greeter from configuration/web-greeter/nody-greeter"
+    build_directory="$(mktemp -d)"
+    run cp -R "$REPOSITORY_PATH/configuration/web-greeter/nody-greeter/." "$build_directory"
+    if ! $dry_run; then (cd "$build_directory" && makepkg -si --needed --noconfirm); fi
+    run rm -rf "$build_directory"
+fi
 
 # --- the dot files, and with --system the two that write outside $HOME ---------------------
 # install.py --system asks for root once, before it changes anything, and installs the login

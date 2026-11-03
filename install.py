@@ -40,6 +40,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 import helper.apply_icc
+import helper.fonts
 import helper.patch_configurations
 import helper.screen_configuration
 import helper.symbols
@@ -284,10 +285,9 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
         configuration["palette"] = pickle.load(handle)
 
     configuration["wallpapers"] = wallpapers
-    configuration["font"] = {
-        "family": SETUP["desktop"]["font_family"],
-        "size": SETUP["desktop"]["font_size"],
-    }
+    # The bundle's font, if this machine has it; setup.toml's fallback at the bundle's size
+    # if not. See helper/fonts.py for why a missing font is a warning and not a failure.
+    configuration["font"] = helper.fonts.resolve(configuration.get("font"), SETUP)
     configuration["state"] = dict(SETUP["state"])
     configuration.update(theme_vocabulary(configuration))
     return configuration
@@ -336,8 +336,8 @@ def migrate_configuration(
     migrated = {key: existing[key] for key in MACHINE_OWNED if key in existing}
     changes = []
 
-    # Re-derived: the bundle names it, setup.toml sizes it, palette.pkl colours it. Each is a
-    # copy taken at install time, and each goes stale when the repository moves under it.
+    # Re-derived: the bundle names it, fonts it and colours it. Each is a copy taken at
+    # install time, and each goes stale when the repository moves under it.
     migrated["name"] = bundle.get("name", existing.get("name"))
     # From the bundle, not from ``~/.config/palette.pkl``. That symlink points at whichever
     # bundle was installed last, so reading it made ``--migrate --theme other`` produce a
@@ -345,10 +345,7 @@ def migrate_configuration(
     # valid palettes and nothing downstream can tell which it asked for.
     with open(os.path.join(bundle_path, "palette.pkl"), "rb") as handle:
         migrated["palette"] = pickle.load(handle)
-    migrated["font"] = {
-        "family": SETUP["desktop"]["font_family"],
-        "size": SETUP["desktop"]["font_size"],
-    }
+    migrated["font"] = helper.fonts.resolve(bundle.get("font"), SETUP)
     migrated.update(theme_vocabulary(bundle))
 
     for field in ("name", "palette", "font", "symbols", "strings", "bluetooth_devices"):

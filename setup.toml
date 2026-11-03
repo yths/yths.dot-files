@@ -2,7 +2,7 @@
 #
 # The installer, the bootstrap script and the dependency documentation all read this file, so
 # a change here reaches every one of them. Nothing else needs editing to adopt this
-# repository on a new machine: pick a theme, name your font, adjust the package list, and run
+# repository on a new machine: pick a theme, adjust the package list, and run
 # `./bootstrap.sh`.
 #
 # Read with tomllib, which is in the standard library — this adds no dependency.
@@ -13,11 +13,15 @@
 # see what is available.
 theme = "default"
 
-# The font the whole desktop derives from: the bar, the terminal, the launcher, the boot
-# splash. Every other size is computed from `size`, so changing it rescales everything
-# together. It must be a Nerd Font — the bar draws glyphs from the private use area.
-font_family = "Iosevka NF"
-font_size = 14
+# The font is the theme's. Each bundle's config.json names the family the whole desktop
+# derives from -- the bar, the terminal, the launcher, the boot splash -- and every other size
+# is computed from its size. ./bootstrap.sh installs the package that provides it
+# (helper/fonts.py knows which package provides which family). This is what the desktop uses
+# instead when that install fails, or the family is not on the machine when install.py runs.
+# It is always installed, so it is there before it is needed, and it must be a Nerd Font --
+# the bar draws glyphs from the private use area.
+fallback_font_family = "Iosevka NF"
+fallback_font_package = "ttf-iosevka-nerd"
 
 [state]
 # How the desktop starts, and what `install.py` resets it to. `theme_mode = "automatic"` lets
@@ -41,7 +45,6 @@ prompt = ["IPINFO_TOKEN"]
 core = [
     "xorg-server", "xorg-xinit", "xinit-xsession",
     "qtile", "python-dbus-fast",
-    "ttc-iosevka",
     "kitty", "rofi", "dunst", "picom",
     # Where GTK keeps the preferences that are not files -- the file chooser showing
     # hidden entries, and the light/dark scheme GTK 4 follows. helper/patch_gtk.py
@@ -71,8 +74,10 @@ core = [
     "maim", "xclip", "playerctl", "brightnessctl", "libnotify",
 ]
 
-# The login screen and the boot splash.
-boot = ["lightdm", "nody-greeter", "plymouth"]
+# The login screen and the boot splash. The greeter itself, nody-greeter, is not here: the
+# AUR package no longer builds, so ./bootstrap.sh makes it from the patched PKGBUILD in
+# configuration/web-greeter/nody-greeter/ once these are in place.
+boot = ["lightdm", "plymouth"]
 
 # The metrics service the bar reads from, and its pacman hook.
 backend = ["valkey", "python-redis", "pacman-contrib"]
