@@ -8,11 +8,11 @@ arch=("any")
 url="https://github.com/JezerM/nody-greeter"
 license=("GPL3")
 depends=("lightdm" "gobject-introspection" "cairo" "xorg-xsetroot")
-makedepends=("git" "nodejs" "npm" "python3")
+makedepends=("git" "nodejs" "npm" "python3" "unzip")
 conflicts=('web-greeter')
 source=("${pkgname}-${pkgver}::git+${url}.git#tag=${pkgver}" "package.patch")
 sha256sums=('9dc6b1f2026dfff59039648aca88048a05c1d4f6d869f3731c2b25ed5bfeda82'
-  '7b8e8e120e53946a9ae09fbba3a57a7bbbcf7601f088a619c4936bfbe5cce062')
+  'dec19da3a54d8d93c47b02e5c2a98ab10ffe09baa52dfcd04debc974834da1ec')
 
 prepare() {
   cd "${pkgname}-${pkgver}"

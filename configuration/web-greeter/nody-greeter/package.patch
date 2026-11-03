@@ -117,3 +117,31 @@
 +      });
        spinner.succeed("Node-gtk compiled");
  
+@@ -325,6 +316,26 @@ let copies_prepare = [
+ ];
+ 
+ async function prepare_install() {
++  const electronDistPath = path.resolve("./node_modules/electron/dist");
++  const electronBinaryPath = path.join(electronDistPath, "electron");
++  if (!fs.pathExistsSync(electronBinaryPath)) {
++    const { downloadArtifact } = await import("@electron/get");
++    const electronArchive = await downloadArtifact({
++      version: electronPackage.version,
++      artifactName: "electron",
++      platform: process.platform,
++      arch: ARCH,
++    });
++    fs.ensureDirSync(electronDistPath);
++    childProcess.execFileSync(
++      "unzip",
++      ["-oq", electronArchive, "-d", electronDistPath],
++      { stdio: "inherit" }
++    );
++  }
++  if (!fs.pathExistsSync(electronBinaryPath)) {
++    throw new Error(`Electron binary missing after extraction: ${electronBinaryPath}`);
++  }
+   create_install_root();
+   if (check_program("bash") && INSTALL_BASH_COMPLETION)
+     copies_prepare.push({
+
