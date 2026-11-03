@@ -269,3 +269,15 @@ def test_the_rendered_glyphs_come_from_the_vocabulary() -> None:
     assert declared <= set(symbols.SYMBOLS), f"undeclared: {declared - set(symbols.SYMBOLS)}"
     for key in declared:
         assert symbols.SYMBOLS[key].isascii(), f"{key} falls back to a glyph, not ascii"
+
+
+def test_the_missing_hook_is_detected_but_never_written(tmp_path: pathlib.Path) -> None:
+    # Whether the splash draws is decided in a file that decides whether the machine boots,
+    # so the installer only reports. The HOOKS= line is parsed as a word list: a hook named
+    # elsewhere in the file, in a comment, is not the hook.
+    config = tmp_path / "mkinitcpio.conf"
+    config.write_text("# plymouth goes here\nHOOKS=(base systemd sd-encrypt filesystems)\n")
+    assert patch_plymouth.hook_is_configured(str(config)) is False
+    config.write_text("HOOKS=(base systemd plymouth sd-encrypt filesystems)\n")
+    assert patch_plymouth.hook_is_configured(str(config)) is True
+    assert patch_plymouth.hook_is_configured(str(tmp_path / "absent")) is None

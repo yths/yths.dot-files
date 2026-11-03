@@ -1,68 +1,151 @@
 # Installation
 
-> One command does all of this, including the boot splash and login screen: `./bootstrap.sh`
-> from a clone, or `--skip-system` to leave those two. This page is the long form —
-> what each step changes, and what to do when one of them does not apply to your machine.
-> Edit [../setup.toml](../setup.toml) first if you want a different theme, fallback font or
-> package set; the package command below and the installer both read it.
+Installing this desktop onto a machine that already runs Arch Linux and boots to a console.
+To build that machine first -- partitioning, encryption, boot loader -- see
+[os-build.md](os-build.md); it ends where this begins, with `git` installed.
 
-Installing this desktop onto a machine that already runs Arch Linux. To build that machine
-first -- partitioning, encryption, boot loader -- see [os-build.md](os-build.md).
+## Install
 
-The steps run in the order `./bootstrap.sh` runs them: packages first, then the dot files,
-and the two things that change how the machine boots and logs in -- the login screen and the
-boot splash -- last, by `install.py --system`. Nothing starts the display manager before
-that: everything up to it is undone by re-running, while a display manager started against a
-half-installed desktop takes over the console you are working from and has nothing to show.
+Three lines at the console, then a reboot. Nothing else is typed:
 
-[dependencies.md](dependencies.md) maps every Python import in the repo to the Arch package
-that provides it, and says what the non-Python packages are for. When adding a dependency,
-update [../setup.toml](../setup.toml) and that file.
+```bash
+git clone https://github.com/yths/yths.dot-files.git ~/repositories/yths.dot-files
+cd ~/repositories/yths.dot-files
+./bootstrap.sh
+```
 
-## Prerequisites
+It asks for the `sudo` password, and once whether to collect credentials (`y`/`n`; `n` is
+fine, see [Credentials](#credentials)). When it prints `Done`:
 
-Before starting, ensure you have:
+```bash
+reboot
+```
 
-- A working Arch Linux installation with network access
-- A user account with `sudo` rights
-- `git` and `python` available
+The machine comes back to the login screen, and the session behind it is qtile. Everything
+further down this page is done from that desktop, in a terminal, and none of it is needed to
+get there.
+
+To change the theme, the fallback font or the package list, edit
+[../setup.toml](../setup.toml) between the `cd` and the `./bootstrap.sh`; it is the one file
+the whole install reads. `./bootstrap.sh --dry-run` prints what would happen and stops;
+`--skip-system` leaves the login screen and boot splash alone; `--dev` adds the linter and
+test runner. It is safe to re-run.
+
+### What it does
+
+In order, so a failure is easy to place:
+
+1. Installs `yay`, then every package in `[packages]` of `setup.toml` plus the fallback font.
+2. Installs the theme's own font, if `helper/fonts.py` knows the package for it -- see
+   [Fonts](#fonts). Failing here is reported and not fatal.
+3. Builds `nody-greeter` from the patched PKGBUILD in
+   [../configuration/web-greeter/nody-greeter/](../configuration/web-greeter/nody-greeter/)
+   (the AUR package no longer builds). Minutes of npm; skipped when already installed.
+4. Enables `valkey`, clones [yths.backend-service](https://github.com/yths/yths.backend-service)
+   beside this repository and enables it as a user service. The bar's metrics; not fatal.
+5. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
+   `~/.config/config.json` from the theme bundle, patches every application, then -- as root,
+   asked for once -- installs the login screen, points LightDM at `nody-greeter`, enables
+   `lightdm.service` *without starting it* (started from the console it would take the console
+   over), and installs the boot splash.
+
+The one thing it does not do is make the boot splash draw: that needs two edits to files that
+decide whether the machine boots, and it says so at the end. See [Boot Splash](#boot-splash).
+
+## After the First Login
+
+Optional, and in no particular order.
+
+### Boot Splash
+
+Installed by the bootstrap, but Plymouth only draws it once it is in the initramfs and asked
+for on the kernel command line. Add the `plymouth` hook to `/etc/mkinitcpio.conf`, after
+`systemd` and before `sd-encrypt`:
+
+```bash
+HOOKS=(... systemd ... plymouth sd-encrypt ...)
+```
+
+Append `splash` to the `options` line of `/boot/loader/entries/arch.conf`, then rebuild:
+
+```bash
+python helper/patch_plymouth.py --install --rebuild
+```
+
+The installer warns about the missing hook every time it installs the splash, until it is
+there.
+
+### Credentials
+
+`install.py` offers to collect the secrets listed under `[credentials]` in `setup.toml` into
+`~/.config/credentials.json` (mode 0600). Today that is one token: `IPINFO_TOKEN`, from
+[ipinfo.io](https://ipinfo.io/), which buys the location widget its sunrise and sunset and
+with them the automatic light/dark switch. Declined at install, it is collected later with:
+
+```bash
+python install.py --credentials
+```
+
+That writes the file and touches nothing else; a plain `python install.py` would also reset
+the machine's `state`.
+
+### Fonts
+
+The font is the theme's: each bundle's `config.json` names the family the whole desktop
+derives from, and every other size is computed from its size. Which Arch package provides
+that family is recorded in `FONT_PACKAGES` in [../helper/fonts.py](../helper/fonts.py), and a
+bundle naming a plain family that has a Nerd Font build -- `Atkinson Hyperlegible Mono` for
+`AtkynsonMono NF` -- gets the Nerd Font build, since that is the one with the glyphs the bar
+draws.
+
+If the theme's font did not install, or the table has no package for it, the desktop is
+running in the fallback -- `[desktop] fallback_font_family` in `setup.toml`, `Iosevka NF`
+from `ttf-iosevka-nerd`, always installed -- and `install.py` said so. Install the font
+(extending the table if it is new) and switch:
+
+```bash
+yay -S --needed $(python helper/fonts.py --package)
+python install.py --migrate
+```
+
+The fallback has to stay a Nerd Font, because the bar draws its glyphs from the private use
+area.
+
+### Backend Service
+
+The bootstrap clones and enables it. To relocate it, change its Valkey, or if that step
+failed, the backend repository's
+[docs/install.md](https://github.com/yths/yths.backend-service/blob/main/docs/install.md) has
+the details. The defaults are overridden by environment variables, which have to be exported
+before LightDM starts the session:
+
+```bash
+BACKEND_REDIS_HOST=localhost
+BACKEND_REDIS_PORT=6379
+BACKEND_REDIS_DB=1
+```
+
+## Without the Bootstrap
+
+What the script does, as commands, for a machine where one step does not apply or has to be
+done differently. Skip to the step that needs it; the order is the script's.
 
 `install.py` symlinks this repository's configuration into place for every application it
 manages. A real file or directory in the way is renamed to `<name>.<timestamp>.bak` first,
-so an existing setup can be recovered; a symlink it had created before is simply
-re-pointed.
+so an existing setup can be recovered; a symlink it had created before is simply re-pointed.
+The installer reads configuration and themes from the clone it is run from, wherever that is;
+`DOTFILES_REPOSITORY_PATH` redirects it to another clone.
 
-## Installing the AUR Helper
-
-Log in as your user and install `yay`:
+**The AUR helper.**
 
 ```bash
 git clone https://aur.archlinux.org/yay-bin.git
-cd yay-bin
-makepkg -si
-cd ..
-rm -rf yay-bin
+cd yay-bin && makepkg -si && cd .. && rm -rf yay-bin
 ```
 
-## Cloning the Repository
-
-The installer and the themes are read from the clone, wherever it is:
-
-```bash
-mkdir -p ~/repositories
-cd ~/repositories
-git clone https://github.com/yths/yths.dot-files.git
-cd yths.dot-files
-```
-
-Now is the time to edit [../setup.toml](../setup.toml): the theme, the fallback font and the
-package groups below are all read from it.
-
-## Installing the Packages
-
-The packages are listed once, in `[packages]` of [../setup.toml](../setup.toml), grouped by
-what stops working without them. This installs the same groups `./bootstrap.sh` does, with
-the fallback font ahead of them:
+**The packages**, from the `[packages]` groups of `setup.toml` with the fallback font ahead
+of them. Drop a group to leave it out -- `boot` for no login screen or splash, `optional` for
+the browser, media player and shell tools:
 
 ```bash
 yay -S --needed $(python - setup.toml core boot backend python optional <<'PYEOF'
@@ -74,48 +157,13 @@ names += [name for group in sys.argv[2:] for name in setup["packages"].get(group
 print(" ".join(dict.fromkeys(names)))
 PYEOF
 )
-```
-
-Drop a group from the list to leave it out -- `boot` if this machine should not get the
-login screen and boot splash, `optional` for the browser, media player and shell tools.
-
-| Group | What it is |
-|---|---|
-| `core` | X, qtile, the terminal, launcher, notifications, compositor, screen lock, polkit agent and keyring. Without these there is nothing to log into. |
-| `boot` | LightDM and Plymouth. Configured in the next two sections, installed by `install.py --system`. The greeter LightDM runs is built separately, below. |
-| `backend` | Valkey and the client the bar reads it through. |
-| `python` | What the helper scripts import. `helper/list_dependencies.py` checks this group against the code. |
-| `optional` | Everything that works without a specific thing missing. |
-
-## Installing the Theme's Font
-
-The font is the theme's: each bundle's `config.json` names the family the whole desktop
-derives from, and every other size is computed from its size. Which Arch package provides
-that family is recorded in `FONT_PACKAGES` in [../helper/fonts.py](../helper/fonts.py), and a
-bundle naming a plain family that has a Nerd Font build -- `Atkinson Hyperlegible Mono` for
-`AtkynsonMono NF` -- gets the Nerd Font build, since that is the one with the glyphs the bar
-draws. This prints the package for the theme `setup.toml` selects, and installs it:
-
-```bash
 yay -S --needed $(python helper/fonts.py --package)
 ```
 
-It prints nothing when `setup.toml` leaves the theme to the prompt, or when the family is
-one the table has no package for -- extend the table, or install the font by hand. Either
-way, and if this install fails, the desktop still renders: the fallback font went in with
-the packages above, and `install.py` writes it into the configuration whenever fontconfig
-cannot see the theme's family. The fallback is `[desktop] fallback_font_family` in
-[../setup.toml](../setup.toml) -- `Iosevka NF`, from `ttf-iosevka-nerd` -- and has to stay
-a Nerd Font, because the bar draws its glyphs from the private use area. Install the
-theme's font later and `python install.py --migrate` switches to it.
+[dependencies.md](dependencies.md) says what the less obvious packages are for.
 
-## Building the Greeter
-
-`nody-greeter` is the web-greeter runtime LightDM renders the login screen with. The AUR
-package no longer builds, so this repository carries it with a patch applied, under
-[../configuration/web-greeter/nody-greeter/](../configuration/web-greeter/nody-greeter/).
-Build it from a scratch copy, so `makepkg` leaves nothing in the clone; `-s` fetches the make
-dependencies (Node, npm) and `lightdm` is already in place from the `boot` group:
+**The greeter**, built from the repository's PKGBUILD in a scratch directory so `makepkg`
+leaves nothing in the clone. `lightdm` has to be installed first (the `boot` group):
 
 ```bash
 build_directory="$(mktemp -d)"
@@ -124,111 +172,36 @@ cp -R configuration/web-greeter/nody-greeter/. "$build_directory"
 rm -rf "$build_directory"
 ```
 
-The build is a few minutes of npm. `./bootstrap.sh` skips it when `nody-greeter` is already
-installed.
-
-## Configuring the Display Manager
-
-LightDM has to be told which greeter to run; nothing in this repository writes
-`/etc/lightdm/lightdm.conf`. Set, under `[Seat:*]`:
-
-```ini
-greeter-session=nody-greeter
-```
-
-Enable the service, but do not start it:
+**The services.**
 
 ```bash
-sudo systemctl enable lightdm.service
-```
-
-Not `--now`. At this point there is no greeter theme installed and nothing has pointed
-`/etc/lightdm/web-greeter.yml` at one -- `install.py --system` does both further down -- so a
-display manager started here switches the machine to a graphical VT with a greeter that
-cannot render, and leaves the console you are following this from behind it. It starts at
-the reboot that ends this page, with everything in place.
-
-## Configuring the Graphical Boot
-
-Add the `plymouth` hook to `/etc/mkinitcpio.conf` between `systemd` and `sd-encrypt`:
-
-```bash
-HOOKS=(... systemd ... plymouth sd-encrypt ...)
-```
-
-Append `splash` to the kernel parameters in `/boot/loader/entries/arch.conf`. The initramfs
-does not need regenerating by hand: `install.py --system` runs
-`plymouth-set-default-theme -R` when it installs the splash, which rebuilds it with the hook
-in place. Skip the rebuild and this section is inert until the next one; the desktop is
-unaffected.
-
-## Installing the Backend Service
-
-Start the Redis-compatible store the qtile widgets read from:
-
-```bash
-sudo systemctl enable --now valkey
-```
-
-Override the defaults via environment variables if needed (make sure they are exported before LightDM starts the session):
-
-```bash
-BACKEND_REDIS_HOST=localhost
-BACKEND_REDIS_PORT=6379
-BACKEND_REDIS_DB=1
-```
-
-Clone and install the backend service:
-
-```bash
-cd ~/repositories
-git clone https://github.com/yths/yths.backend-service.git
-cd yths.backend-service
+sudo systemctl enable --now valkey.service
+git clone https://github.com/yths/yths.backend-service.git ~/repositories/yths.backend-service
 mkdir -p ~/.local/share/systemd/user
-cp backend.service ~/.local/share/systemd/user/
-systemctl --user enable --now backend
+cp ~/repositories/yths.backend-service/backend.service ~/.local/share/systemd/user/
+systemctl --user enable --now backend.service
 ```
 
-Full setup details are in the backend repo's [docs/install.md](https://github.com/yths/yths.backend-service/blob/main/docs/install.md).
-
-## Installing the Dot Files
-
-From the clone, run the installer. `--system` is what installs the login screen and the
-boot splash; without it they are left alone, which is `./bootstrap.sh --skip-system`:
+**The dot files**, with the login screen and boot splash. Without `--system` they are left
+alone, which is what `./bootstrap.sh --skip-system` does:
 
 ```bash
-cd ~/repositories/yths.dot-files
 python install.py --system
 ```
 
-It asks for root once, before changing anything, and installs the two system surfaces last:
-the patched greeter theme into `/usr/share/web-greeter/themes/<theme>/` with
-`/etc/lightdm/web-greeter.yml` pointed at it, and the rendered boot splash made the default,
-initramfs rebuilt. Each can be re-run on its own later with `python install.py --migrate
---system`, or separately via `python helper/patch_web_greeter.py --install --activate` and
-`python helper/patch_plymouth.py --install --rebuild`.
+The theme is `[desktop] theme` in `setup.toml`; `--theme <name>` overrides it, and an empty
+value there restores an interactive prompt. Bundles are discovered under `assets/`, one
+directory per preset. The installer also arms this clone's pre-commit gate (`ruff`, `pytest`,
+`helper/gendocs.py --check`), reported and never prompted; see
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The theme comes from `[desktop] theme` in [../setup.toml](../setup.toml); `--theme <name>` overrides it, and clearing it in setup.toml restores an interactive prompt. Bundles are discovered under `assets/`, one directory per preset, named for the preset. The selected one's `config.json` is assembled into `~/.config/config.json`, which qtile and every helper read.
+The login screen installer writes `/etc/lightdm/lightdm.conf.d/50-nody-greeter.conf` and runs
+`systemctl enable lightdm.service` -- enable, not `--now`. By hand, those two are the same;
+do not start the display manager from the console you are installing from. Both system
+surfaces can be installed separately: `python helper/patch_web_greeter.py --install
+--activate` and `python helper/patch_plymouth.py --install --rebuild`.
 
-The font in that file is the bundle's, unless fontconfig cannot find the family -- then it
-is the fallback from setup.toml, at the bundle's size, and the installer says so. See
-[Installing the Theme's Font](#installing-the-themes-font).
-
-The installer also arms this clone's pre-commit gate, so `ruff`, `pytest` and `helper/gendocs.py --check` run on every commit — see [CONTRIBUTING.md](../CONTRIBUTING.md). It is reported, never prompted, and a failure to arm it does not stop the install.
-
-The installer reads configuration and themes from the clone it is run from, wherever that is. The `DOTFILES_REPOSITORY_PATH` environment variable redirects it to another clone; the installer and the helpers under `helper/` honour it. Hook arming deliberately ignores it, so redirecting where configuration is read from cannot arm a different clone.
-
-## Starting the Desktop
-
-Reboot. Plymouth draws the splash, LightDM starts into the greeter installed above, and the
-session it launches is qtile:
-
-```bash
-reboot
-```
-
-To try the session first without the display manager, `startx` from the console runs the
-same `~/.xinitrc`.
+Then `reboot`, or `startx` to try the session without the display manager first.
 
 ## Updating
 

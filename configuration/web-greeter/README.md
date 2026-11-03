@@ -41,6 +41,13 @@ and nothing else in that file — it is LightDM's, and carries settings this rep
 opinion about. Without `--activate` the theme is installed and whatever is already active
 stays active.
 
+`install.py --system` goes two steps further than `--activate`, because on a fresh machine
+nothing has told LightDM to run a web greeter at all: it writes
+`/etc/lightdm/lightdm.conf.d/50-nody-greeter.conf` with `greeter-session=nody-greeter` — a
+drop-in, so `/etc/lightdm/lightdm.conf` stays the package's — and runs
+`systemctl enable lightdm.service`. Enable, not start: it runs from the console at the end
+of an install, and a display manager started there takes the console over.
+
 The login screen installs under the active theme's name — `/usr/share/web-greeter/themes/<theme>/`
 — so switching themes installs a new copy, and `--activate` points LightDM at it. Once it is
 active, login screens this repository installed for earlier themes are removed; each install

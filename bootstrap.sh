@@ -6,6 +6,12 @@
 #     ./bootstrap.sh --dry-run        print what would happen and stop
 #     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
+# From a console on a machine that has nothing yet, it is the whole install: packages, the
+# greeter, the services, the configuration, the login screen. Reboot when it is done. It asks
+# for the sudo password, and install.py asks once whether to collect credentials; that is all
+# the typing. The boot splash wants two edits to files that decide whether the machine boots,
+# so that one is left for later and said so at the end.
+#
 # Everything it installs comes from setup.toml. Edit that first if you want a different
 # theme, fallback font, or package set; nothing needs editing here.
 #
@@ -14,6 +20,7 @@
 set -euo pipefail
 
 REPOSITORY_URL="https://github.com/yths/yths.dot-files.git"
+BACKEND_URL="https://github.com/yths/yths.backend-service.git"
 DEFAULT_CLONE_PATH="$HOME/repositories/yths.dot-files"
 
 dry_run=false
@@ -24,7 +31,7 @@ for argument in "$@"; do
         --dry-run) dry_run=true ;;
         --dev) development=true ;;
         --skip-system) system=false ;;
-        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \?//'; exit 0 ;;
+        -h|--help) sed -n '2,18p' "$0" | sed 's/^# \?//'; exit 0 ;;
         *) printf 'unknown option: %s\n' "$argument" >&2; exit 2 ;;
     esac
 done
@@ -114,10 +121,37 @@ if ! pacman -Q nody-greeter >/dev/null 2>&1; then
     run rm -rf "$build_directory"
 fi
 
+# --- the services the bar reads from -------------------------------------------------------
+# valkey is the store; the backend service, its own repository, is what writes into it. Both
+# are enabled now so the bar has numbers at the first login. The backend is a user unit, so no
+# root; a failure here costs the bar its metrics and nothing else, hence not fatal.
+say "Enabling valkey"
+run sudo systemctl enable --now valkey.service
+
+backend_path="$(dirname "$REPOSITORY_PATH")/yths.backend-service"
+if [ -d "$backend_path/.git" ]; then
+    say "Updating the backend service in $backend_path"
+    run git -C "$backend_path" pull --ff-only || true
+else
+    say "Cloning the backend service into $backend_path"
+    run git clone "$BACKEND_URL" "$backend_path" || true
+fi
+if [ -f "$backend_path/backend.service" ]; then
+    run mkdir -p "$HOME/.local/share/systemd/user"
+    run cp "$backend_path/backend.service" "$HOME/.local/share/systemd/user/"
+    run systemctl --user daemon-reload || true
+    run systemctl --user enable --now backend.service \
+        || printf 'Could not enable the backend service; the bar runs without its metrics.\n' >&2
+else
+    printf 'No backend.service in %s; the bar runs without its metrics.\n' "$backend_path" >&2
+fi
+
 # --- the dot files, and with --system the two that write outside $HOME ---------------------
 # install.py --system asks for root once, before it changes anything, and installs the login
 # screen and boot splash last: everything before them is reversible by re-running, while they
-# change how the machine boots and logs in. --skip-system leaves both.
+# change how the machine boots and logs in. The login screen installer also points LightDM at
+# nody-greeter and enables the service -- enabled, not started, so this console stays yours
+# until the reboot. --skip-system leaves all of it.
 if $system; then
     say "Installing the configuration, the login screen and the boot splash"
     run python "$REPOSITORY_PATH/install.py" --system
@@ -128,10 +162,10 @@ fi
 
 say "Done"
 cat <<'EOF'
-    Start the desktop with `startx`, or reboot into the display manager.
+    Reboot into the login screen, or `startx` from here to look first.
 
-    To install the login screen and boot splash later, or again:
-      python install.py --migrate --system
-
-    docs/install.md has what they change and why.
+    Left for later, from the desktop -- none of it is needed to log in:
+      - the boot splash: add `plymouth` to HOOKS in /etc/mkinitcpio.conf and `splash` to the
+        kernel command line, then `python install.py --migrate --system`
+      - display calibration, credentials, a different theme: docs/install.md
 EOF

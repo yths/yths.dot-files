@@ -54,6 +54,12 @@ SYSTEM_THEME_ROOT = "/usr/share/web-greeter/themes"
 #: LightDM's greeter configuration, which names the theme it renders.
 GREETER_CONFIG = "/etc/lightdm/web-greeter.yml"
 
+#: Where LightDM is told to run nody-greeter at all. A drop-in rather than an edit to
+#: /etc/lightdm/lightdm.conf: that file is the package's, and LightDM reads this directory
+#: before it, so a `greeter-session` set there by hand still wins. Arch ships it commented out.
+LIGHTDM_DROPIN = "/etc/lightdm/lightdm.conf.d/50-nody-greeter.conf"
+LIGHTDM_DROPIN_CONTENT = "[Seat:*]\ngreeter-session=nody-greeter\n"
+
 #: The theme installed when none is named. The repository ships one.
 DEFAULT_THEME = "standard"
 
@@ -207,6 +213,49 @@ def activate(name: str, prefix: list[str]) -> bool:
     return True
 
 
+def configure_lightdm(prefix: list[str]) -> bool:
+    """Name nody-greeter as LightDM's greeter and enable the service -- without starting it.
+
+    Enabled and not started, deliberately. This runs from the console at the end of an
+    install; a display manager started here takes that console over, and the session it
+    offers is one qtile has never run in. It starts at the reboot, with everything in place.
+    Writing the drop-in is skipped when it already says this, so a theme switch is quiet.
+    """
+    try:
+        with open(LIGHTDM_DROPIN, encoding="utf-8") as handle:
+            current = handle.read()
+    except OSError:
+        current = None
+    if current != LIGHTDM_DROPIN_CONTENT:
+        descriptor, staged = tempfile.mkstemp(suffix=".conf")
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(LIGHTDM_DROPIN_CONTENT)
+        try:
+            result = subprocess.run(
+                [*prefix, "install", "-Dm644", staged, LIGHTDM_DROPIN],
+                capture_output=True, text=True, check=False,
+            )
+        finally:
+            os.unlink(staged)
+        if result.returncode != 0:
+            logger.warning(f"Could not write {LIGHTDM_DROPIN}: {result.stderr.strip()}")
+            return False
+        logger.info(f"LightDM runs nody-greeter ({LIGHTDM_DROPIN}).")
+
+    if shutil.which("systemctl") is None:
+        logger.info("No systemctl; enable the display manager by hand.")
+        return True
+    result = subprocess.run(
+        [*prefix, "systemctl", "enable", "lightdm.service"],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        logger.warning(f"Could not enable lightdm.service: {result.stderr.strip()}")
+        return False
+    logger.info("lightdm.service is enabled; it starts at the next boot.")
+    return True
+
+
 def install_theme(
     name: str, installed_as: str, *, prompt: bool = False, make_active: bool = False
 ) -> bool:
@@ -257,13 +306,18 @@ def install_system(configuration: dict[str, Any], *, prompt: bool = False) -> bo
 
     The system patchers' common entry point; ``patch_plymouth.install_system`` is the other,
     and ``helper/patch_configurations.SYSTEM_PATCHERS`` lists both. Installs the default
-    source theme under the active theme's name. ``prompt`` decides whether root may be asked
-    for. Returns whether LightDM now renders it.
+    source theme under the active theme's name, then makes sure LightDM runs nody-greeter and
+    is enabled. ``prompt`` decides whether root may be asked for. Returns whether the login
+    screen will show it at the next boot.
     """
     patch_web_greeter(configuration)
-    return install_theme(
+    if not install_theme(
         DEFAULT_THEME, installed_theme_name(configuration), prompt=prompt, make_active=True
-    )
+    ):
+        return False
+    # install_theme found a prefix, or it would have returned False; the same one serves here
+    # without a second prompt, since sudo's timestamp is live.
+    return configure_lightdm(root_prefix(prompt=prompt) or [])
 
 
 def main() -> int:
