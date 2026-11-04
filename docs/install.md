@@ -41,9 +41,10 @@ In order, so a failure is easy to place:
    `deactivate`, or make sure `python` is `/usr/bin/python`, and re-run.
 3. Installs the theme's own font, if `helper/fonts.py` knows the package for it -- see
    [Fonts](#fonts). Failing here is reported and not fatal.
-4. Builds `nody-greeter` from the patched PKGBUILD in
-   [../configuration/web-greeter/nody-greeter/](../configuration/web-greeter/nody-greeter/)
-   (the AUR package no longer builds). Minutes of npm; skipped when already installed.
+4. Builds the packages under [../packages/](../packages/README.md), whose AUR builds are
+   broken: `nody-greeter` (the login screen's greeter; minutes of npm) and
+   `python-colour-science` (with its hidden `openimageio` dependency). Each is skipped when
+   already installed.
 5. Enables `valkey`, clones [yths.backend-service](https://github.com/yths/yths.backend-service)
    beside this repository and enables it as a user service. The bar's metrics; not fatal.
 6. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
@@ -165,14 +166,18 @@ yay -S --needed $(python helper/fonts.py --package)
 
 [dependencies.md](dependencies.md) says what the less obvious packages are for.
 
-**The greeter**, built from the repository's PKGBUILD in a scratch directory so `makepkg`
-leaves nothing in the clone. `lightdm` has to be installed first (the `boot` group):
+**The repository's own packages** -- `nody-greeter` and `python-colour-science`, whose AUR
+builds are broken -- from [../packages/](../packages/README.md), each in a scratch directory
+so `makepkg` leaves nothing in the clone. `lightdm` has to be installed first (the `boot`
+group):
 
 ```bash
-build_directory="$(mktemp -d)"
-cp -R configuration/web-greeter/nody-greeter/. "$build_directory"
-(cd "$build_directory" && makepkg -si)
-rm -rf "$build_directory"
+for package in packages/*/; do
+    build_directory="$(mktemp -d)"
+    cp -R "$package." "$build_directory"
+    (cd "$build_directory" && makepkg -si)
+    rm -rf "$build_directory"
+done
 ```
 
 **The services.**

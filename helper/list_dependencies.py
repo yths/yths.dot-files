@@ -50,7 +50,8 @@ ARCH_PACKAGES: dict[str, tuple[str, str]] = {
 }
 
 #: Packages that live in the AUR rather than the main repositories, so `yay -S` is required
-#: rather than merely convenient. Kept as data so the marker lands outside the code span,
+#: rather than merely convenient -- or, for python-colour-science, where the AUR build is
+#: broken and ``packages/`` carries the fixed PKGBUILD. Kept as data so the marker lands outside the code span,
 #: where it renders as bold rather than as literal asterisks.
 AUR_PACKAGES = frozenset({"python-colour-science", "python-sounddevice"})
 
@@ -110,13 +111,26 @@ def describe_users(paths: list[str]) -> str:
     )
 
 
+def repository_packages() -> set[str]:
+    """Every package ``bootstrap.sh`` builds from ``packages/<pkgname>/PKGBUILD``.
+
+    The directory name is the package name; that is the contract the bootstrap's loop relies
+    on when it asks pacman whether the package is already there, and tests/test_setup.py
+    checks it against what the PKGBUILD itself says.
+    """
+    return {
+        path.parent.name
+        for path in (pathlib.Path(utils.REPOSITORY_ROOT) / "packages").glob("*/PKGBUILD")
+    }
+
+
 def installed_packages() -> set[str]:
-    """Every Arch package setup.toml tells the bootstrap script to install."""
+    """Every Arch package ``bootstrap.sh`` installs: setup.toml's groups and ``packages/``."""
     return {
         name
         for group in utils.read_setup()["packages"].values()
         for name in group
-    }
+    } | repository_packages()
 
 
 def mismatches(imports: dict[str, list[str]]) -> list[str]:

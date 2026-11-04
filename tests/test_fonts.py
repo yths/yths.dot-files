@@ -97,8 +97,9 @@ def test_bootstrap_installs_the_fallback_before_the_theme_font() -> None:
 
 def test_bootstrap_builds_the_greeter_from_the_repository() -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
-    assert "configuration/web-greeter/nody-greeter" in script
+    assert "/packages/*/" in script
     assert "makepkg -si" in script
+    assert (Path(utils.REPOSITORY_ROOT) / "packages" / "nody-greeter" / "PKGBUILD").is_file()
     packages = utils.read_setup()["packages"]
     assert not any("nody-greeter" in group for group in packages.values()), (
         "nody-greeter comes from the patched PKGBUILD, not the AUR"
