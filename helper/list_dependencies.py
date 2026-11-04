@@ -34,7 +34,7 @@ EXCLUDED_DIRECTORIES = ("tests/",)
 #: and anything a reader needs to know before installing it. Everything else is derived.
 ARCH_PACKAGES: dict[str, tuple[str, str]] = {
     "PIL": ("python-pillow", "renders the boot background"),
-    "cairo": ("python-pycairo", "draws the boot background and the README preview"),
+    "cairo": ("python-cairo", "draws the boot background and the README preview"),
     "colour": (
         "python-colour-science",
         "perceptual nearest-colour matching, sRGB → XYZ → ΔE",
@@ -53,7 +53,7 @@ ARCH_PACKAGES: dict[str, tuple[str, str]] = {
 #: rather than merely convenient -- or, for python-colour-science, where the AUR build is
 #: broken and ``packages/`` carries the fixed PKGBUILD. Kept as data so the marker lands outside the code span,
 #: where it renders as bold rather than as literal asterisks.
-AUR_PACKAGES = frozenset({"python-colour-science", "python-sounddevice"})
+AUR_PACKAGES = frozenset({"python-colour-science", "python-screeninfo", "python-sounddevice"})
 
 #: Above this many files, the column names directories instead of every path.
 MAX_LISTED_FILES = 3
