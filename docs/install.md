@@ -36,14 +36,17 @@ test runner. It is safe to re-run.
 In order, so a failure is easy to place:
 
 1. Installs `yay`, then every package in `[packages]` of `setup.toml` plus the fallback font.
-2. Installs the theme's own font, if `helper/fonts.py` knows the package for it -- see
+2. Checks that `python` can import what step 1 installed, and stops if not, naming the
+   import and its package. A virtualenv or `pyenv` shim on `PATH` is the usual reason;
+   `deactivate`, or make sure `python` is `/usr/bin/python`, and re-run.
+3. Installs the theme's own font, if `helper/fonts.py` knows the package for it -- see
    [Fonts](#fonts). Failing here is reported and not fatal.
-3. Builds `nody-greeter` from the patched PKGBUILD in
+4. Builds `nody-greeter` from the patched PKGBUILD in
    [../configuration/web-greeter/nody-greeter/](../configuration/web-greeter/nody-greeter/)
    (the AUR package no longer builds). Minutes of npm; skipped when already installed.
-4. Enables `valkey`, clones [yths.backend-service](https://github.com/yths/yths.backend-service)
+5. Enables `valkey`, clones [yths.backend-service](https://github.com/yths/yths.backend-service)
    beside this repository and enables it as a user service. The bar's metrics; not fatal.
-5. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
+6. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
    `~/.config/config.json` from the theme bundle, patches every application, then -- as root,
    asked for once -- installs the login screen, points LightDM at `nody-greeter`, enables
    `lightdm.service` *without starting it* (started from the console it would take the console

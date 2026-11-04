@@ -1,6 +1,9 @@
 """``setup.toml``: the one file a reader edits, and everything that reads it."""
 
 import json
+import subprocess
+import sys
+import textwrap
 from pathlib import Path
 
 import list_dependencies
@@ -89,3 +92,42 @@ def test_bootstrap_reads_the_same_file() -> None:
     assert "setup.toml" in script, "the script must not carry a package list of its own"
     for group in ("core", "boot", "backend", "python", "optional"):
         assert group in script, f"bootstrap.sh installs no {group} group"
+
+
+def test_every_recorded_import_resolves_here() -> None:
+    # The development machine has the packages, so the preflight bootstrap.sh runs before
+    # install.py has nothing to report; what this checks is that the check itself is sound.
+    assert list_dependencies.missing_imports() == []
+
+
+def test_a_missing_import_is_named_with_its_package(monkeypatch: pytest.MonkeyPatch) -> None:
+    real = list_dependencies.importlib.util.find_spec
+    monkeypatch.setattr(
+        list_dependencies.importlib.util, "find_spec",
+        lambda name, *a: None if name == "cairo" else real(name, *a),
+    )
+    assert list_dependencies.missing_imports() == [("cairo", "python-pycairo")]
+
+
+def test_a_missing_dependency_is_not_reported_as_a_missing_patcher() -> None:
+    # The orchestrator's import guard exists for running it as a script. With cairo absent it
+    # used to take that branch too and fail on its first name -- "No module named
+    # 'patch_dunst'" -- leaving the dependency that was actually missing two tracebacks up.
+    probe = textwrap.dedent(f"""
+        import builtins, sys
+        sys.path.insert(0, {str(Path(utils.REPOSITORY_ROOT))!r})
+        real = builtins.__import__
+        def fake(name, *args, **kwargs):
+            if name == "cairo":
+                raise ModuleNotFoundError("No module named 'cairo'", name="cairo")
+            return real(name, *args, **kwargs)
+        builtins.__import__ = fake
+        try:
+            import helper.patch_configurations
+        except ModuleNotFoundError as error:
+            print(error.name)
+    """)
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=False,
+    )
+    assert result.stdout.strip() == "cairo", result.stderr

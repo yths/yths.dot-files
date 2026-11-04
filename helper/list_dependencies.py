@@ -11,8 +11,10 @@ no entry in ``ARCH_PACKAGES``, or an entry nothing imports any more, is reported
 rather than rendered, so the two halves cannot drift apart.
 """
 
+import argparse
 import ast
 import collections
+import importlib.util
 import pathlib
 import subprocess
 import sys
@@ -148,7 +150,35 @@ def generate_markdown() -> str:
     return "\n".join(lines)
 
 
+def missing_imports() -> list[tuple[str, str]]:
+    """Every recorded import this interpreter cannot find, with the package that provides it.
+
+    What ``bootstrap.sh`` asks between installing the packages and running ``install.py``:
+    the install reported success, but is the ``python`` about to run the installer the one
+    those packages landed in? A virtualenv, a pyenv shim or an interrupted ``yay`` all say no,
+    and without this the answer arrived as an ImportError from inside the orchestrator.
+    """
+    return sorted(
+        (name, package)
+        for name, (package, _) in ARCH_PACKAGES.items()
+        if importlib.util.find_spec(name) is None
+    )
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--missing", action="store_true",
+        help="list the recorded imports this python cannot find, with their packages; "
+             "exit 1 if there are any",
+    )
+    arguments = parser.parse_args()
+    if arguments.missing:
+        missing = missing_imports()
+        for name, package in missing:
+            print(f"{name}: not importable by {sys.executable}; `yay -S --needed {package}`")
+        return 1 if missing else 0
+
     problems = mismatches(third_party_imports())
     if problems:
         print("Dependency table and imports disagree:", file=sys.stderr)

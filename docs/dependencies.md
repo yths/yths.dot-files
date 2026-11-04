@@ -55,6 +55,15 @@ working without them; this table says what each group's less obvious members are
 | `pacman-contrib`, `yay` | required by the backend service's pacman post-transaction hook |
 | `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated and nothing fails |
 
+## Checking a Machine
+
+`python helper/list_dependencies.py --missing` lists every recorded import the current
+`python` cannot find, each with the package that provides it, and exits 1 if there are any.
+`./bootstrap.sh` runs it between installing the packages and running `install.py`, because
+a package installed for `/usr/bin/python` is invisible to a virtualenv or `pyenv` shim that
+happens to be first on `PATH` -- and without the check that arrived as an `ImportError` from
+inside `helper/patch_configurations.py`.
+
 ## Removing a Dependency
 
 Delete the import, delete its `ARCH_PACKAGES` entry, run `python helper/gendocs.py`, and

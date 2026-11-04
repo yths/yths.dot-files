@@ -116,6 +116,12 @@ Conventions:
       from utils import logger
   ```
 
+  The orchestrator's guard is narrower: it imports every patcher inside the `try`, and a
+  patcher's own missing dependency -- `cairo`, say -- is an `ImportError` too. Falling through
+  on that made the second branch fail on its first name and report a missing `patch_dunst`
+  instead of a missing `cairo`, so it re-raises anything whose `.name` is not `helper`. A
+  patcher importing only `utils` and the standard library does not need that.
+
 ## Orchestrator
 
 `patch_configurations.py` exposes `patch_all`, called when the theme is switched or the palette is regenerated. It imports each `patch_<app>` module and runs the ones listed in the `PATCHERS` registry. Order is not load-bearing — patchers write to disjoint targets — so a new patcher is one import and one row.
