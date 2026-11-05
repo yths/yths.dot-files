@@ -105,7 +105,7 @@ Every default is ASCII, so a machine whose font has no private use area still dr
 | `meter.ramp` | `.`, `:`, `-`, `=`, `+`, `*`, `#`, `@` | U+2581, U+2582, U+2583, U+2584, U+2585, U+2586, U+2587, U+2588 | `configuration/qtile/shared/spectrum.py`, `configuration/qtile/widgets/audio.py`, `configuration/qtile/widgets/bluetooth.py`, `configuration/qtile/widgets/claude_usage.py`, `helper/render_preview.py` |
 | `meter.silence` | `&nbsp;` | _the default_ | `configuration/qtile/shared/spectrum.py` |
 | `battery.discharging` | `_`, `_`, `.`, `:`, `-`, `=`, `+`, `*`, `#`, `%`, `@` | U+F007A, U+F007A, U+F007B, U+F007C, U+F007D, U+F007E, U+F007F, U+F0080, U+F0081, U+F0082, U+F0079 | `configuration/qtile/widgets/power_supply.py` |
-| `battery.charging` | `_`, `_`, `.`, `:`, `-`, `=`, `+`, `*`, `#`, `%`, `@` | U+F089C, U+F089C, U+F0086, U+F0087, U+F0088, U+F0089, U+F008A, U+F008B, U+F008C, U+F008D, U+F0079 | `configuration/qtile/widgets/power_supply.py` |
+| `battery.charging` | `_`, `_`, `.`, `:`, `-`, `=`, `+`, `*`, `#`, `%`, `@` | U+F089C, U+F089C, U+F0086, U+F0087, U+F0088, U+F089D, U+F0089, U+F089E, U+F008A, U+F008B, U+F0085 | `configuration/qtile/widgets/power_supply.py` |
 | `battery.grid` | `AC` | U+F06A5 | `configuration/qtile/widgets/power_supply.py`, `helper/render_preview.py` |
 | `bluetooth.device` | `bt` | U+F00AF | `configuration/qtile/widgets/bluetooth.py` |
 | `bluetooth.headphones` | `hp` | U+F02CE | `helper/render_preview.py` |

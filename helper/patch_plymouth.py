@@ -95,6 +95,12 @@ THEME_SOURCE = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", "them
 #: splash stayed frozen for thirteen months at a theme nothing wrote any more.
 
 
+def plymouth_theme_name(configuration: dict[str, Any]) -> str:
+    """Avoid Plymouth's reserved ``default`` name, which resets the selected theme."""
+    name = installed_theme_name(configuration)
+    return "dot-files-default" if name == "default" else name
+
+
 def theme_source(_configuration: dict[str, Any] | None = None) -> str | None:
     """The boot splash's source directory, or ``None`` if the tree has none.
 
@@ -342,7 +348,7 @@ def install_system(
         return False
     staged = stage_theme(source)
     try:
-        name = installed_theme_name(configuration)
+        name = plymouth_theme_name(configuration)
         render_theme(configuration, staged, PALETTE_VARIANT, name)
         return install_theme(staged, name, prompt=prompt, rebuild=rebuild)
     finally:
@@ -385,7 +391,7 @@ def main() -> int:
 
     # The active theme's name, not the source directory's: the source is the same for every
     # theme, and install_theme points plymouthd.conf at whatever name it installs under.
-    name = installed_theme_name(configuration)
+    name = plymouth_theme_name(configuration)
     staged = stage_theme(source)
     try:
         logger.info(f"Rendering plymouth theme {source} for the {theme} palette ...")

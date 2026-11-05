@@ -60,6 +60,10 @@ Neither directory needs an `__init__.py`.
   the bar. `widgets/audio.py` renders through it, and so does
   [`helper/preview_audio.py`](../../../helper/README.md), which is what makes that tool a
   preview of the real meter rather than a copy that drifts.
+- **`audio_capture.py`** — runs PortAudio capture in a spawned child process. The widget
+  reads ready spectrum frames without waiting, restarts a failed worker after a backoff,
+  and requests a fresh process for device changes. Native audio failures during dock removal
+  cannot abort the window manager.
 
 ## What Belongs Here
 

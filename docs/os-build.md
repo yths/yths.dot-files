@@ -237,16 +237,19 @@ echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
 ### Configuring the Virtual Console
 
-Adjust the keymap, layout, and font to your preference:
+Adjust the console keymap and font to your preference:
 
 ```bash
 cat > /etc/vconsole.conf << 'EOF'
 KEYMAP=us
-XKBLAYOUT=us
-XKBVARIANT=intl
 FONT=LatGrkCyr-12x22
 EOF
 ```
+
+This configures the text console, not X11. After booting the installed system, desktop
+bootstrap derives an unset X11 layout from this console keymap using `localectl`.
+For a different graphical layout or variant, configure X11 separately; see
+[install.md](install.md#keyboard-layout).
 
 ### Setting the Hostname
 

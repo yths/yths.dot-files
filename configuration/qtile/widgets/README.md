@@ -11,9 +11,13 @@ Every `.py` file in this directory is a widget. Code shared between widgets live
 Two base classes from `libqtile.widget.base`:
 
 - **`BackgroundPoll`** — polls a function at a fixed cadence on a background thread; suitable for fast checks (`systemctl`, reading a Redis stream). Used by every widget that doesn't have its own event source.
-- **`InLoopPollText`** — polls on the qtile event loop; used by `audio.py` because it needs to receive samples from a `sounddevice` callback that runs on its own thread.
+- **`InLoopPollText`** — polls on the qtile event loop; `audio.py` reads ready meter frames from an isolated capture process without waiting for audio devices.
 
-Prefer `BackgroundPoll`. Only reach for `InLoopPollText` when the widget needs to coordinate with another thread that pushes into qtile.
+Prefer `BackgroundPoll`. Only reach for `InLoopPollText` when polling cannot block. Audio
+capture lives in `shared.audio_capture`: only its spawned worker imports `sounddevice` and
+opens PortAudio streams. Unplugging a dock can abort PortAudio in native code, which Python
+exception handling and background threads cannot contain. A failed worker is restarted with
+backoff, and widget finalization stops it without calling native teardown inside Qtile.
 
 ## Anatomy of a Widget
 

@@ -69,7 +69,7 @@ def levels(samples: numpy.ndarray, num_bars: int) -> numpy.ndarray:
     return combined / numpy.max([numpy.max(combined), NOISE_FLOOR])
 
 
-def render(bar_levels: numpy.ndarray, ramp: Sequence[str] | None = None) -> str:
+def render(bar_levels: numpy.ndarray | Sequence[float], ramp: Sequence[str] | None = None) -> str:
     """One character per bar, taken from ``ramp`` by height.
 
     ``ramp`` is the active vocabulary's ``meter.ramp``, passed down from config.py the way
@@ -78,5 +78,5 @@ def render(bar_levels: numpy.ndarray, ramp: Sequence[str] | None = None) -> str:
     meter, and a computed ``chr(BLOCK_BASE + h)`` cannot be overridden by a theme.
     """
     rungs = tuple(ramp) if ramp else DEFAULT_RAMP
-    heights = numpy.round(bar_levels * len(rungs)).astype(int)
+    heights = numpy.round(numpy.asarray(bar_levels) * len(rungs)).astype(int)
     return "".join(rungs[h - 1] if h > 0 else SILENCE for h in heights)

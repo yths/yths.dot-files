@@ -1,6 +1,7 @@
 """``setup.toml``: the one file a reader edits, and everything that reads it."""
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -94,6 +95,32 @@ def test_default_bootstrap_installs_linter_vpn_and_editor(setup: dict) -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("console_keymap", "x11_layout", "expected"),
+    [("de", "", "sudo localectl set-keymap de\n"), ("de", "us", ""), ("", "", "")],
+)
+def test_bootstrap_derives_only_missing_x11_layouts(
+    tmp_path: Path, console_keymap: str, x11_layout: str, expected: str,
+) -> None:
+    script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
+    start = script.index('console_keymap_to_convert="$(python')
+    keyboard_setup = script[start:].split("# --- the packages this repository", 1)[0]
+    busctl = tmp_path / "busctl"
+    busctl.write_text(
+        "#!/bin/sh\ncase \"$*\" in\n"
+        f"*X11Layout) printf '%s\\n' '{json.dumps({'data': x11_layout})}' ;;\n"
+        f"*VConsoleKeymap) printf '%s\\n' '{json.dumps({'data': console_keymap})}' ;;\n"
+        "*) exit 1 ;;\nesac\n"
+    )
+    busctl.chmod(0o755)
+    probe = 'set -euo pipefail\nsay() { :; }\nrun() { printf "%s\\n" "$*"; }\n' + keyboard_setup
+    result = subprocess.run(
+        ["bash", "-c", probe], capture_output=True, text=True, check=True,
+        env={**os.environ, "PATH": f"{tmp_path}{os.pathsep}{os.environ['PATH']}"},
+    )
+    assert result.stdout == expected
+
+
 def test_bootstrap_reads_the_same_file() -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
     assert "setup.toml" in script, "the script must not carry a package list of its own"
@@ -101,9 +128,12 @@ def test_bootstrap_reads_the_same_file() -> None:
         assert group in script, f"bootstrap.sh installs no {group} group"
 
 
-@pytest.mark.parametrize(("initial_theme", "should_repair"), [("autumn-theme", False), ("bgrt", True)])
+@pytest.mark.parametrize(
+    ("bundle_name", "expected"), [("Autumn Theme", "autumn-theme"), ("default", "dot-files-default")],
+)
+@pytest.mark.parametrize("should_repair", [False, True])
 def test_bootstrap_verifies_the_configured_plymouth_theme(
-    tmp_path: Path, initial_theme: str, should_repair: bool
+    tmp_path: Path, bundle_name: str, expected: str, should_repair: bool,
 ) -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
     start = script.index('        expected_plymouth_theme="$(python')
@@ -111,9 +141,9 @@ def test_bootstrap_verifies_the_configured_plymouth_theme(
     theme_check = script[start:end]
     config_directory = tmp_path / ".config"
     config_directory.mkdir()
-    (config_directory / "config.json").write_text(json.dumps({"name": "Autumn Theme"}))
+    (config_directory / "config.json").write_text(json.dumps({"name": bundle_name}))
     theme_file = tmp_path / "plymouth-theme"
-    theme_file.write_text(f"{initial_theme}\n")
+    theme_file.write_text("bgrt\n" if should_repair else f"{expected}\n")
     repair_log = tmp_path / "repairs"
     probe = textwrap.dedent("""
         set -euo pipefail
@@ -134,7 +164,7 @@ def test_bootstrap_verifies_the_configured_plymouth_theme(
         capture_output=True, text=True, check=True,
     )
     assert result.stdout == "finished\n"
-    assert theme_file.read_text().strip() == "autumn-theme"
+    assert theme_file.read_text().strip() == expected
     assert repair_log.exists() is should_repair
     if should_repair:
         assert "helper/patch_plymouth.py" in repair_log.read_text()

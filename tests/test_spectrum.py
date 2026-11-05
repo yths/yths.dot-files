@@ -56,6 +56,14 @@ def test_render_returns_one_character_per_bar() -> None:
     assert len(spectrum.render(numpy.linspace(0, 1, 16))) == 16
 
 
+@pytest.mark.parametrize("ramp", [None, BUNDLE_RAMP], ids=["ascii", "bundle"])
+def test_worker_list_frames_keep_the_same_width_as_arrays(ramp: tuple[str, ...] | None) -> None:
+    values = numpy.linspace(0, 1, 16)
+    rendered = spectrum.render(values.tolist(), ramp)
+    assert len(rendered) == 16
+    assert rendered == spectrum.render(values, ramp)
+
+
 def test_compress_sums_into_the_requested_buckets() -> None:
     assert list(spectrum.compress(numpy.ones(8), 4)) == [2, 2, 2, 2]
     assert spectrum.compress(numpy.arange(10), 5).sum() == numpy.arange(10).sum()

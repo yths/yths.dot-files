@@ -1,154 +1,175 @@
-"""When the audio meter opens its capture stream, and on which device.
-
-A config reload crashed qtile -- and so ended the session -- with PipeWire's JACK thread
-calling a freed PortAudio callback. Every audio widget opened a stream in ``__init__``, the
-moment config.py was evaluated, on the old default of device 31, a JACK input; automatic
-mode then closed it within a second to move to ``default``. Two of those per config load,
-one per screen. These tests hold the two properties that remove the window: building the
-widget opens nothing, and the first poll opens one stream, on the device it keeps.
-"""
+"""Audio capture failures must not block or crash the window manager."""
 
 import json
 import pathlib
+import sys
 import threading
+from multiprocessing.connection import Connection
+from typing import Any
 
 import pytest
+import shared.audio_capture
 import widgets.audio
 from widgets.audio import WidgetAudio
 
 DEVICES = [
-    {"name": "hw", "max_input_channels": 2, "default_samplerate": 48000.0},
+    {"name": "output only", "max_input_channels": 0, "default_samplerate": 48000.0},
     {"name": "default", "max_input_channels": 2, "default_samplerate": 48000.0},
-    {"name": "jack input", "max_input_channels": 2, "default_samplerate": 48000.0},
+    {"name": "dock input", "max_input_channels": 2, "default_samplerate": 48000.0},
 ]
 
 
-class FakeSounddevice:
-    """The parts of ``sounddevice`` the widget uses, recording every stream event."""
+class FakeCapture:
+    """Record capture requests without starting native audio."""
 
-    def __init__(self) -> None:
-        self.events: list[tuple[str, int]] = []
-        fake = self
+    def __init__(self, num_bars: int, device_id: int | None = None) -> None:
+        self.num_bars = num_bars
+        self.device_id = device_id
+        self.reads = 0
+        self.selections: list[tuple[int | None, int]] = []
+        self.closed = False
+        self.frame: tuple[int, list[float]] | None = None
 
-        class Default:
-            device = None
+    def read(self) -> tuple[int, list[float]] | None:
+        self.reads += 1
+        return self.frame
 
-        class InputStream:
-            def __init__(self, **_kwargs: object) -> None:
-                self.device = fake.default.device
-                fake.events.append(("open", self.device))
+    def select(self, device_id: int | None = None, direction: int = 0) -> None:
+        self.selections.append((device_id, direction))
 
-            def start(self) -> None:
-                fake.events.append(("start", self.device))
-
-            def stop(self) -> None:
-                fake.events.append(("stop", self.device))
-
-            def close(self) -> None:
-                fake.events.append(("close", self.device))
-
-        self.default = Default()
-        self.InputStream = InputStream
-
-    def query_devices(self, index: int | None = None) -> object:
-        return DEVICES if index is None else DEVICES[index]
-
-    def _terminate(self) -> None:
-        self.events.append(("terminate", -1))
-
-    def _initialize(self) -> None:
-        pass
+    def close(self) -> None:
+        self.closed = True
 
 
 @pytest.fixture
-def sounddevice(monkeypatch: pytest.MonkeyPatch) -> FakeSounddevice:
-    fake = FakeSounddevice()
-    monkeypatch.setattr(widgets.audio, "sounddevice", fake)
+def capture(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(widgets.audio.shared.audio_capture, "AudioCapture", FakeCapture)
     monkeypatch.setattr(widgets.audio.shared.stream, "read_measurement", lambda _r, _s: None)
-    return fake
 
 
-def _widget(tmp_path: pathlib.Path, mode: str = "automatic", **config: object) -> WidgetAudio:
+def _widget(tmp_path: pathlib.Path, mode: str = "automatic", **config: Any) -> WidgetAudio:
     configuration = tmp_path / "config.json"
     configuration.write_text(json.dumps({"state": {"audio_mode": mode}}))
     return WidgetAudio(r=None, configuration_file_path=str(configuration), **config)
 
 
-def test_building_the_widget_opens_no_stream(
-    tmp_path: pathlib.Path, sounddevice: FakeSounddevice
-) -> None:
-    _widget(tmp_path)
-    assert sounddevice.events == []
-
-
-def test_the_first_poll_opens_one_stream_directly_on_default(
-    tmp_path: pathlib.Path, sounddevice: FakeSounddevice
-) -> None:
+def test_building_the_widget_starts_no_capture(tmp_path: pathlib.Path, capture: None) -> None:
     widget = _widget(tmp_path)
-    widget.poll()
-    assert sounddevice.events == [("open", 1), ("start", 1)], "no detour through another device"
-    widget.poll()
-    assert sounddevice.events == [("open", 1), ("start", 1)], "and nothing more once it is there"
+    assert widget.capture.reads == 0
 
 
-def test_manual_mode_opens_the_chosen_device(
-    tmp_path: pathlib.Path, sounddevice: FakeSounddevice
-) -> None:
+def test_automatic_mode_selects_default_in_the_worker(tmp_path: pathlib.Path, capture: None) -> None:
+    widget = _widget(tmp_path, device_id=2)
+    assert widget.capture.device_id is None
+    widget.poll()
+    assert widget.capture.reads == 1
+
+
+def test_manual_mode_opens_the_chosen_device(tmp_path: pathlib.Path, capture: None) -> None:
     widget = _widget(tmp_path, mode="manual", device_id=2)
-    widget.poll()
-    assert sounddevice.events == [("open", 2), ("start", 2)]
+    assert widget.capture.device_id == 2
 
 
-def test_wheel_device_change_does_not_wait_for_device_query(
-    tmp_path: pathlib.Path, sounddevice: FakeSounddevice
+@pytest.mark.parametrize(("method", "direction"), [("device_up", 1), ("device_down", -1)])
+def test_wheel_only_requests_a_worker_device_change(
+    tmp_path: pathlib.Path, capture: None, method: str, direction: int,
 ) -> None:
-    query_started = threading.Event()
-    release_query = threading.Event()
-    update_finished = threading.Event()
-    updated_devices: list[int] = []
+    widget = _widget(tmp_path, device_id=1)
+    getattr(widget, method)()
+    assert widget.capture.selections == [(1, direction)]
+    assert widget.capture.reads == 0
+    assert widget.mode == "manual"
 
-    def blocked_query(index: int | None = None) -> object:
-        query_started.set()
-        release_query.wait(timeout=2)
-        return DEVICES if index is None else DEVICES[index]
 
-    sounddevice.query_devices = blocked_query
+def test_automatic_toggle_discards_the_manual_device(tmp_path: pathlib.Path, capture: None) -> None:
+    widget = _widget(tmp_path, mode="manual", device_id=2)
+    widget.toggle_mode()
+    assert widget.capture.selections == [(None, 0)]
+
+
+def test_meter_renders_frames_from_the_worker(tmp_path: pathlib.Path, capture: None) -> None:
     widget = _widget(tmp_path)
-
-    def record_update(device_id: int) -> None:
-        updated_devices.append(device_id)
-        update_finished.set()
-
-    widget.update_device = record_update
-    callback_returned = threading.Event()
-
-    def dispatch_wheel() -> None:
-        widget.device_up()
-        callback_returned.set()
-
-    callback_thread = threading.Thread(target=dispatch_wheel)
-    callback_thread.start()
-    try:
-        assert query_started.wait(timeout=1)
-        assert callback_returned.wait(timeout=1), "wheel callback blocked on PortAudio"
-        assert widget._device_change_in_progress
-    finally:
-        release_query.set()
-        callback_thread.join(timeout=1)
-    assert not callback_thread.is_alive()
-    assert update_finished.wait(timeout=1)
-    assert updated_devices == [1]
-
-
-def test_finalize_stops_and_closes_the_stream(
-    tmp_path: pathlib.Path, sounddevice: FakeSounddevice, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # The base class tears down a drawer that only a widget placed in a bar has.
-    monkeypatch.setattr(
-        widgets.audio.libqtile.widget.base.InLoopPollText, "finalize", lambda _self: None
+    widget.capture.frame = (2, [0.5] * widget.NUM_BARS)
+    widget.poll()
+    assert widget.device_id == 2
+    assert len(widget.visualization) == widget.NUM_BARS
+    assert widget.visualization == widgets.audio.shared.spectrum.render(
+        [0.5] * widget.NUM_BARS, widget.symbols["meter.ramp"],
     )
+
+
+def test_finalize_stops_the_worker(
+    tmp_path: pathlib.Path, capture: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(widgets.audio.libqtile.widget.base.InLoopPollText, "finalize", lambda _self: None)
     widget = _widget(tmp_path)
-    widget.poll()
     widget.finalize()
-    assert sounddevice.events[-2:] == [("stop", 1), ("close", 1)]
-    assert widget.stream is None
+    assert widget.capture.closed
+
+
+def _waiting_worker(connection: Connection, num_bars: int, device_id: int | None, direction: int) -> None:
+    connection.send((1, [0.5] * num_bars))
+    threading.Event().wait(timeout=10)
+
+
+def test_native_worker_death_is_contained_and_capture_recovers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(shared.audio_capture, "capture_worker", _waiting_worker)
+    capture = shared.audio_capture.AudioCapture(16)
+    try:
+        capture.read()
+        assert capture._connection.poll(timeout=5)
+        assert capture.read() == (1, [0.5] * 16)
+        process = capture._process
+        process.kill()
+        process.join(timeout=5)
+        assert not process.is_alive()
+        assert capture.read() is None
+        assert capture._process is None
+        assert capture.read() is None
+        assert capture._process is None, "a crashed device must not cause a restart storm"
+        capture._next_start = 0
+        capture.read()
+        assert capture._connection.poll(timeout=5)
+        assert capture.read() == (1, [0.5] * 16)
+    finally:
+        capture.close()
+
+
+@pytest.mark.parametrize(
+    ("device_id", "direction", "expected"), [(None, 0, 1), (2, 0, 2), (1, 1, 2), (1, -1, 2)],
+)
+def test_worker_selects_only_capture_capable_devices(
+    monkeypatch: pytest.MonkeyPatch, device_id: int | None, direction: int, expected: int,
+) -> None:
+    frames = []
+
+    class FakeStream:
+        def __init__(self, **kwargs: Any) -> None:
+            assert kwargs["device"] == expected
+            self.active = True
+
+        def __enter__(self) -> FakeStream:
+            return self
+
+        def __exit__(self, *args: Any) -> None:
+            pass
+
+    class FakeSounddevice:
+        PortAudioError = RuntimeError
+        InputStream = FakeStream
+
+        @staticmethod
+        def query_devices() -> list[dict[str, Any]]:
+            return DEVICES
+
+    class FakeConnection:
+        def send(self, frame: tuple[int, list[float]]) -> None:
+            frames.append(frame)
+            raise BrokenPipeError
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setitem(sys.modules, "sounddevice", FakeSounddevice)
+    shared.audio_capture.capture_worker(FakeConnection(), 16, device_id, direction)
+    assert frames == [(expected, [0.0] * 16)]

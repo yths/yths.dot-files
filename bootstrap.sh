@@ -96,6 +96,26 @@ say "Installing $(printf '%s' "$packages" | wc -w) packages"
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
 
+console_keymap_to_convert="$(python - <<'PYEOF'
+import json, subprocess
+
+def locale_property(name):
+    result = subprocess.run(
+        ["busctl", "--json=short", "get-property", "org.freedesktop.locale1",
+         "/org/freedesktop/locale1", "org.freedesktop.locale1", name],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(result.stdout)["data"]
+
+if not locale_property("X11Layout"):
+    print(locale_property("VConsoleKeymap"))
+PYEOF
+)"
+if [[ -n "$console_keymap_to_convert" ]]; then
+    say "Configuring X11 from the OS console keymap: $console_keymap_to_convert"
+    run sudo localectl set-keymap "$console_keymap_to_convert"
+fi
+
 # --- the packages this repository builds itself ---------------------------------------------
 # packages/<pkgname>/PKGBUILD, one directory per package whose AUR build is broken: nody-greeter
 # (the electron rebuild step and npm's script allow-list) and python-colour-science (a test that
@@ -202,9 +222,9 @@ if $system; then
         expected_plymouth_theme="$(python - "$REPOSITORY_PATH" "$HOME/.config/config.json" <<'PYEOF'
 import json, sys
 sys.path.insert(0, sys.argv[1])
-from helper.utils import installed_theme_name
+from helper.patch_plymouth import plymouth_theme_name
 with open(sys.argv[2], encoding="utf-8") as handle:
-    print(installed_theme_name(json.load(handle)))
+    print(plymouth_theme_name(json.load(handle)))
 PYEOF
 )"
         active_plymouth_theme="$(plymouth-set-default-theme)"

@@ -47,12 +47,12 @@
             "\udb80\udc86",
             "\udb80\udc87",
             "\udb80\udc88",
+            "\udb82\udc9d",
             "\udb80\udc89",
+            "\udb82\udc9e",
             "\udb80\udc8a",
             "\udb80\udc8b",
-            "\udb80\udc8c",
-            "\udb80\udc8d",
-            "\udb80\udc79"
+            "\udb80\udc85"
         ],
         "battery.grid": "\udb81\udea5",
         "bluetooth.device": "\udb80\udcaf",

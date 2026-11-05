@@ -36,6 +36,8 @@ and test tools. Ruff, NordVPN and Visual Studio Code are installed by default. I
 In order, so a failure is easy to place:
 
 1. Installs `yay`, then every package in `[packages]` of `setup.toml` plus the fallback font.
+   If X11 has no configured keyboard layout, derives it from the OS console keymap with
+   `localectl`. An explicitly configured X11 layout is left unchanged.
 2. Checks that `python` can import what step 1 installed, and stops if not, naming the
    import and its package. A virtualenv or `pyenv` shim on `PATH` is the usual reason;
    `deactivate`, or make sure `python` is `/usr/bin/python`, and re-run.
@@ -65,9 +67,29 @@ decide whether the machine boots, and it says so at the end. See [Boot Splash](#
 
 Optional, and in no particular order.
 
+### Keyboard Layout
+
+The console and X11 have separate keyboard settings. A `KEYMAP=de` in `/etc/vconsole.conf`
+configures the console; it does not by itself configure the graphical login screen or desktop.
+Bootstrap uses `localectl set-keymap` to convert the OS console keymap into X11 settings when
+the X11 layout is unset. `XKBLAYOUT` and `XKBVARIANT` entries in `/etc/vconsole.conf` are not a
+substitute for the system X11 configuration.
+
+On an existing machine whose console uses German but whose desktop still uses US, run:
+
+```bash
+sudo localectl set-keymap de
+```
+
+Log out and back in afterward. `localectl status` reports the saved settings; `setxkbmap -query`
+reports the active X session's layout. For a deliberately different X11 layout, set it with
+`localectl --no-convert set-x11-keymap` before running bootstrap.
+
 ### Boot Splash
 
 Bootstrap installs and selects the configured Plymouth theme, and rebuilds the initramfs.
+The `default` bundle installs as `dot-files-default`: Plymouth treats the literal name
+`default` as a command to reset to the distribution's theme, not as a selectable theme name.
 It deliberately does not edit the boot-critical initramfs hooks or kernel command line, so
 the splash remains invisible until both are configured. Add `plymouth` to `HOOKS` in
 `/etc/mkinitcpio.conf`, after `systemd` and before `sd-encrypt`:

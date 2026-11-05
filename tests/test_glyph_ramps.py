@@ -104,6 +104,21 @@ def test_a_low_battery_is_marked_only_while_discharging(power: WidgetPowerSupply
     assert not power._symbol(95, charging=False).startswith("<span")
 
 
+def test_shipped_battery_ramps_match_the_material_design_capacity_labels() -> None:
+    bundle = json.loads((REPO_ROOT / "assets/default/config.json").read_text())
+    charging = bundle["symbols"]["battery.charging"]
+    discharging = bundle["symbols"]["battery.discharging"]
+    assert [ord(glyph) for glyph in charging] == [
+        0xF089C, 0xF089C, 0xF0086, 0xF0087, 0xF0088, 0xF089D,
+        0xF0089, 0xF089E, 0xF008A, 0xF008B, 0xF0085,
+    ]
+    assert [ord(glyph) for glyph in discharging] == [
+        0xF007A, 0xF007A, 0xF007B, 0xF007C, 0xF007D, 0xF007E,
+        0xF007F, 0xF0080, 0xF0081, 0xF0082, 0xF0079,
+    ]
+    assert all(charged != discharged for charged, discharged in zip(charging, discharging, strict=True))
+
+
 # A ramp one rung short is an IndexError inside poll(), which stops qtile rescheduling that
 # cell for the rest of the session. The widgets index by `capacity // 10` and by the meter's
 # own step count, so the length is a contract rather than a detail.

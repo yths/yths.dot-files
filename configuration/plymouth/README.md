@@ -25,6 +25,9 @@ A third step matters for the result to be visible: the splash reads its theme fr
 initramfs, so the files being in place is necessary but not sufficient until
 `mkinitcpio` runs again.
 
+The `default` bundle installs as `dot-files-default`, because the theme chooser interprets
+the literal argument `default` as a reset command. Other bundles use their normalised names.
+
 ## Installing and Updating
 
 `./bootstrap.sh` does this as its last step, and a theme switch with `--system` does it

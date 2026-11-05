@@ -117,6 +117,31 @@ def test_the_ini_is_named_for_the_theme(configuration: dict, staged: pathlib.Pat
     assert [path.name for path in staged.glob("*.plymouth")] == ["autumn.plymouth"]
 
 
+@pytest.mark.parametrize(
+    ("bundle_name", "expected"),
+    [("default", "dot-files-default"), ("Default", "dot-files-default"), ("Autumn Theme", "autumn-theme")],
+)
+def test_plymouth_theme_names_avoid_the_reset_command(bundle_name: str, expected: str) -> None:
+    assert patch_plymouth.plymouth_theme_name({"name": bundle_name}) == expected
+
+
+def test_system_install_renders_and_selects_the_safe_default_name(
+    configuration: dict, staged: pathlib.Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(patch_plymouth, "stage_theme", lambda _source: str(staged))
+    monkeypatch.setattr(patch_plymouth, "render_assets", lambda *_args: None)
+
+    def install(path: str, name: str, *, prompt: bool, rebuild: bool) -> bool:
+        assert name == "dot-files-default"
+        assert (pathlib.Path(path) / f"{name}.plymouth").is_file()
+        assert _ini(pathlib.Path(path))["two-step"]["ImageDir"].endswith(f"/{name}")
+        assert prompt and rebuild
+        return True
+
+    monkeypatch.setattr(patch_plymouth, "install_theme", install)
+    assert patch_plymouth.install_system(configuration, prompt=True)
+
+
 def test_installing_makes_it_the_default_and_removes_earlier_ones(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -1,44 +1,20 @@
 """Qtile widget: audio level visualisation.
 
-Renders a bar-style level meter sampled live from ``sounddevice`` and overlays a
+Renders a bar-style level meter sampled by an isolated capture process and overlays a
 notification colour when the system mute state (read from the ``audio`` Redis stream)
 is active. Implements ``libqtile.widget.base.InLoopPollText``.
 """
 
-import threading
-import time
 from typing import Any
 
-import libqtile.log_utils
 import libqtile.widget.base
 import numpy
 import redis
+import shared.audio_capture
 import shared.spectrum
 import shared.state
 import shared.stream
 import symbols as vocabulary
-
-try:
-    import sounddevice
-except ImportError:
-    libqtile.log_utils.logger.warning(
-        "sounddevice module not found. Audio widget will not function."
-    )
-    sounddevice = None
-
-#: What the PortAudio calls below can actually raise. ``PortAudioError`` covers a device
-#: that has vanished or was never valid; the builtins cover a missing ``sounddevice``
-#: module, an out-of-range index, and a device whose properties came back incomplete.
-#: Named here rather than caught as a bare ``Exception`` so an unexpected failure still
-#: surfaces instead of being silently swallowed by the bar.
-AUDIO_ERRORS: tuple[type[BaseException], ...] = (
-    (sounddevice.PortAudioError,) if sounddevice is not None else ()
-) + (AttributeError, KeyError, OSError, TypeError, ValueError)
-
-#: Weight of the previous frame in the displayed meter. PortAudio delivers capture blocks
-#: far faster than the eye resolves, so each frame is mixed into the last rather than
-#: replacing it; without this the bars flicker rather than move.
-SMOOTHING = 0.8
 
 
 class WidgetAudio(libqtile.widget.base.InLoopPollText):
@@ -62,16 +38,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             else shared.state.CONFIGURATION_FILE_PATH
         )
 
-        #: The capture device, or ``None`` until one is chosen. No stream is opened here: this
-        #: runs whenever config.py is evaluated, and a stream opened then was opened on the old
-        #: default of device 31 -- a JACK input -- only to be closed a moment later when
-        #: automatic mode moved to ``default``. Two of those per config load, one per screen,
-        #: and closing a PortAudio JACK stream mid-callback under PipeWire is a use-after-free:
-        #: it took qtile, and with it the session, down on a config reload. The stream opens on
-        #: the first poll instead, once the widget is in a bar, on the device it will keep.
         self.device_id = max(device_id, 0) if device_id is not None else None
-        self.device_properties = None
-        self.stream = None
 
         self.MAX_DECAY = 32
 
@@ -80,13 +47,11 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws a meter.
         self.symbols = symbols or vocabulary.SYMBOLS
-        self.past_values = numpy.zeros(self.NUM_BARS, dtype=float)
-
         self.mode = self._load_mode()
         self.last_active_sink = None
-        self._last_reenum = 0.0
-        self.REENUM_INTERVAL = 5.0
-        self._device_change_in_progress = False
+        self.capture = shared.audio_capture.AudioCapture(
+            self.NUM_BARS, self.device_id if self.mode == "manual" else None,
+        )
 
         self.add_callbacks({
             "Button2": self.toggle_mode,
@@ -113,148 +78,23 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         target = "manual" if self.mode == "automatic" else "automatic"
         self._set_mode(target)
         self.last_active_sink = None
-        if target == "automatic":
-            # User-initiated refresh — bypass throttle so a freshly connected
-            # bluetooth headset can be picked up immediately on middle-click.
-            self._reenumerate_devices(force=True)
-
-    def _auto_device_index(self) -> int | None:
-        # The ALSA 'default' device is the alsa-pulse bridge — PipeWire/Pulse
-        # routes whatever is currently playing through it, so capturing from
-        # it tracks the active sink without per-sink mapping. The pulse-hostapi
-        # entries for individual sinks (e.g. bluez_output monitors) often
-        # don't deliver a usable input stream.
-        if sounddevice is None:
-            return None
-        try:
-            devices = sounddevice.query_devices()
-        except AUDIO_ERRORS:
-            return None
-        for index, device in enumerate(devices):
-            if device.get("name") == "default" and device.get("max_input_channels", 0) > 0:
-                return index
-        return None
-
-    def _reenumerate_devices(self, force: bool = False) -> None:
-        # PortAudio caches its device list at init; bluetooth headsets and
-        # other hot-plugged sinks aren't visible until we terminate and
-        # re-initialise. Throttled so a sink description that never resolves
-        # doesn't cause a re-init storm.
-        if sounddevice is None:
-            return
-        if not force and time.monotonic() - self._last_reenum < self.REENUM_INTERVAL:
-            return
-        self._last_reenum = time.monotonic()
-        if self.stream is not None:
-            try:
-                self.stream.stop()
-                self.stream.close()
-            except AUDIO_ERRORS:
-                libqtile.log_utils.logger.exception("stopping the audio stream failed")
-            self.stream = None
-        try:
-            sounddevice._terminate()
-            sounddevice._initialize()
-        except AUDIO_ERRORS:
-            libqtile.log_utils.logger.exception("sounddevice re-init failed")
+        self.capture.select(self.device_id if target == "manual" else None)
 
     def device_up(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
-        self._change_device(1)
+        self.capture.select(self.device_id, direction=1)
 
     def device_down(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
-        if self.device_id:
-            self._change_device(-1)
-
-    def _change_device(self, direction: int) -> None:
-        if sounddevice is None or self._device_change_in_progress:
-            return
-        self._device_change_in_progress = True
-
-        def change() -> None:
-            try:
-                available_devices = len(sounddevice.query_devices())
-                if available_devices:
-                    device_id = ((self.device_id or 0) + direction) % available_devices
-                    self.update_device(device_id)
-            except AUDIO_ERRORS:
-                libqtile.log_utils.logger.exception("changing the audio device failed")
-            finally:
-                self._device_change_in_progress = False
-
-        threading.Thread(target=change, name="qtile-audio-device", daemon=True).start()
-
-    def _close_stream(self) -> None:
-        """Tear the input stream down, tolerating a device that has already gone away.
-
-        Unguarded, a disconnected device raises PortAudioError out of ``poll()`` (via the
-        auto-follow path) which permanently freezes the cell, and leaves ``self.stream``
-        non-None so the reopen guard never fires and the stream is genuinely leaked.
-        """
-        if self.stream is None:
-            return
-        try:
-            self.stream.stop()
-            self.stream.close()
-        except AUDIO_ERRORS:
-            libqtile.log_utils.logger.exception("closing the audio stream failed")
-        finally:
-            self.stream = None
-
-    def _open_stream(self) -> None:
-        """Open and start the capture stream on ``self.device_id``; ``None`` if it fails."""
-        try:
-            sounddevice.default.device = self.device_id
-            self.device_properties = sounddevice.query_devices(self.device_id)
-            self.stream = sounddevice.InputStream(
-                channels=2,
-                samplerate=self.device_properties['default_samplerate'],
-                callback=self.callback_spectrum,
-            )
-            self.stream.start()
-        except AUDIO_ERRORS:
-            self.device_properties = None
-            self.stream = None
-
-    def update_device(self, device_id: int) -> None:
-        self.device_id = device_id
-        self._close_stream()
-        self._open_stream()
-
-    def callback_spectrum(
-        self, in_data: numpy.ndarray, frame_count: int, time_info: Any, status: Any
-    ) -> None:
-        """Fold one capture block into the displayed meter.
-
-        Runs on the PortAudio callback thread, not qtile's event loop, so it only assigns to
-        two attributes and never touches the drawer.
-        """
-        try:
-            current = shared.spectrum.levels(in_data, self.NUM_BARS)
-        except ValueError:
-            # Capture too short to fill the bars; keep the previous frame on screen.
-            return
-        self.past_values = SMOOTHING * self.past_values + (1 - SMOOTHING) * current
-        self.visualization = shared.spectrum.render(self.past_values, self.symbols["meter.ramp"])
-
-    def _follow_default(self) -> None:
-        """In automatic mode, move to ``default`` before -- not after -- opening anything."""
-        target = self._auto_device_index()
-        if target is None:
-            self._reenumerate_devices()
-            target = self._auto_device_index()
-        if target is not None and target != self.device_id:
-            self.update_device(target)
+        self.capture.select(self.device_id, direction=-1)
 
     def poll(self) -> str:
-        if sounddevice is not None and not self._device_change_in_progress:
-            if self.mode == "automatic" or self.device_id is None:
-                self._follow_default()
-            if self.stream is None and self.device_id is not None:
-                self._open_stream()
+        frame = self.capture.read()
+        if frame is not None:
+            self.device_id, levels = frame
+            self.visualization = shared.spectrum.render(levels, self.symbols["meter.ramp"])
 
         measurement = shared.stream.read_measurement(self.r, "audio")
         if measurement is None:
@@ -282,5 +122,5 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
 
     def finalize(self) -> None:
-        self._close_stream()
+        self.capture.close()
         libqtile.widget.base.InLoopPollText.finalize(self)
