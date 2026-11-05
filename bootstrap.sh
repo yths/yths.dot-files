@@ -198,6 +198,27 @@ fi
 if $system; then
     say "Installing the configuration, the login screen and the boot splash"
     run python "$REPOSITORY_PATH/install.py" --system
+    if ! $dry_run; then
+        expected_plymouth_theme="$(python - "$REPOSITORY_PATH" "$HOME/.config/config.json" <<'PYEOF'
+import json, sys
+sys.path.insert(0, sys.argv[1])
+from helper.utils import installed_theme_name
+with open(sys.argv[2], encoding="utf-8") as handle:
+    print(installed_theme_name(json.load(handle)))
+PYEOF
+)"
+        active_plymouth_theme="$(plymouth-set-default-theme)"
+        if [[ "$active_plymouth_theme" != "$expected_plymouth_theme" ]]; then
+            say "Correcting the default Plymouth theme to $expected_plymouth_theme"
+            run python "$REPOSITORY_PATH/helper/patch_plymouth.py" --install --rebuild
+            active_plymouth_theme="$(plymouth-set-default-theme)"
+        fi
+        if [[ "$active_plymouth_theme" != "$expected_plymouth_theme" ]]; then
+            printf 'Plymouth still selects %s, expected %s.\n' \
+                "$active_plymouth_theme" "$expected_plymouth_theme" >&2
+            exit 1
+        fi
+    fi
 else
     say "Installing the configuration (--skip-system: no login screen or boot splash)"
     run python "$REPOSITORY_PATH/install.py"

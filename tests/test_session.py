@@ -1,4 +1,4 @@
-"""Starting the programs that cannot start before qtile does.
+"""Starting guarded session programs for LightDM and startx.
 
 The guard is the whole of it. This runs from `startup_complete`, which fires on every qtile
 start — and qtile restarts on each theme switch, twice a day, and again on a monitor hotplug.
@@ -6,6 +6,7 @@ Starting unconditionally would leave one more copy of every program behind each 
 """
 
 import subprocess
+from pathlib import Path
 
 import pytest
 import shared.session
@@ -21,8 +22,12 @@ class Recorder:
         self.running = running or set()
         self.missing = missing or set()
         self.started: list[list[str]] = []
+        self.configured: list[list[str]] = []
 
     def run(self, argv: list[str], **_: object) -> subprocess.CompletedProcess:
+        if argv[0] == "xset":
+            self.configured.append(argv)
+            return subprocess.CompletedProcess(argv, 0)
         assert argv[:2] == ["pgrep", "-x"], argv
         return subprocess.CompletedProcess(argv, 0 if argv[2] in self.running else 1)
 
@@ -98,11 +103,35 @@ def test_the_match_is_exact(recorder: Recorder) -> None:
     # Recorder.run asserts the -x flag is present; reaching here is the assertion.
 
 
-def test_the_bridge_is_what_the_session_starts() -> None:
-    """It is in the registry, and named the way pgrep will find it."""
-    assert ([" ".join(argv) for argv, _ in shared.session.SESSION_PROGRAMS]
-            == ["inhibit-bridge"])
-    assert [name for _, name in shared.session.SESSION_PROGRAMS] == ["inhibit-bridge"]
+def test_the_session_starts_the_locker_and_bridge(recorder: Recorder) -> None:
+    assert shared.session.start_programs() == ["xss-lock", "inhibit-bridge"]
+    locker = recorder.started[0]
+    assert locker[:3] == ["xss-lock", "--transfer-sleep-lock", "--"]
+    assert Path(locker[3]).parts[-2:] == ("lock", "lock.sh")
+    assert recorder.started[1] == ["inhibit-bridge"]
+    assert recorder.configured == [
+        ["xset", "s", "512", "512"], ["xset", "dpms", "512", "512", "1024"],
+    ]
+
+
+def test_a_running_locker_keeps_its_timers_on_reload(recorder: Recorder) -> None:
+    recorder.running = {"xss-lock", "inhibit-bridge"}
+    assert shared.session.start_programs() == []
+    assert recorder.configured == []
+
+
+def test_missing_xset_does_not_prevent_suspend_locking(
+    recorder: Recorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run = recorder.run
+
+    def missing_xset(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        if argv[0] == "xset":
+            raise FileNotFoundError("xset")
+        return run(argv, **kwargs)
+
+    monkeypatch.setattr(shared.session.subprocess, "run", missing_xset)
+    assert shared.session.start_programs() == ["xss-lock", "inhibit-bridge"]
 
 
 def test_the_bridge_is_in_the_install_list() -> None:

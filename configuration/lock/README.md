@@ -31,8 +31,10 @@ there to challenge. Everything it displays is offered to them.
 
 ## What Triggers It
 
-`~/.xinitrc` starts `xss-lock`, which watches three things: the X idle timer (set by the
-`xset s` line above it), `loginctl lock-session`, and systemd's suspend. It runs with
+Qtile's guarded session startup sets the X idle timeout to 512 seconds with `xset` and
+starts `xss-lock`. This works for both LightDM and `startx`; LightDM's direct Qtile session
+does not run `~/.xinitrc`. Bootstrap installs `xorg-xset` to provide the timer command.
+`xss-lock` watches the X idle timer, `loginctl lock-session`, and systemd's suspend. It runs with
 `--transfer-sleep-lock`, which holds the sleep inhibitor until the locker is actually up — so
 the machine cannot suspend into a state where it wakes unlocked.
 
@@ -51,20 +53,19 @@ Anything added to that row has to stay short for the same reason. A test in
 
 ## What A Wrong Password Looks Like
 
-Nothing, and that is not this configuration's doing. The dialog shows `Processing...`, then
-returns to `Password:` with an empty field. No error appears.
+Arch's default PAM service rejects a wrong password without a message. The optional local
+`xsecurelock-pam-feedback` package supplies a separate service that reports the failure,
+without modifying the shared `system-auth` stack. Install it and regenerate the lock
+environment with:
 
-xsecurelock only draws what the PAM conversation hands it, and `pam_unix` returns an
-authentication failure with no message attached — so there is nothing to draw. `authproto_pam`
-writes `pam_authenticate: Authentication failure.` to the session log instead. A message
-reaches the screen only when some module in the stack produces one, which on this machine
-means `pam_faillock` once it actually locks the account.
+```bash
+python helper/patch_lock.py --install-pam
+```
 
-Measured rather than assumed: sampling the screen every 0.3 s for six seconds after a wrong
-password, the warning colour — the only colour an error is drawn in — never appears anywhere.
-
-Nothing here can change that. It needs a PAM stack that emits a message on failure, which is
-system configuration, not a dotfile.
+If the package was installed directly with `makepkg`, run `python helper/patch_lock.py`
+afterward. The generated environment selects this service only when its file exists, and
+the launcher reads that environment on every lock. No session restart is needed for this
+PAM selection. See [../../docs/architecture.md](../../docs/architecture.md) for recovery steps.
 
 ## What Stops It
 
@@ -75,8 +76,8 @@ playing video is not input. Browsers and video players say so over D-Bus instead
 Two pieces carry that to the lock, and the second one is the half that does the work.
 
 `inhibit-bridge` holds the `org.freedesktop.ScreenSaver` name and opens a matching **logind**
-idle inhibitor for each request. qtile starts it from `startup_complete` (see
-[`shared/session.py`](../qtile/shared/README.md)) rather than `~/.xinitrc`, because it
+idle inhibitor for each request. qtile starts it alongside `xss-lock` from `startup_complete`
+(see [`shared/session.py`](../qtile/shared/README.md)), because it
 publishes a `StatusNotifierItem` and needs the bar's tray to register with.
 
 That alone stops nothing here, which is worth being blunt about. `xss-lock` locks from the **X

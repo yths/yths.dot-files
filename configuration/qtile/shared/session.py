@@ -1,22 +1,27 @@
-"""Programs qtile starts because they cannot start before it.
+"""Start guarded session programs for both LightDM and startx logins."""
 
-``~/.xinitrc`` starts everything else, and starts it earlier. What lands here is the
-exception: a program that needs something qtile itself provides, which for the moment means
-the bar's system tray.
-"""
-
+import os
 import subprocess
 
 #: Each entry is (argv, the name ``pgrep -x`` matches). The two are separate because a
 #: program's process name is not always its argv[0] -- and because matching loosely is how a
 #: guard like this ends up finding an unrelated process and skipping the start.
 SESSION_PROGRAMS: tuple[tuple[list[str], str], ...] = (
-    # Bridges the D-Bus screensaver inhibit a browser or video player takes to the logind
-    # idle inhibit that xss-lock obeys, so a playing film stops the screen locking under it.
-    # It publishes org.kde.StatusNotifierItem and needs a host to register with, which is why
-    # it starts here rather than from ~/.xinitrc beside xss-lock: the bar does not exist yet.
+    (["xss-lock", "--transfer-sleep-lock", "--", os.path.join(
+        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "lock", "lock.sh"
+    )], "xss-lock"),
     (["inhibit-bridge"], "inhibit-bridge"),
 )
+
+
+def configure_locking() -> bool:
+    """Set X idle and DPMS timeouts before starting the lock daemon."""
+    try:
+        idle = subprocess.run(["xset", "s", "512", "512"], check=False)
+        dpms = subprocess.run(["xset", "dpms", "512", "512", "1024"], check=False)
+    except OSError:
+        return False
+    return idle.returncode == 0 and dpms.returncode == 0
 
 
 def is_running(process: str) -> bool:
@@ -42,12 +47,14 @@ def start_programs(programs: tuple[tuple[list[str], str], ...] = SESSION_PROGRAM
     time. The guard also means a program that has died is started again by the next restart.
 
     A program that is not installed is skipped rather than raised: this runs during startup,
-    and taking the session down over a missing status indicator is the wrong trade.
+    and missing session utilities must not take the desktop down.
     """
     started = []
     for argv, process in programs:
         if is_running(process):
             continue
+        if process == "xss-lock":
+            configure_locking()
         try:
             subprocess.Popen(argv)
         except OSError:

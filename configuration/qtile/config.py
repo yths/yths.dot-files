@@ -464,7 +464,7 @@ def relabel_groups() -> None:
 
 @hook.subscribe.startup_complete
 def start_session_programs() -> None:
-    """Start the programs that could not start before qtile did; see ``shared.session``."""
+    """Start guarded session programs; see ``shared.session``."""
     for name in shared.session.start_programs():
         logger.info(f"Started {name}.")
 
@@ -472,7 +472,7 @@ def start_session_programs() -> None:
 class _IdleGuard:
     """State for the idle guard, in a class for the reason ``_ScreenChange`` is.
 
-    ``timeout`` is read once, at startup, rather than written down again here: ~/.xinitrc
+    ``timeout`` is read once, at startup, rather than written down again here: shared.session
     has already set it by then, so this is the value this machine was configured with and
     there is no second copy of it to drift.
     """
@@ -491,7 +491,7 @@ def start_idle_guard() -> None:
     if not _IdleGuard.timeout:
         logger.warning(
             "The X screen saver timeout is 0 at startup: this session will not lock itself. "
-            "Set it in ~/.xinitrc with `xset s <seconds>`."
+            "Check that xorg-xset is installed and the session can run `xset s <seconds>`."
         )
     qtile.call_later(shared.idle_guard.CHECK_SECONDS, run_idle_guard)
 

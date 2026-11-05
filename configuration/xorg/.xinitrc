@@ -51,18 +51,6 @@ if [ -f "$DOTFILES_ROOT/helper/apply_icc.py" ]; then
     python "$DOTFILES_ROOT/helper/apply_icc.py"
 fi
 
-# https://shallowsky.com/linux/x-screen-blanking.html
-xset s 512 512
-xset dpms 512 512 1024
-
-# Lock on idle, on `loginctl lock-session`, and before suspend. xss-lock watches all three
-# and runs the locker; the timer it obeys is the `xset s` above. --transfer-sleep-lock holds
-# systemd's sleep inhibitor until the locker is actually up, so the machine cannot suspend
-# to a state where it wakes unlocked.
-if command -v xss-lock >/dev/null 2>&1; then
-    xss-lock --transfer-sleep-lock -- "$HOME/.config/lock/lock.sh" &
-fi
-
 # The polkit authentication agent: the password dialog for privileged actions a program
 # asks for. It needs no bar or tray, so it starts here rather than from qtile.
 POLKIT_AGENT=/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1

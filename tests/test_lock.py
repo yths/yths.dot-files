@@ -83,15 +83,15 @@ def test_the_launcher_execs_rather_than_forking() -> None:
 
 
 def test_the_session_starts_the_lock_daemon() -> None:
-    xinitrc = (pathlib.Path(utils.REPOSITORY_ROOT) / "configuration" / "xorg" / ".xinitrc").read_text()
-    assert "xss-lock" in xinitrc
+    session = (pathlib.Path(utils.REPOSITORY_ROOT) / "configuration/qtile/shared/session.py").read_text()
+    assert "xss-lock" in session
     # Without this, suspend can win the race and the machine wakes unlocked.
-    assert "--transfer-sleep-lock" in xinitrc
+    assert "--transfer-sleep-lock" in session
 
 
 def test_both_lockers_are_installed_by_the_bootstrap() -> None:
     packages = {name for group in utils.read_setup()["packages"].values() for name in group}
-    assert {"xsecurelock", "xss-lock"} <= packages
+    assert {"xsecurelock", "xss-lock", "xorg-xset"} <= packages
 
 
 def test_the_lock_is_in_the_patcher_registry() -> None:

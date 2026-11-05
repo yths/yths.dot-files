@@ -67,22 +67,24 @@ Optional, and in no particular order.
 
 ### Boot Splash
 
-Installed by the bootstrap, but Plymouth only draws it once it is in the initramfs and asked
-for on the kernel command line. Add the `plymouth` hook to `/etc/mkinitcpio.conf`, after
-`systemd` and before `sd-encrypt`:
+Bootstrap installs and selects the configured Plymouth theme, and rebuilds the initramfs.
+It deliberately does not edit the boot-critical initramfs hooks or kernel command line, so
+the splash remains invisible until both are configured. Add `plymouth` to `HOOKS` in
+`/etc/mkinitcpio.conf`, after `systemd` and before `sd-encrypt`:
 
 ```bash
 HOOKS=(... systemd ... plymouth sd-encrypt ...)
 ```
 
-Append `splash` to the `options` line of `/boot/loader/entries/arch.conf`, then rebuild:
+Append `splash` to the `options` line of the active systemd-boot entry, normally
+`/boot/loader/entries/arch.conf`. Then install/select the theme and rebuild the initramfs:
 
 ```bash
 python helper/patch_plymouth.py --install --rebuild
 ```
 
-The installer warns about the missing hook every time it installs the splash, until it is
-there.
+The installer warns if the hook is missing. Bootstrap also verifies that the configured theme
+is selected and retries the theme install if needed. Reboot for the changes to take effect.
 
 ### Credentials
 

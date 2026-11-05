@@ -101,6 +101,45 @@ def test_bootstrap_reads_the_same_file() -> None:
         assert group in script, f"bootstrap.sh installs no {group} group"
 
 
+@pytest.mark.parametrize(("initial_theme", "should_repair"), [("autumn-theme", False), ("bgrt", True)])
+def test_bootstrap_verifies_the_configured_plymouth_theme(
+    tmp_path: Path, initial_theme: str, should_repair: bool
+) -> None:
+    script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
+    start = script.index('        expected_plymouth_theme="$(python')
+    end = script.index("\n        fi\n    fi\nelse\n", start) + len("\n        fi")
+    theme_check = script[start:end]
+    config_directory = tmp_path / ".config"
+    config_directory.mkdir()
+    (config_directory / "config.json").write_text(json.dumps({"name": "Autumn Theme"}))
+    theme_file = tmp_path / "plymouth-theme"
+    theme_file.write_text(f"{initial_theme}\n")
+    repair_log = tmp_path / "repairs"
+    probe = textwrap.dedent("""
+        set -euo pipefail
+        REPOSITORY_PATH="$1"
+        HOME="$2"
+        theme_file="$3"
+        repair_log="$4"
+        plymouth-set-default-theme() { cat "$theme_file"; }
+        say() { :; }
+        run() {
+            printf '%s\\n' "$*" >> "$repair_log"
+            printf '%s\\n' "$expected_plymouth_theme" > "$theme_file"
+        }
+    """) + theme_check + '\nprintf "finished\\n"\n'
+    result = subprocess.run(
+        ["bash", "-c", probe, "_", utils.REPOSITORY_ROOT, str(tmp_path),
+         str(theme_file), str(repair_log)],
+        capture_output=True, text=True, check=True,
+    )
+    assert result.stdout == "finished\n"
+    assert theme_file.read_text().strip() == "autumn-theme"
+    assert repair_log.exists() is should_repair
+    if should_repair:
+        assert "helper/patch_plymouth.py" in repair_log.read_text()
+
+
 @pytest.mark.parametrize("mode", ["install", "dry-run", "missing", "failure"])
 def test_bootstrap_installs_the_package_update_hook(tmp_path: Path, mode: str) -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
