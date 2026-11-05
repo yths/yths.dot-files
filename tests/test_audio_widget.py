@@ -10,6 +10,7 @@ widget opens nothing, and the first poll opens one stream, on the device it keep
 
 import json
 import pathlib
+import threading
 
 import pytest
 import widgets.audio
@@ -96,6 +97,47 @@ def test_manual_mode_opens_the_chosen_device(
     widget = _widget(tmp_path, mode="manual", device_id=2)
     widget.poll()
     assert sounddevice.events == [("open", 2), ("start", 2)]
+
+
+def test_wheel_device_change_does_not_wait_for_device_query(
+    tmp_path: pathlib.Path, sounddevice: FakeSounddevice
+) -> None:
+    query_started = threading.Event()
+    release_query = threading.Event()
+    update_finished = threading.Event()
+    updated_devices: list[int] = []
+
+    def blocked_query(index: int | None = None) -> object:
+        query_started.set()
+        release_query.wait(timeout=2)
+        return DEVICES if index is None else DEVICES[index]
+
+    sounddevice.query_devices = blocked_query
+    widget = _widget(tmp_path)
+
+    def record_update(device_id: int) -> None:
+        updated_devices.append(device_id)
+        update_finished.set()
+
+    widget.update_device = record_update
+    callback_returned = threading.Event()
+
+    def dispatch_wheel() -> None:
+        widget.device_up()
+        callback_returned.set()
+
+    callback_thread = threading.Thread(target=dispatch_wheel)
+    callback_thread.start()
+    try:
+        assert query_started.wait(timeout=1)
+        assert callback_returned.wait(timeout=1), "wheel callback blocked on PortAudio"
+        assert widget._device_change_in_progress
+    finally:
+        release_query.set()
+        callback_thread.join(timeout=1)
+    assert not callback_thread.is_alive()
+    assert update_finished.wait(timeout=1)
+    assert updated_devices == [1]
 
 
 def test_finalize_stops_and_closes_the_stream(

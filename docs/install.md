@@ -28,8 +28,8 @@ get there.
 To change the theme, the fallback font or the package list, edit
 [../setup.toml](../setup.toml) between the `cd` and the `./bootstrap.sh`; it is the one file
 the whole install reads. `./bootstrap.sh --dry-run` prints what would happen and stops;
-`--skip-system` leaves the login screen and boot splash alone; `--dev` adds the linter and
-test runner. It is safe to re-run.
+`--skip-system` leaves the login screen and boot splash alone; `--dev` adds the test runner
+and test tools. Ruff, NordVPN and Visual Studio Code are installed by default. It is safe to re-run.
 
 ### What it does
 
@@ -45,8 +45,13 @@ In order, so a failure is easy to place:
    broken: `nody-greeter` (the login screen's greeter; minutes of npm) and
    `python-colour-science` (with its hidden `openimageio` dependency). Each is skipped when
    already installed.
-5. Enables `valkey`, clones [yths.backend-service](https://github.com/yths/yths.backend-service)
-   beside this repository and enables it as a user service. The bar's metrics; not fatal.
+5. Enables the PipeWire and PulseAudio-compatible sockets and WirePlumber user service,
+   then checks the audio server with `pactl info`. Enables `valkey`, clones
+   [yths.backend-service](https://github.com/yths/yths.backend-service)
+   beside this repository and enables it as a user service. Installs its pacman hook and
+   helper scripts so the update count refreshes after transactions from `pacman` or `yay`.
+   Re-running bootstrap refreshes these root-owned copies. Backend setup failures are not fatal;
+   without the hook, the backend refreshes the count hourly.
 6. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
    `~/.config/config.json` from the theme bundle, patches every application, then -- as root,
    asked for once -- installs the login screen, points LightDM at `nody-greeter`, enables

@@ -88,11 +88,91 @@ def test_the_development_group_is_not_needed_to_run_the_desktop(setup: dict) -> 
     assert not (set(setup["packages"]["development"]) & recorded)
 
 
+def test_default_bootstrap_installs_linter_vpn_and_editor(setup: dict) -> None:
+    assert set(setup["packages"]["optional"]) >= {
+        "ruff", "nordvpn-bin", "visual-studio-code-bin",
+    }
+
+
 def test_bootstrap_reads_the_same_file() -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
     assert "setup.toml" in script, "the script must not carry a package list of its own"
     for group in ("core", "boot", "backend", "python", "optional"):
         assert group in script, f"bootstrap.sh installs no {group} group"
+
+
+@pytest.mark.parametrize("mode", ["install", "dry-run", "missing", "failure"])
+def test_bootstrap_installs_the_package_update_hook(tmp_path: Path, mode: str) -> None:
+    script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
+    block = script.split('if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py"', 1)
+    hook_install = 'if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py"' + block[1].split(
+        "# --- the dot files", 1,
+    )[0]
+    if mode in {"install", "failure"}:
+        for name in (
+            "pacman_post_transaction.py", "update_count.py",
+            "subprocess_safe.py", "redis-updates.hook",
+        ):
+            (tmp_path / name).touch()
+    probe = textwrap.dedent("""
+        set -euo pipefail
+        backend_path="$1"
+        dry_run="$2"
+        fail="$3"
+        say() { :; }
+        run() { printf '%s\n' "$*"; ! "$fail"; }
+    """) + hook_install + '\nprintf "finished\\n"\n'
+    result = subprocess.run(
+        ["bash", "-c", probe, "_", str(tmp_path),
+         str(mode == "dry-run").lower(), str(mode == "failure").lower()],
+        capture_output=True, text=True, check=True,
+    )
+    assert result.stdout.endswith("finished\n")
+    if mode in {"install", "dry-run"}:
+        assert result.stderr == ""
+        assert result.stdout.splitlines()[:-1] == [
+            "sudo install -d -m 755 /usr/local/bin /etc/pacman.d/hooks",
+            f"sudo install -m 755 {tmp_path}/pacman_post_transaction.py "
+            "/usr/local/bin/pacman-redis-updates",
+            f"sudo install -m 644 {tmp_path}/update_count.py /usr/local/bin/update_count.py",
+            f"sudo install -m 644 {tmp_path}/subprocess_safe.py "
+            "/usr/local/bin/subprocess_safe.py",
+            f"sudo install -m 644 {tmp_path}/redis-updates.hook "
+            "/etc/pacman.d/hooks/redis-updates.hook",
+        ]
+    else:
+        assert "updates refresh hourly" in result.stderr
+        if mode == "missing":
+            assert result.stdout == "finished\n"
+
+
+def test_bootstrap_installs_pipewire_packages(setup: dict) -> None:
+    assert set(setup["packages"]["core"]) >= {
+        "pipewire", "pipewire-audio", "pipewire-pulse", "wireplumber", "libpulse",
+    }
+
+
+@pytest.mark.parametrize("failed_command", ["", "systemctl", "pactl"])
+def test_bootstrap_enables_and_checks_pipewire(failed_command: str) -> None:
+    script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
+    audio_setup = script.split('say "Enabling PipeWire audio"', 1)[1].split(
+        "# --- the services the bar reads from", 1,
+    )[0]
+    probe = textwrap.dedent("""
+        set -euo pipefail
+        failed_command="$1"
+        run() { printf '%s\\n' "$*"; [[ "$1" != "$failed_command" ]]; }
+    """) + audio_setup + '\nprintf "finished\\n"\n'
+    result = subprocess.run(
+        ["bash", "-c", probe, "_", failed_command],
+        capture_output=True, text=True, check=True,
+    )
+    assert result.stdout.splitlines() == [
+        "systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service",
+        "pactl info",
+        "finished",
+    ]
+    assert bool(result.stderr) == bool(failed_command)
 
 
 def test_every_recorded_import_resolves_here() -> None:

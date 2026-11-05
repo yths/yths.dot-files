@@ -46,6 +46,7 @@ core = [
     "xorg-server", "xorg-xinit", "xinit-xsession",
     "qtile", "python-dbus-fast",
     "kitty", "rofi", "dunst", "picom",
+    "pipewire", "pipewire-audio", "pipewire-pulse", "wireplumber", "libpulse",
     # Where GTK keeps the preferences that are not files -- the file chooser showing
     # hidden entries, and the light/dark scheme GTK 4 follows. helper/patch_gtk.py
     # writes them through gsettings, which needs this backend to make them persist.
@@ -99,11 +100,13 @@ optional = [
     "tmux",
     "starship",
     "vim",
+    "ruff",
+    "nordvpn-bin",
+    "visual-studio-code-bin",
 ]
 
 # Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them.
 development = [
-    "ruff",
     "python-pytest",
     # tests/test_lock_pam.py exercises the lock screen's PAM stack by compiling a small client
     # against libpam and running it in a sandbox with a fake /etc/pam.d -- which is how the

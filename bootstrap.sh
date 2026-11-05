@@ -2,7 +2,7 @@
 # Install this desktop on a fresh Arch system, in one command.
 #
 #     ./bootstrap.sh                  from a clone
-#     ./bootstrap.sh --dev            also install ruff and pytest, for changing the repository
+#     ./bootstrap.sh --dev            also install pytest and test tools, for changing the repository
 #     ./bootstrap.sh --dry-run        print what would happen and stop
 #     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
@@ -140,6 +140,12 @@ if [ -n "$theme_font" ]; then
         || printf 'Could not install %s; the desktop falls back to the font in setup.toml.\n' "$theme_font" >&2
 fi
 
+say "Enabling PipeWire audio"
+run systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service \
+    || printf 'Could not enable PipeWire audio; retry from a logged-in user session.\n' >&2
+run pactl info \
+    || printf 'Could not contact the audio server; check PipeWire after logging in.\n' >&2
+
 # --- the services the bar reads from -------------------------------------------------------
 # valkey is the store; the backend service, its own repository, is what writes into it. Both
 # are enabled now so the bar has numbers at the first login. The backend is a user unit, so no
@@ -163,6 +169,24 @@ if [ -f "$backend_path/backend.service" ]; then
         || printf 'Could not enable the backend service; the bar runs without its metrics.\n' >&2
 else
     printf 'No backend.service in %s; the bar runs without its metrics.\n' "$backend_path" >&2
+fi
+
+if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py" &&
+    -f "$backend_path/update_count.py" && -f "$backend_path/subprocess_safe.py" &&
+    -f "$backend_path/redis-updates.hook" ]]; then
+    say "Installing the package-update hook"
+    run sudo install -d -m 755 /usr/local/bin /etc/pacman.d/hooks &&
+        run sudo install -m 755 "$backend_path/pacman_post_transaction.py" \
+            /usr/local/bin/pacman-redis-updates &&
+        run sudo install -m 644 "$backend_path/update_count.py" \
+            /usr/local/bin/update_count.py &&
+        run sudo install -m 644 "$backend_path/subprocess_safe.py" \
+            /usr/local/bin/subprocess_safe.py &&
+        run sudo install -m 644 "$backend_path/redis-updates.hook" \
+            /etc/pacman.d/hooks/redis-updates.hook \
+        || printf 'Could not install the package-update hook; updates refresh hourly.\n' >&2
+else
+    printf 'Backend hook files are missing in %s; updates refresh hourly.\n' "$backend_path" >&2
 fi
 
 # --- the dot files, and with --system the two that write outside $HOME ---------------------

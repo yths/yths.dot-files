@@ -69,8 +69,8 @@ cd yths.dot-files
 
 That is the whole install: packages, the greeter, the services, the configuration, the login
 screen. It asks for the sudo password and once whether to collect credentials; then reboot.
-`./bootstrap.sh --dry-run` prints what it would do and stops; `--dev` adds the linter and
-test runner.
+`./bootstrap.sh --dry-run` prints what it would do and stops; `--dev` adds the test runner
+and test tools. Ruff, NordVPN and Visual Studio Code are installed by default.
 
 Everything you would change first is in [setup.toml](setup.toml) — the theme, the fallback
 font, the package list, which credentials to collect. Edit it before running, and nothing

@@ -5,6 +5,7 @@ notification colour when the system mute state (read from the ``audio`` Redis st
 is active. Implements ``libqtile.widget.base.InLoopPollText``.
 """
 
+import threading
 import time
 from typing import Any
 
@@ -85,6 +86,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self.last_active_sink = None
         self._last_reenum = 0.0
         self.REENUM_INTERVAL = 5.0
+        self._device_change_in_progress = False
 
         self.add_callbacks({
             "Button2": self.toggle_mode,
@@ -159,15 +161,31 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
     def device_up(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
-        available_devices = len(sounddevice.query_devices())
-        self.update_device(((self.device_id or 0) + 1) % available_devices)
+        self._change_device(1)
 
     def device_down(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
         if self.device_id:
-            available_devices = len(sounddevice.query_devices())
-            self.update_device((self.device_id - 1) % available_devices)
+            self._change_device(-1)
+
+    def _change_device(self, direction: int) -> None:
+        if sounddevice is None or self._device_change_in_progress:
+            return
+        self._device_change_in_progress = True
+
+        def change() -> None:
+            try:
+                available_devices = len(sounddevice.query_devices())
+                if available_devices:
+                    device_id = ((self.device_id or 0) + direction) % available_devices
+                    self.update_device(device_id)
+            except AUDIO_ERRORS:
+                libqtile.log_utils.logger.exception("changing the audio device failed")
+            finally:
+                self._device_change_in_progress = False
+
+        threading.Thread(target=change, name="qtile-audio-device", daemon=True).start()
 
     def _close_stream(self) -> None:
         """Tear the input stream down, tolerating a device that has already gone away.
@@ -232,7 +250,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             self.update_device(target)
 
     def poll(self) -> str:
-        if sounddevice is not None:
+        if sounddevice is not None and not self._device_change_in_progress:
             if self.mode == "automatic" or self.device_id is None:
                 self._follow_default()
             if self.stream is None and self.device_id is not None:
