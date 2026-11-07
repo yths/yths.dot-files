@@ -30,7 +30,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_vsc** — Patch the user's Visual Studio Code ``settings.json``.
 - **patch_web_greeter** — Patch and install the web-greeter themes LightDM renders at the login screen.
 - **patch_xorg** — Patch xorg: the X server's DPI, averaged across the detected monitors.
-- **preview_audio** — Preview the qtile audio meter in a terminal and pick a capture device.
+- **preview_audio** — Preview the qtile audio meter in a terminal and pick an output device.
 - **render_preview** — Render a preview of the configured desktop from the palette, not from a screen.
 - **screen_configuration** — Detect connected monitors via ``screeninfo``.
 - **symbols** — The symbols and strings every surface draws, in ASCII, for a theme to override.

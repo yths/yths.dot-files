@@ -14,10 +14,9 @@ Two base classes from `libqtile.widget.base`:
 - **`InLoopPollText`** — polls on the qtile event loop; `audio.py` reads ready meter frames from an isolated capture process without waiting for audio devices.
 
 Prefer `BackgroundPoll`. Only reach for `InLoopPollText` when polling cannot block. Audio
-capture lives in `shared.audio_capture`: only its spawned worker imports `sounddevice` and
-opens PortAudio streams. Unplugging a dock can abort PortAudio in native code, which Python
-exception handling and background threads cannot contain. A failed worker is restarted with
-backoff, and widget finalization stops it without calling native teardown inside Qtile.
+capture lives in `shared.audio_capture`: its spawned worker opens only PipeWire/Pulse output
+monitor sources, never microphones. A failed worker is restarted with backoff, and widget
+finalization stops it without calling native teardown inside Qtile.
 
 ## Anatomy of a Widget
 

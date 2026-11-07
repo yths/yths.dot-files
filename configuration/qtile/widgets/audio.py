@@ -5,6 +5,7 @@ notification colour when the system mute state (read from the ``audio`` Redis st
 is active. Implements ``libqtile.widget.base.InLoopPollText``.
 """
 
+import time
 from typing import Any
 
 import libqtile.widget.base
@@ -44,6 +45,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
         self.NUM_BARS = num_bars
         self.visualization = shared.spectrum.SILENCE * self.NUM_BARS
+        self.last_frame_at = time.monotonic()
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws a meter.
         self.symbols = symbols or vocabulary.SYMBOLS
@@ -95,6 +97,9 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         if frame is not None:
             self.device_id, levels = frame
             self.visualization = shared.spectrum.render(levels, self.symbols["meter.ramp"])
+            self.last_frame_at = time.monotonic()
+        elif time.monotonic() - self.last_frame_at >= 1.0:
+            self.visualization = shared.spectrum.SILENCE * self.NUM_BARS
 
         measurement = shared.stream.read_measurement(self.r, "audio")
         if measurement is None:

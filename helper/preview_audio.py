@@ -1,4 +1,4 @@
-"""Preview the qtile audio meter in a terminal and pick a capture device.
+"""Preview the qtile audio meter in a terminal and pick an output device.
 
 The bar's level meter is eight characters of block glyphs in a status bar, which makes it a
 poor place to work out why it is flat: is the device wrong, is nothing playing, or is the
@@ -8,21 +8,20 @@ so what appears here is what the bar will draw.
 
 Usage::
 
-    python helper/preview_audio.py --list          # capture devices, with their indices
-    python helper/preview_audio.py                 # preview the system default input
-    python helper/preview_audio.py --device 31     # preview a specific device
-    python helper/preview_audio.py --device pulse  # ... or the first whose name matches
+    python helper/preview_audio.py --list          # outputs, with their sink indices
+    python helper/preview_audio.py                 # preview the system default output
+    python helper/preview_audio.py --device 31     # preview a specific sink
+    python helper/preview_audio.py --device analog # ... or the first whose name matches
 
 Pass the chosen index to ``WidgetAudio(device_id=...)`` in ``configuration/qtile/config.py``.
 """
 
 import argparse
 import os
+import subprocess
 import sys
-import time
 
 import numpy
-import sounddevice
 
 #: This file's repository, resolved through any symlink used to invoke it.
 _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -33,6 +32,7 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 # the harness this replaced had done.
 sys.path.insert(0, os.path.join(_REPOSITORY_ROOT, "configuration", "qtile"))
 
+import shared.audio_capture  # noqa: E402
 import shared.spectrum  # noqa: E402
 
 #: Matches the widget's default, so the preview shows the same number of bars as the bar.
@@ -40,60 +40,56 @@ DEFAULT_NUM_BARS = 16
 
 
 def list_devices() -> int:
-    """Print every device that can be captured from, with the index the widget expects."""
+    """Print output sinks with the indices the widget expects."""
     try:
-        devices = sounddevice.query_devices()
-    except sounddevice.PortAudioError as error:
-        print(f"PortAudio is unavailable: {error}", file=sys.stderr)
+        outputs = shared.audio_capture.output_monitors()
+        default = shared.audio_capture.default_output()
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print(f"audio outputs are unavailable: {error}", file=sys.stderr)
         return 1
-    default_input = sounddevice.default.device[0]
-    for index, device in enumerate(devices):
-        if device["max_input_channels"] < 2:
+    for output in outputs:
+        if not output.get("monitor_source"):
             continue
-        marker = "*" if index == default_input else " "
-        rate = round(device["default_samplerate"])
-        print(f"{marker} {index:>3}  {device['name']}  ({rate} Hz)")
-    print("\n* is the system default input. Devices with fewer than 2 channels are omitted.")
+        marker = "*" if output["name"] == default else " "
+        print(f"{marker} {output['index']:>3}  {output['name']}")
+    print("\n* is the system default output.")
     return 0
 
 
 def preview(device: str | int | None, num_bars: int) -> int:
     """Draw the meter until interrupted. Returns a process exit status."""
     try:
-        properties = sounddevice.query_devices(device, kind="input")
-    except (sounddevice.PortAudioError, ValueError) as error:
+        outputs = shared.audio_capture.output_monitors()
+        default = shared.audio_capture.default_output()
+        if isinstance(device, str):
+            output = next((item for item in outputs if device in item["name"] and item.get("monitor_source")), None)
+        elif isinstance(device, int):
+            output = next((item for item in outputs if item["index"] == device and item.get("monitor_source")), None)
+        else:
+            output = shared.audio_capture.select_output(outputs, default, None, 0)
+        if output is None:
+            print(f"output {device!r} is unavailable", file=sys.stderr)
+            return 1
+        monitor = shared.audio_capture.OutputMonitor(output["monitor_source"])
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"cannot open device {device!r}: {error}", file=sys.stderr)
         return 1
 
-    print(f"Capturing from {properties['name']} — Ctrl-C to stop.")
-    meter = shared.spectrum.SILENCE * num_bars
-
-    def draw(indata: numpy.ndarray, frames: int, timestamp: object, status: object) -> None:
-        nonlocal meter
-        if status:
-            print(f"\n{status}", file=sys.stderr)
-        try:
-            meter = shared.spectrum.render(shared.spectrum.levels(indata, num_bars))
-        except ValueError:
-            # Capture too short to fill the bars; keep the previous frame on screen.
-            return
-
+    print(f"Capturing output {output['name']} — Ctrl-C to stop.")
+    levels = numpy.zeros(num_bars)
     try:
-        with sounddevice.InputStream(
-            device=device,
-            channels=2,
-            samplerate=properties["default_samplerate"],
-            callback=draw,
-        ):
-            while True:
-                print(f"\r|{meter}|", end="", flush=True)
-                time.sleep(0.05)
+        while True:
+            levels = 0.8 * levels + 0.2 * shared.spectrum.levels(monitor.read(), num_bars)
+            meter = shared.spectrum.render(levels)
+            print(f"\r|{meter}|", end="", flush=True)
     except KeyboardInterrupt:
         print()
         return 0
-    except sounddevice.PortAudioError as error:
+    except (OSError, ValueError) as error:
         print(f"\ncapture failed: {error}", file=sys.stderr)
         return 1
+    finally:
+        monitor.close()
 
 
 def parse_device(value: str) -> str | int:
@@ -106,13 +102,13 @@ def main() -> int:
     parser.add_argument(
         "--list",
         action="store_true",
-        help="list capture devices and their indices, then exit",
+        help="list output devices and their sink indices, then exit",
     )
     parser.add_argument(
         "--device",
         type=parse_device,
         default=None,
-        help="device index or name substring (default: the system default input)",
+        help="sink index or name substring (default: the system default output)",
     )
     parser.add_argument(
         "--bars",

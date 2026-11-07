@@ -68,8 +68,6 @@ addopts = "--quiet --no-header"
 max-returns = 12
 
 [tool.ruff.lint.per-file-ignores]
-# PortAudio must be imported only in the capture child, never in the window manager.
-"configuration/qtile/shared/audio_capture.py" = ["PLC0415"]
 # Two places must survive a failure they cannot enumerate, and in both the breadth is the
 # design rather than a lapse. Neither swallows anything: the failure is logged with its
 # traceback and surfaced to the caller, which is the substance BLE001 protects.

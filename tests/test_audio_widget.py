@@ -2,21 +2,34 @@
 
 import json
 import pathlib
-import sys
 import threading
 from multiprocessing.connection import Connection
 from typing import Any
 
+import numpy
+import preview_audio
 import pytest
 import shared.audio_capture
 import widgets.audio
 from widgets.audio import WidgetAudio
 
-DEVICES = [
-    {"name": "output only", "max_input_channels": 0, "default_samplerate": 48000.0},
-    {"name": "default", "max_input_channels": 2, "default_samplerate": 48000.0},
-    {"name": "dock input", "max_input_channels": 2, "default_samplerate": 48000.0},
+OUTPUTS = [
+    {"index": 1, "name": "speakers", "monitor_source": "speakers.monitor"},
+    {"index": 2, "name": "dock", "monitor_source": "dock.monitor"},
 ]
+
+
+@pytest.mark.parametrize(
+    ("device_id", "direction", "expected"), [(None, 0, 10), (20, 0, 20), (10, 1, 20), (10, -1, 20), (99, 0, 10)],
+)
+def test_output_selection_uses_only_sink_monitors(device_id: int | None, direction: int, expected: int) -> None:
+    sinks = [
+        {"index": 10, "name": "speakers", "monitor_source": "speakers.monitor"},
+        {"index": 20, "name": "dock", "monitor_source": "dock.monitor"},
+        {"index": 30, "name": "not-a-monitor"},
+    ]
+    assert shared.audio_capture.select_output(sinks, "speakers", device_id, direction)["index"] == expected
+    assert shared.audio_capture.select_output(sinks, "missing", None, 0) is None
 
 
 class FakeCapture:
@@ -98,6 +111,17 @@ def test_meter_renders_frames_from_the_worker(tmp_path: pathlib.Path, capture: N
     )
 
 
+def test_meter_clears_a_stale_capture_frame(
+    tmp_path: pathlib.Path, capture: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    widget = _widget(tmp_path)
+    widget.visualization = "x" * widget.NUM_BARS
+    widget.last_frame_at = 10.0
+    monkeypatch.setattr(widgets.audio.time, "monotonic", lambda: 11.0)
+    widget.poll()
+    assert widget.visualization == shared.spectrum.SILENCE * widget.NUM_BARS
+
+
 def test_finalize_stops_the_worker(
     tmp_path: pathlib.Path, capture: None, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -138,29 +162,21 @@ def test_native_worker_death_is_contained_and_capture_recovers(monkeypatch: pyte
 @pytest.mark.parametrize(
     ("device_id", "direction", "expected"), [(None, 0, 1), (2, 0, 2), (1, 1, 2), (1, -1, 2)],
 )
-def test_worker_selects_only_capture_capable_devices(
+def test_worker_captures_only_the_selected_output_monitor(
     monkeypatch: pytest.MonkeyPatch, device_id: int | None, direction: int, expected: int,
 ) -> None:
     frames = []
+    sources = []
 
-    class FakeStream:
-        def __init__(self, **kwargs: Any) -> None:
-            assert kwargs["device"] == expected
-            self.active = True
+    class FakeMonitor:
+        def __init__(self, source: str) -> None:
+            sources.append(source)
 
-        def __enter__(self) -> FakeStream:
-            return self
+        def read(self) -> numpy.ndarray:
+            return numpy.zeros((2048, 2))
 
-        def __exit__(self, *args: Any) -> None:
+        def close(self) -> None:
             pass
-
-    class FakeSounddevice:
-        PortAudioError = RuntimeError
-        InputStream = FakeStream
-
-        @staticmethod
-        def query_devices() -> list[dict[str, Any]]:
-            return DEVICES
 
     class FakeConnection:
         def send(self, frame: tuple[int, list[float]]) -> None:
@@ -170,6 +186,96 @@ def test_worker_selects_only_capture_capable_devices(
         def close(self) -> None:
             pass
 
-    monkeypatch.setitem(sys.modules, "sounddevice", FakeSounddevice)
+    monkeypatch.setattr(shared.audio_capture, "default_output", lambda: "speakers")
+    monkeypatch.setattr(shared.audio_capture, "output_monitors", lambda: OUTPUTS)
+    monkeypatch.setattr(shared.audio_capture, "OutputMonitor", FakeMonitor)
     shared.audio_capture.capture_worker(FakeConnection(), 16, device_id, direction)
     assert frames == [(expected, [0.0] * 16)]
+    assert sources == [next(output["monitor_source"] for output in OUTPUTS if output["index"] == expected)]
+
+
+def test_worker_follows_default_output_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+    defaults = iter(["speakers", "dock", "dock"])
+    sources = []
+    closed = []
+    frames = []
+
+    class FakeMonitor:
+        def __init__(self, source: str) -> None:
+            self.source = source
+            sources.append(source)
+
+        def read(self) -> numpy.ndarray:
+            return numpy.zeros((2048, 2))
+
+        def close(self) -> None:
+            closed.append(self.source)
+
+    class FakeConnection:
+        def send(self, frame: tuple[int, list[float]]) -> None:
+            frames.append(frame)
+            if len(frames) == 2:
+                raise BrokenPipeError
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(shared.audio_capture, "default_output", lambda: next(defaults))
+    monkeypatch.setattr(shared.audio_capture, "output_monitors", lambda: OUTPUTS)
+    monkeypatch.setattr(shared.audio_capture, "OutputMonitor", FakeMonitor)
+    monkeypatch.setattr(shared.audio_capture, "SINK_CHECK_SECONDS", 0)
+    shared.audio_capture.capture_worker(FakeConnection(), 16, None, 0)
+    assert sources == ["speakers.monitor", "dock.monitor"]
+    assert closed == sources
+    assert [frame[0] for frame in frames] == [1, 2]
+
+
+def test_worker_reports_output_signal(monkeypatch: pytest.MonkeyPatch) -> None:
+    frames = []
+    tone = numpy.sin(2 * numpy.pi * 440 * numpy.arange(2048) / 48000) * 0.1
+
+    class FakeMonitor:
+        def __init__(self, source: str) -> None:
+            assert source == "speakers.monitor"
+
+        def read(self) -> numpy.ndarray:
+            return numpy.column_stack((tone, tone))
+
+        def close(self) -> None:
+            pass
+
+    class FakeConnection:
+        def send(self, frame: tuple[int, list[float]]) -> None:
+            frames.append(frame)
+            raise BrokenPipeError
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(shared.audio_capture, "default_output", lambda: "speakers")
+    monkeypatch.setattr(shared.audio_capture, "output_monitors", lambda: OUTPUTS)
+    monkeypatch.setattr(shared.audio_capture, "OutputMonitor", FakeMonitor)
+    shared.audio_capture.capture_worker(FakeConnection(), 16, None, 0)
+    assert frames[0][0] == 1
+    assert max(frames[0][1]) > 0
+
+
+@pytest.mark.parametrize("device", [2, "dock"])
+def test_preview_selects_output_monitor(monkeypatch: pytest.MonkeyPatch, device: int | str) -> None:
+    sources = []
+
+    class FakeMonitor:
+        def __init__(self, source: str) -> None:
+            sources.append(source)
+
+        def read(self) -> numpy.ndarray:
+            raise KeyboardInterrupt
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(shared.audio_capture, "default_output", lambda: "speakers")
+    monkeypatch.setattr(shared.audio_capture, "output_monitors", lambda: OUTPUTS)
+    monkeypatch.setattr(shared.audio_capture, "OutputMonitor", FakeMonitor)
+    assert preview_audio.preview(device, 16) == 0
+    assert sources == ["dock.monitor"]

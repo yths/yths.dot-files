@@ -28,7 +28,6 @@ entry there and running `python helper/gendocs.py`; nothing else needs editing.
 | `numpy` | `python-numpy` | `configuration/qtile/shared/` (2 files), `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | level-meter maths |
 | `redis` | `python-redis` | `configuration/qtile/config.py`, `configuration/qtile/shared/stream.py`, `configuration/qtile/widgets/` (8 files) | optional at run time; cells render empty if Redis is unreachable |
 | `screeninfo` | `python-screeninfo` **(AUR)** | `configuration/qtile/shared/monitors.py` | detects monitor geometry, at install and on hotplug |
-| `sounddevice` | `python-sounddevice` **(AUR)** | `configuration/qtile/shared/audio_capture.py`, `helper/preview_audio.py` | live audio sampling |
 | `toml` | `python-toml` | `helper/patch_starship.py` | reads and rewrites `~/.config/starship.toml` |
 | `websockets` | `python-websockets` | `configuration/web-greeter/preview/server.py` | live theme editing and reload broadcast |
 <!-- END: DEPENDENCIES -->

@@ -89,7 +89,6 @@ backend = ["valkey", "python-redis", "pacman-contrib"]
 python = [
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
     "python-pillow", "python-cairo", "python-websockets",
-    "python-sounddevice",
 ]
 
 # Everything still works without these; each one buys a specific thing.
