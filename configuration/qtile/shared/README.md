@@ -35,7 +35,9 @@ Neither directory needs an `__init__.py`.
   its text at a fixed padding from the top of the bar instead of centring it like every
   other cell, which left the titles seven pixels above the icons beside them. This derives
   the padding from the font's line height, so the titles share the bar's centre line at any
-  size.
+  size. `AdaptiveTaskBar` moves the list to a bottom `SecondaryTaskBar` when its available
+  width falls below 18 scaled font sizes; it returns to the top at 27. The bottom bar reserves
+  space only while needed and retains the focused-screen outline when collapsed.
 - **`launcher.py`** — `rofi_command(mode, output, clearance, script)`, the argv the rofi key
   bindings spawn, the power menu's script mode included. It names the focused screen's output, because rofi's own default is the monitor
   under the pointer, and passes that screen's geometry inside the focus outline as a
