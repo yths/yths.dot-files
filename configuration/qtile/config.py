@@ -922,6 +922,10 @@ screens = [
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
                     ),
+                    padding=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    ),
                     update_interval=1,
                 ),
                 widget.Spacer(
