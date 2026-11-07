@@ -37,6 +37,12 @@ class CentredTaskList(widget.TaskList):
         spare = self.bar.size - self.layout.height - 2 * (self.margin_y + self.borderwidth)
         self.padding_y = max(spare // 2, 0)
 
+    def get_taskname(self, window: Any) -> str:
+        name = super().get_taskname(window)
+        if window is not None and window.urgent and self.markup_focused:
+            return self.markup_focused.format(name)
+        return name
+
     def draw(self) -> None:
         if self.length and self.titles_hidden:
             self._box_end_positions = []

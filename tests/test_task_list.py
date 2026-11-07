@@ -50,6 +50,41 @@ def test_a_line_taller_than_the_bar_gets_no_negative_padding(
     assert _configured(monkeypatch, bar=20, line=40).padding_y == 0
 
 
+@pytest.mark.parametrize("state", ["normal", "floating", "minimized", "maximized"])
+def test_urgent_titles_use_the_focused_text_colour(state: str) -> None:
+    task = shared.task_list.CentredTaskList(markup_focused="<span foreground='#123456'>{}</span>")
+    task.markup = True
+    window = types.SimpleNamespace(
+        name="Window <title>",
+        urgent=True,
+        minimized=state == "minimized",
+        maximized=state == "maximized",
+        floating=state == "floating",
+        group=types.SimpleNamespace(current_window=None),
+    )
+
+    urgent = task.get_taskname(window)
+    assert urgent.startswith("<span foreground='#123456'>")
+    assert "Window &lt;title&gt;" in urgent
+    window.urgent = False
+    assert urgent == task.markup_focused.format(task.get_taskname(window))
+
+
+def test_urgent_and_focused_titles_match_without_changing_normal_titles() -> None:
+    task = shared.task_list.CentredTaskList(markup_focused="<span foreground='#123456'>{}</span>")
+    task.markup = True
+    window = types.SimpleNamespace(
+        name="Window", urgent=False, minimized=False, maximized=False, floating=False,
+        group=types.SimpleNamespace(current_window=None),
+    )
+    assert task.get_taskname(window) == "Window"
+    window.group.current_window = window
+    focused = task.get_taskname(window)
+    window.group.current_window = None
+    window.urgent = True
+    assert task.get_taskname(window) == focused
+
+
 @pytest.mark.parametrize(
     ("available", "secondary", "expected"),
     [(199, False, True), (200, False, False), (200, True, True), (299, True, True), (300, True, False)],
