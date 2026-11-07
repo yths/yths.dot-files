@@ -42,8 +42,10 @@ except ImportError:
 NERD_FONT_BUILDS = {
     "Iosevka": "Iosevka NF",
     "Iosevka Nerd Font": "Iosevka NF",
-    "Atkinson Hyperlegible Mono": "AtkynsonMono NF",
-    "AtkynsonMono Nerd Font": "AtkynsonMono NF",
+    "Atkinson Hyperlegible Mono": "Atkinson Mono NF",
+    "Atkinson Mono Nerd Font": "Atkinson Mono NF",
+    "AtkynsonMono Nerd Font": "Atkinson Mono NF",
+    "AtkynsonMono NF": "Atkinson Mono NF",
 }
 
 #: Which Arch package provides a family a bundle may name, after ``NERD_FONT_BUILDS`` has
@@ -51,7 +53,7 @@ NERD_FONT_BUILDS = {
 #: ``bootstrap.sh`` installs only the fallback for it.
 FONT_PACKAGES = {
     "Iosevka NF": "ttf-iosevka-nerd",
-    "AtkynsonMono NF": "otf-atkinsonhyperlegiblemono-nerd",
+    "Atkinson Mono NF": "otf-atkinsonhyperlegiblemono-nerd",
 }
 
 #: What a bundle that names no size gets. Bundles always carry one; this is for the fallback

@@ -49,13 +49,21 @@ def test_a_plain_family_is_installed_as_its_nerd_font_build() -> None:
     # The bar needs the private-use glyphs; the Nerd Font build is the same face with them.
     plain = {"family": "Atkinson Hyperlegible Mono", "size": 12}
     assert fonts.package_for(plain) == "otf-atkinsonhyperlegiblemono-nerd"
-    assert fonts.resolve(plain, SETUP, families={"AtkynsonMono NF"}) == {
-        "family": "AtkynsonMono NF", "size": 12
+    assert fonts.resolve(plain, SETUP, families={"Atkinson Mono NF"}) == {
+        "family": "Atkinson Mono NF", "size": 12
     }
     # Only the plain family present: that is still not the font the bar needs, so fall back.
     assert fonts.resolve(plain, SETUP, families={"Atkinson Hyperlegible Mono"}) == {
         "family": "Fallback NF", "size": 12
     }
+
+
+def test_legacy_atkinson_bundle_alias_matches_the_installed_family() -> None:
+    bundle_font = {"family": "AtkynsonMono NF", "size": 14}
+    assert fonts.resolve(bundle_font, SETUP, families={"Atkinson Mono NF"}) == {
+        "family": "Atkinson Mono NF", "size": 14
+    }
+    assert fonts.package_for(bundle_font) == "otf-atkinsonhyperlegiblemono-nerd"
 
 
 def test_every_nerd_font_build_has_a_package() -> None:
