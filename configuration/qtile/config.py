@@ -118,7 +118,6 @@ except FileNotFoundError:
 
 theme = configuration["state"]["theme"]
 
-# Only distinguish the focused screen when there is more than one screen.
 FOCUS_BORDER_WIDTH = 3 if len(configuration["monitors"]) > 1 else 0
 FOCUS_BORDER_ACTIVE = configuration["palette"][theme]["highlight"]
 FOCUS_BORDER_INACTIVE = configuration["palette"][theme]["background"]
@@ -698,10 +697,7 @@ def highlight_focused_screen() -> None:
         if screen.top is not None:
             screen.top.border_color = [colour] * 4
             screen.top.draw()
-        if screen.bottom is not None:
-            screen.bottom.set_outline_color(colour)
-            screen.bottom.draw()
-        for edge in (screen.left, screen.right):
+        for edge in (screen.bottom, screen.left, screen.right):
             if edge is not None:
                 edge.background = colour
                 edge.draw()
@@ -715,23 +711,9 @@ if FOCUS_BORDER_WIDTH:
     # outlined no screen at all until focus next changed.
     hook.subscribe.startup(highlight_focused_screen)
 
-def task_list_for_monitor(monitor: str) -> shared.task_list.CentredTaskList:
-    return shared.task_list.CentredTaskList(
-        icon_size=0,
-        highlight_method="block",
-        borderwidth=0,
-        border=configuration["palette"][theme]["highlight"],
-        urgent_border=configuration["palette"][theme]["notification"],
-        markup_focused="<span foreground='" + configuration["palette"][theme]["background"] + "'>{}</span>",
-        foreground=configuration["palette"][theme]["neutral"],
-        fontsize=round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]),
-        padding_x=round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]),
-    )
-
-
 screens = [
     Screen(
-        top=shared.task_list.AdaptiveTaskBar(
+        top=shared.hover_bar.HoverBar(
             [
                 widget.TextBox(
                     f"{icons['monitor']}{subscript_characters[m]}",
@@ -797,13 +779,31 @@ screens = [
                         * configuration["font"]["size"]
                     )
                 ),
-                # widget.Prompt(
-                #     fontsize=round(
-                #         configuration["monitors"][monitor]["scaling_factor"]
-                #         * configuration["font"]["size"]
-                #     )
-                # ),
-                task_list_for_monitor(monitor),
+                widget.Prompt(
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    )
+                ),
+                shared.task_list.CentredTaskList(
+                    icon_size=0,
+                    highlight_method="block",
+                    borderwidth=0,
+                    border=configuration["palette"][theme]["highlight"],
+                    urgent_border=configuration["palette"][theme]["notification"],
+                    markup_focused="<span foreground='"
+                    + configuration["palette"][theme]["background"]
+                    + "'>{}</span>",
+                    foreground=configuration["palette"][theme]["neutral"],
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    ),
+                    padding_x=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    ),
+                ),
                 widget.Chord(
                     chords_colors={
                         "launch": (
@@ -1002,27 +1002,8 @@ screens = [
                 else 0
             ),
             border_color=FOCUS_BORDER_INACTIVE,
-            minimum_task_width=round(
-                configuration["monitors"][monitor]["scaling_factor"]
-                * configuration["font"]["size"]
-                * 18
-            ),
         ),
-        bottom=shared.task_list.SecondaryTaskBar(
-            [task_list_for_monitor(monitor)],
-            size=round(
-                configuration["monitors"][monitor]["scaling_factor"]
-                * configuration["font"]["size"]
-                * 2.75
-            ),
-            background=configuration["palette"][theme]["background"],
-            border_width=(
-                [focus_border_size(monitor)] * 4
-                if FOCUS_BORDER_WIDTH else 0
-            ),
-            border_color=FOCUS_BORDER_INACTIVE,
-            outline_size=focus_border_size(monitor) if FOCUS_BORDER_WIDTH else 0,
-        ),
+        bottom=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
         left=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
         right=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
         background=configuration["palette"][theme]["background"],
