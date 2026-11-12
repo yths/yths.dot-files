@@ -55,7 +55,8 @@
 - [x] Add plymouth to patch configuration
     - (2026-05-16) `helper/patch_plymouth.py` is wired into `helper/patch_configurations.py:patch_all`
     - (2026-08-30) correction: it was not, and had never been. The module exposed no importable function — every line sat under `if __name__` — so there was nothing for `patch_all` to call, and nothing else invoked it either.
-    - (2026-08-30) now true. `patch_plymouth(configuration)` exists and is in the `PATCHERS` registry. The blocker was that the theme installs into root-owned `/usr/share/plymouth/themes/`, so the patcher was split: rendering goes to a staging directory and needs no privileges, and installing promotes via `sudo -n` or `pkexec`. The pipeline never prompts — it installs only where root is already available and otherwise logs the command — so a theme switch cannot block on a password dialog.
+    - (2026-08-30) `patch_plymouth(configuration)` exists and is importable. The blocker was that the theme installs into root-owned `/usr/share/plymouth/themes/`, so the patcher was split: rendering goes to a staging directory and needs no privileges, and installing promotes via `sudo -n` or `pkexec`.
+    - (2026-08-30) deliberately *not* in the `PATCHERS` registry, which settles the question this ticket left open. The splash is drawn before login, so no user's theme preference applies to it; it is always rendered dark; and updating it costs root and an `mkinitcpio` run. It is a system decision made once, not a per-session one.
 - [ ] Automate installation of web-greeter
 - [ ] Automate installation of plymouth
     - (2026-08-30) partly done: `python helper/patch_plymouth.py --install --rebuild` now performs the copy into `/usr/share/plymouth/themes/` and the `mkinitcpio` rebuild that used to be two manual commands in the theme README, prompting for root once. What is left is `install.py` running it, which means deciding whether a desktop install should rebuild the initramfs unattended.

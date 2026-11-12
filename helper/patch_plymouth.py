@@ -6,11 +6,13 @@ Unlike every other patcher, plymouth's target is not under ``~``: themes live in
 rewrites it for the active palette — no privileges, nothing in the repository touched.
 **Install** copies the staged theme into the system path, which needs root.
 
-The split is what lets the patcher join the pipeline at all. ``patch_plymouth`` renders on
-every theme switch and installs only when root is already available without asking anyone
-anything; a password dialog at dawn and dusk would be worse than a boot splash that lags a
-theme behind. Run it by hand with ``--install`` to be prompted, and ``--rebuild`` to make
-the change visible at the next boot::
+This does not run on a theme switch, and is not in ``patch_all``'s registry. The boot splash
+is a property of the machine rather than of whoever is logged into it: it is drawn before
+login, needs root to install and an ``mkinitcpio`` run to take effect, and is always rendered
+dark. Re-rendering it twice a day would prompt for a password, rebuild the initramfs, and
+change something nobody is looking at.
+
+Run it when the palette itself changes::
 
     python helper/patch_plymouth.py --install --rebuild
 
@@ -41,6 +43,12 @@ except ImportError:
 
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
 SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"
+
+#: The boot splash is always rendered dark, whatever the desktop's current theme. It is drawn
+#: before anyone logs in, so there is no user whose preference could apply; ``state.theme``
+#: describes a session that does not exist yet. Dark also matches ``background-tile.png``,
+#: which links to the dark wallpaper, and suits a screen coming up in a dark room.
+PALETTE_VARIANT = "dark"
 
 #: This file's repository, resolved through any symlink used to invoke it.
 _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -239,11 +247,12 @@ def render_theme(configuration: dict[str, Any], theme_path: str, theme: str) -> 
 
 
 def patch_plymouth(configuration: dict[str, Any]) -> None:
-    """Render the boot splash for the active palette, and install it if root costs nothing.
+    """Render the boot splash from ``configuration``'s palette and install it if root is free.
 
-    The registry entry point, so it takes only the configuration and never prompts. Where
-    root is not already available it renders, says what to run, and returns — a theme switch
-    must not stop to ask for a password.
+    The importable entry point, for a caller that already holds a configuration -- an
+    installer, or a script regenerating a preset. It is deliberately not in ``patch_all``'s
+    registry: see this module's docstring. Never prompts, so an unattended caller cannot
+    block on a password.
     """
     source = theme_source(configuration)
     if source is None:
@@ -253,7 +262,7 @@ def patch_plymouth(configuration: dict[str, Any]) -> None:
         return
     staged = stage_theme(source)
     try:
-        render_theme(configuration, staged, configuration["state"]["theme"])
+        render_theme(configuration, staged, PALETTE_VARIANT)
         install_theme(staged, os.path.basename(source), prompt=False)
     finally:
         shutil.rmtree(staged, ignore_errors=True)
@@ -267,7 +276,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--theme", default=None,
-        help="palette variant to render (default: the active state.theme)",
+        help=f"palette variant to render (default: {PALETTE_VARIANT}; the splash is not "
+             "themed per session)",
     )
     parser.add_argument(
         "theme_path", nargs="?", default=None,
@@ -294,7 +304,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    theme = arguments.theme or configuration["state"]["theme"]
+    theme = arguments.theme or PALETTE_VARIANT
 
     staged = stage_theme(source)
     try:
