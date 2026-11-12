@@ -28,6 +28,17 @@ else
     status=1
 fi
 
+printf '  tests    '
+if ! command -v pytest >/dev/null 2>&1; then
+    printf 'SKIP  pytest is not installed (yay -S python-pytest)\n'
+    status=1
+elif output="$(pytest 2>&1)"; then
+    printf 'ok\n'
+else
+    printf 'FAIL\n%s\n\n' "$output"
+    status=1
+fi
+
 printf '  gendocs  '
 if output="$(python helper/gendocs.py --check 2>&1)"; then
     printf 'ok\n'

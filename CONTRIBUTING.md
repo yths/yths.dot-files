@@ -6,7 +6,7 @@ checks.
 ## Setup
 
 ```bash
-yay -S ruff
+yay -S ruff python-pytest
 helper/hooks/enable
 ```
 
@@ -17,10 +17,11 @@ this for you; a clone made only to edit needs the command.
 
 ## The Gate
 
-Two checks run on every commit and refuse it if either fails:
+Three checks run on every commit and refuse it if any fails:
 
 ```bash
 ruff check .                    # lint and type-annotation enforcement
+pytest                          # the pure logic; see tests/README.md
 python helper/gendocs.py        # regenerate the marker blocks in the docs
 python helper/gendocs.py --check   # ...or just fail if they are stale
 ```

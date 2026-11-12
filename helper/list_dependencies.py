@@ -19,8 +19,12 @@ import sys
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-#: Vendor-generated and not ours to account for; excluded from linting for the same reason.
-EXCLUDED = ("configuration/qutebrowser/config.py",)
+#: Not part of what this desktop needs installed. The qutebrowser config is vendor-generated
+#: and excluded from linting for the same reason; the tests import pytest, which is
+#: development tooling and belongs in CONTRIBUTING.md beside ruff, not in a table of what a
+#: machine needs to run the desktop.
+EXCLUDED_FILES = ("configuration/qutebrowser/config.py",)
+EXCLUDED_DIRECTORIES = ("tests/",)
 
 #: The only thing here that the code cannot tell us: which Arch package provides an import,
 #: and anything a reader needs to know before installing it. Everything else is derived.
@@ -56,7 +60,11 @@ def tracked_modules() -> list[pathlib.Path]:
         ["git", "-C", str(REPO_ROOT), "ls-files", "*.py"],
         capture_output=True, text=True, check=False,
     ).stdout.split()
-    return [REPO_ROOT / name for name in listing if name not in EXCLUDED]
+    return [
+        REPO_ROOT / name
+        for name in listing
+        if name not in EXCLUDED_FILES and not name.startswith(EXCLUDED_DIRECTORIES)
+    ]
 
 
 def first_party_names() -> set[str]:
