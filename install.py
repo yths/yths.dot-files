@@ -485,11 +485,11 @@ def main(argv: list[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     enable_git_hooks()
 
+    # This clone, wherever it was made, unless the variable redirects it. The default used to
+    # be ~/repositories/yths.dot-files, so a clone anywhere else -- which bootstrap.sh runs
+    # from without complaint -- installed from a path that did not exist.
     repository_folder_path = os.path.expanduser(
-        os.environ.get(
-            "DOTFILES_REPOSITORY_PATH",
-            os.path.join("~", "repositories", "yths.dot-files"),
-        )
+        os.environ.get("DOTFILES_REPOSITORY_PATH", _REPOSITORY_ROOT)
     )
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")

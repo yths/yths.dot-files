@@ -68,8 +68,8 @@ block does not name is drawn as `bluetooth.device`.
 
 ```json
 "bluetooth_devices": {
-    "CC:98:8B:99:F4:E5": "bluetooth.headphones",
-    "AC:80:0A:A4:66:EB": "\udb80\udf7d"
+    "00:11:22:33:44:55": "bluetooth.headphones",
+    "66:77:88:99:AA:BB": "\udb80\udf7d"
 }
 ```
 

@@ -16,7 +16,7 @@ def assets_folder() -> str:
     repository_folder_path = os.path.expanduser(
         os.environ.get(
             "DOTFILES_REPOSITORY_PATH",
-            os.path.join("~", "repositories", "yths.dot-files"),
+            os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
         )
     )
     return os.path.join(repository_folder_path, "assets")
