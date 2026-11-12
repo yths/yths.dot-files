@@ -21,13 +21,13 @@ entry there and running `python helper/gendocs.py`; nothing else needs editing.
 | Import | Arch package | Used by | Notes |
 |---|---|---|---|
 | `PIL` | `python-pillow` | `helper/patch_plymouth.py` | renders the boot background |
-| `cairo` | `python-pycairo` | `helper/patch_plymouth.py`, `helper/render_preview.py` | draws the boot background and the README preview |
+| `cairo` | `python-cairo` | `helper/patch_plymouth.py`, `helper/render_preview.py` | draws the boot background and the README preview |
 | `colour` | `python-colour-science` **(AUR)** | `helper/color_match.py` | perceptual nearest-colour matching, sRGB → XYZ → ΔE |
 | `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/shared/` (2 files), `configuration/qtile/widgets/` (9 files) | the window manager package provides the library |
 | `loguru` | `python-loguru` | `helper/utils.py`, `install.py` | optional; `helper/utils.py` falls back to stdlib `logging` |
 | `numpy` | `python-numpy` | `configuration/qtile/shared/spectrum.py`, `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | level-meter maths |
 | `redis` | `python-redis` | `configuration/qtile/config.py`, `configuration/qtile/shared/stream.py`, `configuration/qtile/widgets/` (8 files) | optional at run time; cells render empty if Redis is unreachable |
-| `screeninfo` | `python-screeninfo` | `configuration/qtile/shared/monitors.py` | detects monitor geometry, at install and on hotplug |
+| `screeninfo` | `python-screeninfo` **(AUR)** | `configuration/qtile/shared/monitors.py` | detects monitor geometry, at install and on hotplug |
 | `sounddevice` | `python-sounddevice` **(AUR)** | `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | live audio sampling |
 | `toml` | `python-toml` | `helper/patch_starship.py` | reads and rewrites `~/.config/starship.toml` |
 | `websockets` | `python-websockets` | `configuration/web-greeter/preview/server.py` | live theme editing and reload broadcast |

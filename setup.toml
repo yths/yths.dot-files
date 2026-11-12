@@ -87,7 +87,7 @@ backend = ["valkey", "python-redis", "pacman-contrib"]
 # python-colour-science is under packages/, not here: see there.
 python = [
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
-    "python-pillow", "python-pycairo", "python-websockets",
+    "python-pillow", "python-cairo", "python-websockets",
     "python-sounddevice",
 ]
 

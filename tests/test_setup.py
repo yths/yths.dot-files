@@ -107,7 +107,7 @@ def test_a_missing_import_is_named_with_its_package(monkeypatch: pytest.MonkeyPa
         list_dependencies.importlib.util, "find_spec",
         lambda name, *a: None if name == "cairo" else real(name, *a),
     )
-    assert list_dependencies.missing_imports() == [("cairo", "python-pycairo")]
+    assert list_dependencies.missing_imports() == [("cairo", "python-cairo")]
 
 
 def test_a_missing_dependency_is_not_reported_as_a_missing_patcher() -> None:
@@ -162,3 +162,25 @@ def test_the_colour_package_carries_its_hidden_dependency() -> None:
     depends = next(line for line in pkgbuild.splitlines() if line.startswith("depends="))
     assert "openimageio" in depends
     assert "not test_write_spectral_image_Fichet2021" in pkgbuild
+
+
+# A package name nobody has typed into pacman is only ever found on the fresh machine. This
+# ran there as "No AUR package found for python-pycairo", which the eye slides past.
+def test_every_package_name_resolves_in_the_repositories_or_the_aur(setup: dict) -> None:
+    if shutil.which("pacman") is None or shutil.which("yay") is None:
+        pytest.skip("needs pacman and yay to ask")
+    if subprocess.run(["yay", "-Si", "yay"], capture_output=True, check=False).returncode:
+        pytest.skip("the AUR is not reachable from here")
+    names = {setup["desktop"]["fallback_font_package"]}
+    names |= {name for group in setup["packages"].values() for name in group}
+    names |= {package for package, _ in list_dependencies.ARCH_PACKAGES.values()}
+    names -= list_dependencies.repository_packages()
+    in_repositories = subprocess.run(
+        ["pacman", "-Si", *sorted(names)], capture_output=True, text=True, check=False,
+    ).stderr
+    unknown = {
+        name for name in names
+        if f"package '{name}' was not found" in in_repositories
+        and subprocess.run(["yay", "-Si", name], capture_output=True, check=False).returncode
+    }
+    assert not unknown, f"not in the repositories or the AUR: {sorted(unknown)}"
