@@ -71,6 +71,11 @@
 
 ## Configurations
 
+- [x] Caps lock warning left its ends behind on the lock screen
+    - (2026-09-08) toggling caps lock off left `Key` and `ock` in the warning colour either side of the shorter string. xsecurelock clears a fixed-width region before redrawing that row rather than one sized to the text being replaced, so `Keyboard: English (intl., with AltGr dead keys), Caps Lock` overhung it at both ends.
+    - (2026-09-08) reproduced in a nested X server (Xephyr) with the machine's own layout, font and lock environment, rather than on the live session -- it does not reproduce under a plain `us` layout, where the string is short enough to fit, which is why the layout mattered.
+    - (2026-09-08) fixed with `XSECURELOCK_SHOW_KEYBOARD_LAYOUT=0`: the row becomes `Keyboard: Caps Lock`, which fits. The warning is kept, and the layout is the kind of detail this screen withholds anyway. The clearing itself is still wrong upstream, and any long string on that row would show it again.
+
 - [ ] The `inhibit-bridge` tray icon does not render (needs a `dbus-fast` fix)
     - (2026-09-08) the bridge itself works: it holds `org.freedesktop.ScreenSaver` and opens a matching logind idle inhibitor for each inhibit taken, verified end to end with `systemd-inhibit --list`. Only the indicator is missing.
     - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.

@@ -37,6 +37,19 @@ BEHAVIOUR = {
     # The first keypress wakes the screen rather than being swallowed by the prompt.
     "XSECURELOCK_DISCARD_FIRST_KEYPRESS": "1",
     "XSECURELOCK_SAVER_DELAY_MS": "0",
+    # Say when caps lock is on. A wrong password with no explanation is the worst thing a
+    # lock screen can do, and this is the usual cause. Pinned rather than left to the
+    # default because the line below now depends on it being the only thing on that row.
+    "XSECURELOCK_SHOW_LOCKS_AND_LATCHES": "1",
+    # ... and do not name the keyboard layout, which shares that row and is the long half of
+    # it. xsecurelock clears a fixed-width region before redrawing the row rather than one
+    # sized to the text it is replacing, so a string wider than that region leaves its ends
+    # behind. Toggling caps lock off left `Key` and `ock` in the warning colour either side
+    # of the shorter string, because "Keyboard: English (intl., with AltGr dead keys), Caps
+    # Lock" overhangs it at both ends. Without the layout the row reads "Keyboard: Caps
+    # Lock", which fits. The layout is also the kind of detail this screen withholds
+    # anyway -- and one this machine only has a single value for.
+    "XSECURELOCK_SHOW_KEYBOARD_LAYOUT": "0",
 }
 
 

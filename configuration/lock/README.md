@@ -36,6 +36,19 @@ there to challenge. Everything it displays is offered to them.
 `--transfer-sleep-lock`, which holds the sleep inhibitor until the locker is actually up — so
 the machine cannot suspend into a state where it wakes unlocked.
 
+## What It Says When A Password Fails
+
+Caps lock is announced, because a rejected password with no explanation is the worst thing a
+lock screen can do and this is the usual cause. The keyboard layout is not, and that is a fix
+rather than a preference: xsecurelock clears a fixed-width region before redrawing that row,
+not one sized to the text it is replacing. `Keyboard: English (intl., with AltGr dead keys),
+Caps Lock` is wider than that region, so turning caps lock off left `Key` and `ock` behind in
+the warning colour, on either side of the shorter string drawn over it. Without the layout the
+row reads `Keyboard: Caps Lock` and fits.
+
+Anything added to that row has to stay short for the same reason. A test in
+`tests/test_lock.py` holds the line.
+
 ## What Stops It
 
 A film is the case where locking on idle is wrong, and the X idle timer cannot see one:

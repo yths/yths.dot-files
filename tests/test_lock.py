@@ -86,3 +86,28 @@ def test_both_lockers_are_installed_by_the_bootstrap() -> None:
 
 def test_the_lock_is_in_the_patcher_registry() -> None:
     assert "lock" in {name for name, _ in PATCHERS}, "a theme switch must reach the lock screen"
+
+
+def test_caps_lock_is_announced(configuration: dict) -> None:
+    """A wrong password with no explanation is the worst thing a lock screen can do, and
+    caps lock is the usual cause."""
+    assert patch_lock.lock_environment(configuration)["XSECURELOCK_SHOW_LOCKS_AND_LATCHES"] == ON
+
+
+def test_the_keyboard_layout_is_not_named(configuration: dict) -> None:
+    """It shares a row with the caps lock warning, and xsecurelock clears a fixed-width
+    region before redrawing that row rather than one sized to the text being replaced. With
+    the layout in it the row read "Keyboard: English (intl., with AltGr dead keys), Caps
+    Lock", which overhangs the cleared region -- so turning caps lock off left `Key` and
+    `ock` in the warning colour on either side of the shorter string. Reproduced in a nested
+    X server, and fixed by making the row short enough to fit.
+    """
+    assert patch_lock.lock_environment(configuration)["XSECURELOCK_SHOW_KEYBOARD_LAYOUT"] == OFF
+
+
+def test_the_row_that_overflowed_is_now_short(configuration: dict) -> None:
+    """The guard on the fix: what is on that row has to stay well inside what xsecurelock
+    clears, so nothing here may put a long string back on it."""
+    environment = patch_lock.lock_environment(configuration)
+    row = "Keyboard: Caps Lock" if environment["XSECURELOCK_SHOW_LOCKS_AND_LATCHES"] == ON else ""
+    assert len(row) < 30, "the caps lock row grew; check it still fits the cleared region"
