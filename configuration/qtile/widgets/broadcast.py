@@ -1,8 +1,14 @@
-"""Qtile widget: OBS streaming and recording state.
+"""Qtile widget: OBS broadcast and recording state.
 
-Reads the latest entry from the ``stream`` Redis stream (``streaming``, ``obs`` booleans)
-and renders a recording dot when OBS is live, switching every screen to the highlight
-wallpaper while streaming. ``InLoopPollText`` based, so ``poll()`` must never raise.
+Reads the latest entry from the ``broadcast`` Redis stream (``streaming``, ``obs``
+booleans) and renders a recording dot when OBS is live, switching every screen to the
+highlight wallpaper while broadcasting. ``InLoopPollText`` based, so ``poll()`` must never
+raise.
+
+Named ``broadcast`` rather than ``stream`` because every other widget's module name is its
+Redis stream name, and this one could not be: ``stream`` already means the transport. The
+old name made ``read_measurement(self.r, "stream")`` say two different things in one
+line.
 """
 
 import os
@@ -14,7 +20,7 @@ import shared.state
 import shared.stream
 
 
-class WidgetStreamState(libqtile.widget.base.InLoopPollText):
+class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
     def __init__(
         self,
         r: redis.Redis | None,
@@ -63,7 +69,7 @@ class WidgetStreamState(libqtile.widget.base.InLoopPollText):
             screen.set_wallpaper(path_to_wallpaper)
 
     def poll(self) -> str:
-        measurement = shared.stream.read_measurement(self.r, "stream")
+        measurement = shared.stream.read_measurement(self.r, "broadcast")
         if measurement is None:
             return ""
         # Default to not-streaming: a payload missing the key must not flip the desktop

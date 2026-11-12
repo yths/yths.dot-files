@@ -62,11 +62,11 @@ except redis.exceptions.ConnectionError:
 
 import widgets.audio
 import widgets.bluetooth
+import widgets.broadcast
 import widgets.claude_usage
 import widgets.location
 import widgets.power_supply
 import widgets.service_state
-import widgets.stream_state
 import widgets.updates
 import widgets.vpn
 
@@ -470,7 +470,7 @@ screens = [
                         * configuration["font"]["size"]
                     )
                 ),
-                widgets.stream_state.WidgetStreamState(
+                widgets.broadcast.WidgetBroadcast(
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
                     warning_color=configuration["palette"][theme]["warning"],
