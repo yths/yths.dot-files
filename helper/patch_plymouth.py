@@ -38,10 +38,22 @@ import PIL.Image
 # Resolves whether this runs as ``helper.patch_plymouth`` or as a script; see helper/README.md.
 try:
     from helper import symbols
-    from helper.utils import logger, root_prefix
+    from helper.utils import (
+        installed_theme_name,
+        logger,
+        mark_installed,
+        remove_previous_installs,
+        root_prefix,
+    )
 except ImportError:
     import symbols
-    from utils import logger, root_prefix
+    from utils import (
+        installed_theme_name,
+        logger,
+        mark_installed,
+        remove_previous_installs,
+        root_prefix,
+    )
 
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
 SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"
@@ -67,11 +79,10 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 #: from a deliberate omission.
 THEME_SOURCE = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", "theme")
 
-#: What it installs as, and what ``/etc/plymouth/plymouthd.conf`` has to name. A constant, so the
-#: two cannot drift: while this was the preset's name, renaming a preset left plymouthd.conf
-#: pointing at a theme nothing wrote any more, and the splash stayed frozen at whatever had been
-#: installed under the old name.
-THEME_NAME = "yths"
+#: The splash installs under the active theme's name (``utils.installed_theme_name``), and every
+#: install also names it in ``/etc/plymouth/plymouthd.conf``. The two have to move together:
+#: once, the installed name followed a preset while nothing updated plymouthd.conf, and the
+#: splash stayed frozen for thirteen months at a theme nothing wrote any more.
 
 
 def theme_source(_configuration: dict[str, Any] | None = None) -> str | None:
@@ -110,7 +121,14 @@ def stage_theme(source: str) -> str:
 
 
 def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool = False) -> bool:
-    """Copy the staged theme into the system path as root. Returns whether it landed."""
+    """Install the staged theme as ``name`` and make it plymouth's. Returns whether it did.
+
+    Setting the default is part of installing, not a separate step: plymouthd.conf has to
+    name what was installed, or the next initramfs rebuild picks up whatever it named before.
+    ``rebuild`` also rebuilds the initramfs, which is what shows the change at the next boot.
+    Once the new theme is the default, the ones this repository installed before it are
+    removed; directories without ``utils.INSTALL_MARKER`` are never touched.
+    """
     destination = os.path.join(SYSTEM_THEME_ROOT, name)
     prefix = root_prefix(prompt=prompt)
     if prefix is None:
@@ -129,23 +147,25 @@ def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool
     if result.returncode != 0:
         logger.warning(f"Installing the plymouth theme failed: {result.stderr.strip()}")
         return False
+    mark_installed(destination, prefix)
     logger.info(f"Installed the plymouth theme to {destination}.")
 
-    if not rebuild:
-        logger.info(
-            f"The boot splash changes at the next initramfs rebuild: "
-            f"`sudo plymouth-set-default-theme {name} -R`."
-        )
-        return True
-
     result = subprocess.run(
-        [*prefix, "plymouth-set-default-theme", name, "-R"],
+        [*prefix, "plymouth-set-default-theme", name, *(["-R"] if rebuild else [])],
         capture_output=True, text=True, check=False,
     )
     if result.returncode != 0:
-        logger.warning(f"Rebuilding the initramfs failed: {result.stderr.strip()}")
+        logger.warning(f"Making {name} the default boot splash failed: {result.stderr.strip()}")
         return False
-    logger.info(f"Rebuilt the initramfs; {name} is the default boot splash.")
+    for previous in remove_previous_installs(SYSTEM_THEME_ROOT, name, prefix):
+        logger.info(f"Removed the previous boot splash {previous}.")
+    if rebuild:
+        logger.info(f"Rebuilt the initramfs; {name} is the default boot splash.")
+    else:
+        logger.info(
+            f"{name} is the default boot splash from the next initramfs rebuild: "
+            "`python helper/patch_plymouth.py --install --rebuild`."
+        )
     return True
 
 
@@ -187,9 +207,7 @@ def render_configuration(
     around them and left the words in the checked-in INI, so every bundle booted to the same
     seven titles no matter what else it changed.
     """
-    # Found rather than derived: theme_path is a staging directory whose name has nothing
-    # to do with the theme's, and the previous code hardcoded "yths.plymouth", which would
-    # have silently produced an empty config for any other preset.
+    # Found rather than assumed: the source's INI need not be named for the theme yet.
     inis = glob.glob(os.path.join(theme_path, "*.plymouth"))
     if not inis:
         raise FileNotFoundError(f"no .plymouth file in {theme_path}")
@@ -239,8 +257,13 @@ def render_configuration(
             if value is not None:
                 plymouth_configuration[section][ini_key] = value
 
-    with open(ini_path, "w") as handle:
+    # plymouth finds a theme's INI by the directory's name -- themes/<name>/<name>.plymouth --
+    # so the file is renamed along with everything it says.
+    named_path = os.path.join(theme_path, f"{name}.plymouth")
+    with open(named_path, "w") as handle:
         plymouth_configuration.write(handle, space_around_delimiters=False)
+    if named_path != ini_path:
+        os.remove(ini_path)
 
 
 def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
@@ -288,8 +311,9 @@ def patch_plymouth(configuration: dict[str, Any]) -> None:
         return
     staged = stage_theme(source)
     try:
-        render_theme(configuration, staged, PALETTE_VARIANT, THEME_NAME)
-        install_theme(staged, THEME_NAME, prompt=False)
+        name = installed_theme_name(configuration)
+        render_theme(configuration, staged, PALETTE_VARIANT, name)
+        install_theme(staged, name, prompt=False)
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 
@@ -328,10 +352,9 @@ def main() -> int:
         return 1
     theme = arguments.theme or PALETTE_VARIANT
 
-    # The constant, not the source directory's name. A theme rendered from a directory given on
-    # the command line still has to install where plymouthd.conf looks, or it is rendered into
-    # nothing -- which is how the installed splash came to be thirteen months old.
-    name = THEME_NAME
+    # The active theme's name, not the source directory's: the source is the same for every
+    # theme, and install_theme points plymouthd.conf at whatever name it installs under.
+    name = installed_theme_name(configuration)
     staged = stage_theme(source)
     try:
         logger.info(f"Rendering plymouth theme {source} for the {theme} palette ...")

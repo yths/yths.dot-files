@@ -29,7 +29,7 @@ Throughout this guide, the following placeholders appear. Replace them with valu
 | `<disk-part1>` | Boot partition | `/dev/sda1`, `/dev/nvme0n1p1` |
 | `<disk-part2>` | Swap partition | `/dev/sda2`, `/dev/nvme0n1p2` |
 | `<disk-part3>` | Root partition | `/dev/sda3`, `/dev/nvme0n1p3` |
-| `<user>` | Your username | `yths` |
+| `<user>` | Your username | `alice` |
 | `<hostname>` | Machine hostname | `arch` |
 | `<time-zone>` | Your time zone | `Europe/Berlin` |
 | `<primary-dns>` | Primary DNS server | `1.1.1.1` |
@@ -50,7 +50,7 @@ yay -S qemu-base edk2-ovmf
 Create the disk image:
 
 ```bash
-qemu-img create -f raw yths-dot-files-base 8G
+qemu-img create -f raw dot-files-base 8G
 ```
 
 Boot the image with the installation medium:
@@ -59,7 +59,7 @@ Boot the image with the installation medium:
 qemu-system-x86_64 \
   -cdrom Downloads/archlinux-<iso-version>-x86_64.iso \
   -boot order=d \
-  -drive file=yths-dot-files-base,format=raw \
+  -drive file=dot-files-base,format=raw \
   -enable-kvm \
   -m 8192 \
   -netdev user,id=net0 \
@@ -77,7 +77,7 @@ Boot the image with UEFI-enabled firmware:
 
 ```bash
 qemu-system-x86_64 \
-  -drive file=yths-dot-files-base,format=raw \
+  -drive file=dot-files-base,format=raw \
   -enable-kvm \
   -m 8192 \
   -netdev user,id=net0 \

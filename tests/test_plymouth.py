@@ -5,14 +5,13 @@ anyone logs in, so it has no user whose light/dark preference could apply -- it 
 rendered from the dark palette, and `state.theme` describes a session that does not exist yet.
 
 And `ImageDir` is an absolute path into the system theme directory, so it has to name the
-directory `install_theme` is about to create. It did not: after the bundle was renamed from
-`yths` to `default` the theme installed to `.../themes/default` while its INI still pointed at
-`.../themes/yths`, which plymouth answers by drawing no images at all.
+directory `install_theme` is about to create. It did not once: after a bundle was renamed, the
+theme installed under the new name while its INI still pointed at the old one, which plymouth
+answers by drawing no images at all.
 
-The name is now a constant rather than the preset's, which is the other half of the same lesson.
-`/etc/plymouth/plymouthd.conf` names the theme and cannot follow a rename, so while the installed
-directory was the preset's name, renaming a preset left the config pointing at a theme nothing
-wrote any more -- and the splash on this machine stayed thirteen months old without a word.
+The splash installs under the active theme's name, and installing also names it in
+`/etc/plymouth/plymouthd.conf`. The two have to move together: once the installed name changed
+while nothing updated plymouthd.conf, and the splash stayed thirteen months old without a word.
 """
 
 import configparser
@@ -20,10 +19,12 @@ import os
 import pathlib
 import re
 import shutil
+import subprocess
 
 import patch_plymouth
 import pytest
 import symbols
+import utils
 
 PALETTE = {"background": "#322f2f", "foreground": "#d5d1d1", "neutral": "#afabab",
            "highlight": "#4d91c7"}
@@ -44,8 +45,8 @@ def configuration() -> dict:
 @pytest.fixture
 def staged(tmp_path: pathlib.Path) -> pathlib.Path:
     """A staging directory holding a copy of the shipped theme's INI."""
-    source = pathlib.Path("configuration/plymouth/theme/yths.plymouth")
-    destination = tmp_path / "yths.plymouth"
+    source = pathlib.Path("configuration/plymouth/theme/theme.plymouth")
+    destination = tmp_path / "theme.plymouth"
     shutil.copyfile(source, destination)
     return tmp_path
 
@@ -53,7 +54,9 @@ def staged(tmp_path: pathlib.Path) -> pathlib.Path:
 def _ini(path: pathlib.Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str
-    parser.read(path / "yths.plymouth")
+    # Whatever the render named it: the INI is renamed to <name>.plymouth.
+    (ini,) = path.glob("*.plymouth")
+    parser.read(ini)
     return parser
 
 
@@ -108,16 +111,42 @@ def test_the_splash_does_not_depend_on_which_bundle_is_installed() -> None:
         assert patch_plymouth.theme_source({"name": name}) == patch_plymouth.THEME_SOURCE
 
 
-def test_it_installs_under_a_constant_name_not_the_presets() -> None:
-    """/etc/plymouth/plymouthd.conf names the theme, and cannot follow a renamed preset.
+# plymouth finds a theme's INI as themes/<name>/<name>.plymouth.
+def test_the_ini_is_named_for_the_theme(configuration: dict, staged: pathlib.Path) -> None:
+    patch_plymouth.render_configuration(configuration, str(staged), "dark", "autumn")
+    assert [path.name for path in staged.glob("*.plymouth")] == ["autumn.plymouth"]
 
-    It did not: the installed splash was thirteen months old, from a preset called `yths` that
-    no longer existed, because every render since had installed under a different name.
+
+def test_installing_makes_it_the_default_and_removes_earlier_ones(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """plymouthd.conf has to name what was installed, in the same step.
+
+    Once it did not: the installed name changed while plymouthd.conf kept naming the old one,
+    and the splash stayed thirteen months old.
     """
-    source = pathlib.Path("helper/patch_plymouth.py").read_text()
-    body = source[source.index("def patch_plymouth("):source.index("def main(")]
-    assert "THEME_NAME" in body
-    assert "os.path.basename(source)" not in body
+    root = tmp_path / "themes"
+    for name, ours in (("earlier", True), ("from-a-package", False)):
+        (root / name).mkdir(parents=True)
+        if ours:
+            (root / name / utils.INSTALL_MARKER).write_text("")
+    calls = []
+
+    def run(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        calls.append(argv)
+        if argv[0] == "rm":
+            shutil.rmtree(argv[-1])
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(patch_plymouth, "SYSTEM_THEME_ROOT", str(root))
+    monkeypatch.setattr(patch_plymouth, "root_prefix", lambda **_kwargs: [])
+    monkeypatch.setattr(patch_plymouth.subprocess, "run", run)
+
+    assert patch_plymouth.install_theme(str(tmp_path), "autumn")
+    assert ["plymouth-set-default-theme", "autumn"] in calls
+    assert sorted(path.name for path in root.iterdir()) == ["from-a-package"], (
+        "the earlier splash this repository installed is gone; the package's is not"
+    )
 
 
 def test_the_fonts_scale_from_the_configured_size(
@@ -157,7 +186,7 @@ def test_staging_refuses_a_dangling_wallpaper_link(tmp_path: pathlib.Path) -> No
     dangling link produces a theme that boots to nothing, so it is refused with the fix."""
     source = tmp_path / "theme"
     source.mkdir()
-    (source / "yths.plymouth").write_text("[two-step]\n")
+    (source / "theme.plymouth").write_text("[two-step]\n")
     os.symlink(tmp_path / "no-such-wallpaper.png", source / "background-tile.png")
     with pytest.raises(FileNotFoundError, match=re.escape("install.py")):
         patch_plymouth.stage_theme(str(source))
@@ -167,12 +196,12 @@ def test_staging_copies_rather_than_rendering_in_place(tmp_path: pathlib.Path) -
     """Rendering in place would rewrite tracked files on every run."""
     source = tmp_path / "theme"
     source.mkdir()
-    (source / "yths.plymouth").write_text("[two-step]\nFont=original\n")
+    (source / "theme.plymouth").write_text("[two-step]\nFont=original\n")
     staged = patch_plymouth.stage_theme(str(source))
     try:
         assert staged != str(source)
-        (pathlib.Path(staged) / "yths.plymouth").write_text("[two-step]\nFont=changed\n")
-        assert "original" in (source / "yths.plymouth").read_text()
+        (pathlib.Path(staged) / "theme.plymouth").write_text("[two-step]\nFont=changed\n")
+        assert "original" in (source / "theme.plymouth").read_text()
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 

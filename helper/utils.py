@@ -13,6 +13,7 @@ lands on a tracked file.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -71,6 +72,52 @@ def root_prefix(*, prompt: bool) -> list[str] | None:
     if os.environ.get("DISPLAY") and shutil.which("pkexec"):
         return ["pkexec"]
     return None
+
+
+#: Left in every theme directory installed under a system path, so a later install may remove
+#: it once another has replaced it -- and never removes a directory something else put there,
+#: like the themes a greeter package ships beside ours.
+INSTALL_MARKER = ".installed-by-dot-files"
+
+
+def installed_theme_name(configuration: dict[str, Any]) -> str:
+    """The active theme's name, as the name of a directory under a system theme path.
+
+    The login screen and the boot splash install under it, so what a machine shows is named
+    for the theme it came from rather than for anyone's account.
+    """
+    name = re.sub(r"[^a-z0-9._-]+", "-", str(configuration.get("name") or "").lower())
+    return name.strip("-.") or "dot-files"
+
+
+def remove_previous_installs(root: str, keep: str, prefix: list[str]) -> list[str]:
+    """Remove theme directories under ``root`` that this repository installed, but ``keep``.
+
+    Called only once ``keep`` is installed and active, so nothing is removed that is still in
+    use. Only directories carrying ``INSTALL_MARKER`` are candidates. Returns the names removed.
+    """
+    try:
+        entries = os.listdir(root)
+    except OSError:
+        return []
+    removed = []
+    for entry in sorted(entries):
+        path = os.path.join(root, entry)
+        if entry == keep or not os.path.isfile(os.path.join(path, INSTALL_MARKER)):
+            continue
+        result = subprocess.run([*prefix, "rm", "-rf", path], capture_output=True, check=False)
+        if result.returncode == 0:
+            removed.append(entry)
+    return removed
+
+
+def mark_installed(directory: str, prefix: list[str]) -> bool:
+    """Leave ``INSTALL_MARKER`` in an installed theme directory. Returns whether it did."""
+    result = subprocess.run(
+        [*prefix, "touch", os.path.join(directory, INSTALL_MARKER)],
+        capture_output=True, check=False,
+    )
+    return result.returncode == 0
 
 
 def template_path(app: str, filename: str) -> str:

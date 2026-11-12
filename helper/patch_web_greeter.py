@@ -28,13 +28,25 @@ from typing import Any
 
 try:
     from helper import symbols
-    from helper.utils import logger, root_prefix
+    from helper.utils import (
+        installed_theme_name,
+        logger,
+        mark_installed,
+        remove_previous_installs,
+        root_prefix,
+    )
 except ImportError:
     # Reached when this file runs as a script: sys.path[0] is then helper/, not the
     # repository root, so the package-qualified form cannot resolve. Both branches land on
     # the same loguru-or-stdlib fallback defined once in helper/utils.py.
     import symbols
-    from utils import logger, root_prefix
+    from utils import (
+        installed_theme_name,
+        logger,
+        mark_installed,
+        remove_previous_installs,
+        root_prefix,
+    )
 
 #: Where web-greeter looks for themes. Root-owned, which is why installing is its own stage.
 SYSTEM_THEME_ROOT = "/usr/share/web-greeter/themes"
@@ -195,14 +207,22 @@ def activate(name: str, prefix: list[str]) -> bool:
     return True
 
 
-def install_theme(name: str, *, prompt: bool = False, make_active: bool = False) -> bool:
-    """Copy one patched theme into the system directory. Returns whether it landed."""
+def install_theme(
+    name: str, installed_as: str, *, prompt: bool = False, make_active: bool = False
+) -> bool:
+    """Install the patched source theme ``name`` as ``installed_as``. Returns whether it landed.
+
+    ``installed_as`` is the active theme's name (``utils.installed_theme_name``), so the login
+    screen is named for the theme it shows. With ``make_active`` LightDM is pointed at it, and
+    the login screens this repository installed before it are then removed; directories
+    without ``utils.INSTALL_MARKER`` -- the greeter package's own themes -- are never touched.
+    """
     source = os.path.join(THEME_SOURCE_ROOT, name)
     if not os.path.isdir(source):
         logger.warning(f"No theme named {name!r}; this repository ships {available_themes()}.")
         return False
 
-    destination = os.path.join(SYSTEM_THEME_ROOT, name)
+    destination = os.path.join(SYSTEM_THEME_ROOT, installed_as)
     prefix = root_prefix(prompt=prompt)
     if prefix is None:
         logger.info(
@@ -219,10 +239,15 @@ def install_theme(name: str, *, prompt: bool = False, make_active: bool = False)
     if result.returncode != 0:
         logger.warning(f"Installing {name} failed: {result.stderr.strip()}")
         return False
+    mark_installed(destination, prefix)
     logger.info(f"Installed the {name} theme to {destination}.")
 
     if make_active:
-        return activate(name, prefix)
+        if not activate(installed_as, prefix):
+            return False
+        for previous in remove_previous_installs(SYSTEM_THEME_ROOT, installed_as, prefix):
+            logger.info(f"Removed the previous login screen {previous}.")
+        return True
     logger.info(f"Pass --activate to have LightDM render it; {GREETER_CONFIG} is unchanged.")
     return True
 
@@ -255,7 +280,8 @@ def main() -> int:
         logger.info("Patched only; pass --install to copy into place.")
         return 0
     return 0 if install_theme(
-        arguments.theme, prompt=True, make_active=arguments.activate
+        arguments.theme, installed_theme_name(configuration),
+        prompt=True, make_active=arguments.activate,
     ) else 1
 
 
