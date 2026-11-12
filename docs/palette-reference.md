@@ -845,16 +845,15 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `walkThrough.embeddedEditorBackground` | `background` | 22.0 |
 | `widget.shadow` | `background` | 22.0 |
 
-#### `light` — 250 keys (`workbench.colorCustomizations` in `settings.json`)
+#### `light` — 246 keys (`workbench.colorCustomizations` in `settings.json`)
 
 | VSCode key | Token | ΔE |
 | --- | --- | --- |
-| `activityBar.background` | `background` | 15.3 |
-| `activityBar.border` | `background` | 15.3 |
-| `activityBar.foreground` | `foreground_variant` | 3.7 |
-| `activityBar.inactiveForeground` | `foreground_variant` | 3.7 |
-| `activityBarBadge.background` | `background` | 15.3 |
-| `activityBarBadge.foreground` | `foreground_variant` | 3.7 |
+| `activityBar.background` | `foreground_variant` | 2.4 |
+| `activityBar.foreground` | `background` | 2.0 |
+| `activityBar.inactiveForeground` | `background` | 2.0 |
+| `activityBarBadge.background` | `highlight` | 10.2 |
+| `activityBarBadge.foreground` | `background` | 2.0 |
 | `badge.background` | `background` | 17.7 |
 | `badge.foreground` | `foreground_variant` | 2.3 |
 | `breadcrumb.activeSelectionForeground` | `foreground` | 1.8 |
@@ -911,7 +910,6 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editorGroup.border` | `background` | 6.5 |
 | `editorGroup.emptyBackground` | `background` | 2.0 |
 | `editorGroupHeader.tabsBackground` | `background` | 3.1 |
-| `editorGroupHeader.tabsBorder` | `background` | 15.3 |
 | `editorGutter.addedBackground` | `success` | 12.1 |
 | `editorGutter.background` | `background` | 2.0 |
 | `editorGutter.commentRangeForeground` | `foreground` | 5.0 |
@@ -1044,7 +1042,6 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `settings.focusedRowBackground` | `neutral` | 39.9 |
 | `settings.headerForeground` | `foreground` | 8.9 |
 | `sideBar.background` | `background` | 3.1 |
-| `sideBar.border` | `background` | 15.3 |
 | `sideBar.dropBackground` | `highlight` | 34.9 |
 | `sideBar.foreground` | `foreground` | 8.9 |
 | `sideBarSectionHeader.background` | `foreground_variant` | 22.0 |
@@ -1062,12 +1059,11 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `statusBarItem.remoteBackground` | `green` | 5.6 |
 | `statusBarItem.remoteForeground` | `background` | 2.0 |
 | `tab.activeBackground` | `background` | 2.0 |
-| `tab.activeBorder` | `background` | 15.3 |
-| `tab.activeBorderTop` | `background` | 7.1 |
+| `tab.activeBorder` | `foreground_variant` | 22.0 |
+| `tab.activeBorderTop` | `foreground_variant` | 22.0 |
 | `tab.activeForeground` | `foreground_variant` | 2.3 |
 | `tab.border` | `background` | 3.1 |
-| `tab.hoverBackground` | `neutral` | 3.2 |
-| `tab.inactiveBackground` | `background` | 7.1 |
+| `tab.inactiveBackground` | `background` | 5.0 |
 | `tab.inactiveForeground` | `foreground_variant` | 2.3 |
 | `terminal.ansiBlack` | `foreground_variant` | 22.0 |
 | `terminal.ansiBlue` | `blue` | 8.4 |

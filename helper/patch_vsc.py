@@ -13,13 +13,13 @@ import sys
 
 try:
     from helper import color_match
-    from helper.utils import logger
+    from helper.utils import logger, template_path
 except ImportError:
     # Reached when this file runs as a script: sys.path[0] is then helper/, not the
     # repository root, so the package-qualified form cannot resolve. Both branches land on
     # the same loguru-or-stdlib fallback defined once in helper/utils.py.
     import color_match
-    from utils import logger
+    from utils import logger, template_path
 
 def dict_replace_value(d: dict, colors: list, lookup_colors: list | None = None) -> dict:
     if lookup_colors is None:
@@ -71,7 +71,8 @@ def list_replace_value(
 #: The two variants a bundle carries, and the order they are built in.
 MODES = ("dark", "light")
 
-#: Where VSCode keeps the settings this patcher writes into.
+#: Where VSCode reads the settings from. ``install.py`` symlinks the patcher's output here,
+#: so this is a fact about the install rather than a path anything below opens.
 USER_SETTINGS_PATH = os.path.join("~", ".config", "Code", "User", "settings.json")
 
 
@@ -82,11 +83,16 @@ def build_palette_map(palette: dict) -> dict[str, list]:
 
 
 def load_default_themes(input_path: str | None) -> dict[str, dict]:
-    """Read the stock VSCode themes this patcher recolours, one per mode."""
+    """Read the stock VSCode themes this patcher recolours, one per mode.
+
+    These are what *Developer: Generate Color Theme From Current Settings* writes, so
+    refreshing them is a VSCode command rather than an edit here -- which is the point of
+    reading a theme file rather than a hand-maintained list of keys.
+    """
     directory = input_path if input_path is not None else os.getcwd()
     themes = {}
     for mode in MODES:
-        with open(os.path.join(directory, f"vsc_default_{mode}.json")) as handle:
+        with open(os.path.join(directory, f"template-{mode}-color-theme.json")) as handle:
             themes[mode] = json.load(handle)
     return themes
 
@@ -113,20 +119,28 @@ def build_themes(
 def apply_to_user_settings(theme: dict) -> bool:
     """Write the recoloured theme into VSCode's settings. Returns whether it was written.
 
-    VSCode may simply not be installed, which is not a failure: the patcher runs on every
-    theme switch and must not complain on a machine that has no VSCode.
+    Reads ``settings.json.template`` and writes the result beside it, the way every other
+    patcher that has hand-written settings alongside palette-derived ones works. It used to
+    read and rewrite its own output, which made one file both the source of six scalars and
+    the home of 487 generated colours -- on a tracked path, so every theme switch dirtied
+    76 KB of it, and a colour fixed by hand there was a fix the generator never learned.
+
+    ``install.py`` symlinks the output to ``~/.config/Code/User/settings.json``, so writing
+    here is what VSCode reads. A machine without VSCode simply has a file nothing opens.
     """
-    settings_path = os.path.expanduser(USER_SETTINGS_PATH)
-    if not os.path.exists(settings_path):
+    template = template_path("vscode", "settings.json.template")
+    if not os.path.exists(template):
+        logger.info("No settings.json.template; leaving Visual Studio Code alone.")
         return False
+
     logger.info("Patching Visual Studio Code settings...")
-    with open(settings_path) as handle:
+    with open(template) as handle:
         user_settings = json.load(handle)
     user_settings["editor.tokenColorCustomizations"] = {
         "textMateRules": theme.get("tokenColors", [])
     }
     user_settings["workbench.colorCustomizations"] = theme.get("colors", {})
-    with open(settings_path, "w") as handle:
+    with open(template_path("vscode", "settings.json"), "w") as handle:
         json.dump(user_settings, handle, indent=4)
     logger.info("Patched Visual Studio Code settings.")
     return True
