@@ -1,163 +1,314 @@
-"""Patch a plymouth theme.
+"""Patch plymouth: the boot splash's palette, fonts and rendered assets.
 
-Reads the active palette and current ``state.theme`` (light/dark) from
-``~/.config/config.json`` and rewrites the target ``.plymouth`` INI, then renders the
-background asset (PNG via PIL + cairo) so the boot splash matches the active palette.
+Unlike every other patcher, plymouth's target is not under ``~``: themes live in
+``/usr/share/plymouth/themes/``, which is root-owned. That is why this runs in two stages.
+**Render** copies the theme source out of this repository into a staging directory and
+rewrites it for the active palette — no privileges, nothing in the repository touched.
+**Install** copies the staged theme into the system path, which needs root.
+
+The split is what lets the patcher join the pipeline at all. ``patch_plymouth`` renders on
+every theme switch and installs only when root is already available without asking anyone
+anything; a password dialog at dawn and dusk would be worse than a boot splash that lags a
+theme behind. Run it by hand with ``--install`` to be prompted, and ``--rebuild`` to make
+the change visible at the next boot::
+
+    python helper/patch_plymouth.py --install --rebuild
+
+The rebuild is separate because it re-runs ``mkinitcpio`` for every preset: the boot splash
+reads its theme from the initramfs, so copying files into place is necessary but not
+sufficient.
 """
 
 import argparse
 import configparser
+import glob
 import json
 import os
+import shutil
 import subprocess
+import sys
+import tempfile
+from typing import Any
 
 import cairo
 import PIL.Image
 
+# Resolves whether this runs as ``helper.patch_plymouth`` or as a script; see helper/README.md.
 try:
     from helper.utils import logger
 except ImportError:
-    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
-    # repository root, so the package-qualified form cannot resolve. Both branches land on
-    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
     from utils import logger
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Patch plymouth configurations according to the given configuration file."
-    )
-    parser.add_argument(
-        "--configuration",
-        type=str,
-        help="Path to the configuration file.",
-        required=False,
-        default="~/.config/config.json",
-        dest="configuration_file_path",
-    )
-    parser.add_argument(
-        "--theme",
-        type=str,
-        help="Theme to be applied.",
-        required=False,
-        default="dark",
-        dest="theme",
-    )
-    parser.add_argument(
-        "plymouth_path",
-        type=str,
-        help="Path to the plymouth theme file to be patched.",
-    )
-    args = parser.parse_args()
+#: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
+SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"
 
-    with open(os.path.expanduser(args.configuration_file_path)) as config_handle:
-        configuration = json.load(config_handle)
+#: This file's repository, resolved through any symlink used to invoke it.
+_REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    logger.info(f"Patching plymouth theme at '{args.plymouth_path}' with theme '{args.theme}' ...")
+#: Theme sources in this repository, one directory per preset that ships a boot splash.
+THEME_SOURCE_ROOT = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", "themes")
+
+
+def theme_source(configuration: dict[str, Any]) -> str | None:
+    """Source directory of the boot splash for the active preset, or ``None`` if it has none.
+
+    Only some presets ship one — ``nuunamnir`` does not, which is an open ticket — so a
+    missing directory is an ordinary outcome rather than a failure.
+    """
+    name = configuration.get("name")
+    if not name:
+        return None
+    path = os.path.join(THEME_SOURCE_ROOT, str(name))
+    return path if os.path.isdir(path) else None
+
+
+def stage_theme(source: str) -> str:
+    """Copy the theme source into a fresh temporary directory and return its path.
+
+    Rendering happens on the copy, never on the source. The eight PNGs and the ``.plymouth``
+    INI are all rewritten on every run, so rendering in place would rewrite tracked files
+    twice a day — which is exactly the churn the wallpapers and the web-greeter stylesheets
+    are gitignored to avoid.
+    """
+    dangling = [
+        entry.name
+        for entry in os.scandir(source)
+        if entry.is_symlink() and not os.path.exists(entry.path)
+    ]
+    if dangling:
+        raise FileNotFoundError(
+            f"{', '.join(dangling)} in {source} points at a file that does not exist. "
+            "Run install.py first: it creates the wallpaper links the theme dereferences."
+        )
+    staged = tempfile.mkdtemp(prefix="plymouth-theme-")
+    # symlinks=False dereferences background-tile.png, which points at the active wallpaper:
+    # the system copy has to hold the image, not a link into a home directory root cannot read.
+    shutil.copytree(source, staged, symlinks=False, dirs_exist_ok=True)
+    return staged
+
+
+def root_prefix(*, prompt: bool) -> list[str] | None:
+    """An argv prefix that runs a command as root here, or ``None`` if nothing can.
+
+    An empty list means the caller is already root. ``sudo -n`` is tried first because it
+    either works silently — a live timestamp, or a NOPASSWD rule — or fails immediately;
+    it is the only form the unattended theme switch is allowed to use. When prompting is
+    permitted, pkexec puts the dialog on the desktop and sudo on the terminal.
+    """
+    if os.geteuid() == 0:
+        return []
+    if shutil.which("sudo") and subprocess.run(
+        ["sudo", "-n", "true"], capture_output=True, check=False
+    ).returncode == 0:
+        return ["sudo", "-n"]
+    if not prompt:
+        return None
+    if os.environ.get("DISPLAY") and shutil.which("pkexec"):
+        return ["pkexec"]
+    if sys.stdin.isatty() and shutil.which("sudo"):
+        return ["sudo"]
+    return None
+
+
+def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool = False) -> bool:
+    """Copy the staged theme into the system path as root. Returns whether it landed."""
+    destination = os.path.join(SYSTEM_THEME_ROOT, name)
+    prefix = root_prefix(prompt=prompt)
+    if prefix is None:
+        logger.info(
+            f"Rendered the plymouth theme, but writing {destination} needs root. Run "
+            "`python helper/patch_plymouth.py --install --rebuild` to be prompted for it."
+        )
+        return False
+
+    # -L dereferences whatever the source still links to; -T makes the destination the
+    # directory itself rather than a parent to nest a second copy inside.
+    result = subprocess.run(
+        [*prefix, "cp", "-RLT", staged, destination],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        logger.warning(f"Installing the plymouth theme failed: {result.stderr.strip()}")
+        return False
+    logger.info(f"Installed the plymouth theme to {destination}.")
+
+    if not rebuild:
+        logger.info(
+            f"The boot splash changes at the next initramfs rebuild: "
+            f"`sudo plymouth-set-default-theme {name} -R`."
+        )
+        return True
+
+    result = subprocess.run(
+        [*prefix, "plymouth-set-default-theme", name, "-R"],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        logger.warning(f"Rebuilding the initramfs failed: {result.stderr.strip()}")
+        return False
+    logger.info(f"Rebuilt the initramfs; {name} is the default boot splash.")
+    return True
+
+
+#: Flat rectangles plymouth composites behind the password entry and the animation:
+#: (filename, size, palette token).
+SOLID_ASSETS = (
+    ("entry.png", (305, 34), "background"),
+    ("animation-001.png", (533, 400), "background"),
+)
+
+#: Glyphs drawn on transparency: (filename, surface size, palette token, font size, origin,
+#: character). These were six near-identical cairo incantations; only these six values ever
+#: differed. The characters are escaped rather than inlined because they are nerd-font
+#: private-use codepoints — invisible in an editor and silently dropped by anything that
+#: rewrites the line.
+GLYPH_ASSETS = (
+    ("capslock.png", (24, 28), "highlight", 24, (6, 22), "\U000f030e"),      # md-keyboard_caps
+    ("bullet.png", (10, 10), "foreground", 16, (1, 11), "\u2022"),           # bullet
+    ("throbber-01.png", (64, 64), "foreground", 32, (24, 44), "\ueb10"),     # cod-loading
+    ("throbber-02.png", (64, 64), "neutral", 32, (24, 44), "\ueb10"),        # cod-loading, dimmed
+    ("keyboard.png", (36, 36), "neutral", 32, (2, 30), "\uf11c"),            # fa-keyboard
+    ("lock.png", (35, 34), "neutral", 32, (3, 29), "\U000f07f5"),            # md-lock_outline
+)
+
+
+def _rgb(hex_colour: str) -> tuple[float, float, float]:
+    """``#rrggbb`` to the 0..1 triple cairo wants."""
+    return tuple(int(hex_colour[i : i + 2], 16) / 255 for i in (1, 3, 5))
+
+
+def render_configuration(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
+    """Rewrite the theme's ``.plymouth`` INI with the active palette and fonts."""
+    # Found rather than derived: theme_path is a staging directory whose name has nothing
+    # to do with the theme's, and the previous code hardcoded "yths.plymouth", which would
+    # have silently produced an empty config for any other preset.
+    inis = glob.glob(os.path.join(theme_path, "*.plymouth"))
+    if not inis:
+        raise FileNotFoundError(f"no .plymouth file in {theme_path}")
+    ini_path = inis[0]
 
     plymouth_configuration = configparser.ConfigParser(interpolation=None)
     plymouth_configuration.optionxform = str
-    plymouth_configuration.read(os.path.join(args.plymouth_path, "yths.plymouth"))
+    plymouth_configuration.read(ini_path)
 
     two_step = plymouth_configuration["two-step"]
     font_family = configuration["font"]["family"]
     font_size = configuration["font"]["size"]
-    palette = configuration["palette"][args.theme]
+    palette = configuration["palette"][theme]
 
     two_step["Font"] = f"{font_family} {round(font_size * 1.25)}"
     two_step["TitleFont"] = f"{font_family} {round(font_size * 1.25)}"
     two_step["MonospaceFont"] = f"{font_family} {round(font_size * 0.85)}"
 
-    two_step["BackgroundStartColor"] = f"{palette['background'].replace('#', '0x')}"
-    two_step["BackgroundEndColor"] = f"{palette['background'].replace('#', '0x')}"
-    two_step["ProgressBarBackgroundColor"] = f"{palette['neutral'].replace('#', '0x')}"
-    two_step["ConsoleLogTextColor"] = f"{palette['foreground'].replace('#', '0x')}"
-    two_step["ConsoleLogBackgroundColor"] = f"{palette['background'].replace('#', '0x')}"
+    # Plymouth writes colours as 0xrrggbb rather than #rrggbb.
+    two_step["BackgroundStartColor"] = palette["background"].replace("#", "0x")
+    two_step["BackgroundEndColor"] = palette["background"].replace("#", "0x")
+    two_step["ProgressBarBackgroundColor"] = palette["neutral"].replace("#", "0x")
+    two_step["ConsoleLogTextColor"] = palette["foreground"].replace("#", "0x")
+    two_step["ConsoleLogBackgroundColor"] = palette["background"].replace("#", "0x")
 
-    with open(os.path.join(args.plymouth_path, "yths.plymouth"), "w") as handle:
+    with open(ini_path, "w") as handle:
         plymouth_configuration.write(handle, space_around_delimiters=False)
 
-    # find path to font file
-    proc = subprocess.run(
-        ["fc-list"], encoding="utf-8", stdout=subprocess.PIPE, check=False
+
+def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
+    """Re-render every image the theme draws, in the active palette."""
+    palette = configuration["palette"][theme]
+    font_family = configuration["font"]["family"]
+
+    for filename, size, token in SOLID_ASSETS:
+        PIL.Image.new("RGB", size, palette[token]).save(os.path.join(theme_path, filename))
+
+    for filename, size, token, font_size, origin, glyph in GLYPH_ASSETS:
+        with cairo.ImageSurface(cairo.FORMAT_ARGB32, *size) as surface:
+            context = cairo.Context(surface)
+            context.set_source_rgb(*_rgb(palette[token]))
+            context.select_font_face(
+                font_family, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL
+            )
+            context.set_font_size(font_size)
+            context.move_to(*origin)
+            context.show_text(glyph)
+            surface.write_to_png(os.path.join(theme_path, filename))
+
+
+def render_theme(configuration: dict[str, Any], theme_path: str, theme: str) -> None:
+    """Rewrite the staged theme's INI and re-render its assets for one palette variant."""
+    render_configuration(configuration, theme_path, theme)
+    render_assets(configuration, theme_path, theme)
+
+
+def patch_plymouth(configuration: dict[str, Any]) -> None:
+    """Render the boot splash for the active palette, and install it if root costs nothing.
+
+    The registry entry point, so it takes only the configuration and never prompts. Where
+    root is not already available it renders, says what to run, and returns — a theme switch
+    must not stop to ask for a password.
+    """
+    source = theme_source(configuration)
+    if source is None:
+        logger.info(
+            f"No plymouth theme ships for the {configuration.get('name')!r} preset; skipping."
+        )
+        return
+    staged = stage_theme(source)
+    try:
+        render_theme(configuration, staged, configuration["state"]["theme"])
+        install_theme(staged, os.path.basename(source), prompt=False)
+    finally:
+        shutil.rmtree(staged, ignore_errors=True)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--configuration", default="~/.config/config.json", dest="configuration_file_path",
+        help="path to the active configuration (default: ~/.config/config.json)",
     )
-    for line in proc.stdout.split("\n"):
-        try:
-            font_path, font_name, font_style = line.split(":")
-            path_value = font_path.strip()
-            name_value = font_name.split(",")[0].strip()
-            if name_value != configuration["font"]["family"]:
-                continue
-            style_values = font_style.split("=")[1].split(",")
-            if "Regular" not in style_values or len(style_values) > 1:
-                continue
-        except ValueError:
-            continue
+    parser.add_argument(
+        "--theme", default=None,
+        help="palette variant to render (default: the active state.theme)",
+    )
+    parser.add_argument(
+        "theme_path", nargs="?", default=None,
+        help="theme source directory (default: the active preset's, under configuration/plymouth/themes/)",
+    )
+    parser.add_argument(
+        "--install", action="store_true",
+        help=f"copy the rendered theme into {SYSTEM_THEME_ROOT}, prompting for root if needed",
+    )
+    parser.add_argument(
+        "--rebuild", action="store_true",
+        help="with --install, also rebuild the initramfs so the change shows at the next boot",
+    )
+    arguments = parser.parse_args()
 
-    im_entry = PIL.Image.new("RGB", (305, 34), palette["background"])
-    im_entry.save(os.path.join(args.plymouth_path, "entry.png"))
+    with open(os.path.expanduser(arguments.configuration_file_path)) as handle:
+        configuration = json.load(handle)
 
-    im_entry = PIL.Image.new("RGB", (533, 400), palette["background"])
-    im_entry.save(os.path.join(args.plymouth_path, "animation-001.png"))
+    source = arguments.theme_path or theme_source(configuration)
+    if source is None or not os.path.isdir(source):
+        print(
+            f"No plymouth theme source for preset {configuration.get('name')!r}; "
+            f"looked under {THEME_SOURCE_ROOT}.",
+            file=sys.stderr,
+        )
+        return 1
+    theme = arguments.theme or configuration["state"]["theme"]
 
-    color_neutral_str = palette["highlight"]
-    color_neutral_tuple = tuple(int(color_neutral_str[i:i+2], 16) for i in (1, 3, 5))
+    staged = stage_theme(source)
+    try:
+        logger.info(f"Rendering plymouth theme {source} for the {theme} palette ...")
+        render_theme(configuration, staged, theme)
+        if not arguments.install:
+            logger.info("Rendered only; pass --install to copy it into place.")
+            return 0
+        return 0 if install_theme(
+            staged, os.path.basename(source), prompt=True, rebuild=arguments.rebuild
+        ) else 1
+    finally:
+        shutil.rmtree(staged, ignore_errors=True)
 
-    color_foreground_str = palette["foreground"]
-    color_foreground_tuple = tuple(int(color_foreground_str[i:i+2], 16) for i in (1, 3, 5))
 
-    color_grey_str = palette["neutral"]
-    color_grey_tuple = tuple(int(color_grey_str[i:i+2], 16) for i in (1, 3, 5))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 24, 28) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_neutral_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(24)
-        context.move_to(6, 22)
-        context.show_text("󰌎")
-        surface.write_to_png(os.path.join(args.plymouth_path, "capslock.png"))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 10, 10) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_foreground_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(16)
-        context.move_to(1, 11)
-        context.show_text("•")
-        surface.write_to_png(os.path.join(args.plymouth_path, "bullet.png"))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 64, 64) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_foreground_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(32)
-        context.move_to(24, 44)
-        context.show_text("")
-        surface.write_to_png(os.path.join(args.plymouth_path, "throbber-01.png"))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 64, 64) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_grey_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(32)
-        context.move_to(24, 44)
-        context.show_text("")
-        surface.write_to_png(os.path.join(args.plymouth_path, "throbber-02.png"))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 36, 36) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_grey_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(32)
-        context.move_to(2, 30)
-        context.show_text("")
-        surface.write_to_png(os.path.join(args.plymouth_path, "keyboard.png"))
-
-    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 35, 34) as surface:
-        context = cairo.Context(surface)
-        context.set_source_rgb(*[v / 255 for v in color_grey_tuple])
-        context.select_font_face(configuration["font"]["family"], cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        context.set_font_size(32)
-        context.move_to(3, 29)
-        context.show_text("󰟵")
-        surface.write_to_png(os.path.join(args.plymouth_path, "lock.png"))
+if __name__ == "__main__":
+    sys.exit(main())

@@ -63,7 +63,13 @@ The web-greeter preview server under `configuration/web-greeter/preview/` serves
 
 ## Debug Plymouth Boot Splash
 
-Plymouth's splash can be exercised without rebooting:
+Render and install the current palette first — the splash reads its theme from the initramfs, so nothing changes until `mkinitcpio` runs:
+
+```bash
+python helper/patch_plymouth.py --install --rebuild
+```
+
+The splash can then be exercised without rebooting:
 
 ```bash
 plymouthd --debug-file=~/plymouth-test.log

@@ -51,9 +51,11 @@
     - (2026-05-14) added `helper/patch_web_greeter.py`, wired into `patch_all`; themes parameterized via CSS variables generated into each theme's `theme.css`
 - [x] Add plymouth to patch configuration
     - (2026-05-16) `helper/patch_plymouth.py` is wired into `helper/patch_configurations.py:patch_all`
-    - (2026-08-30) correction: it is not, and was not then. The module exposes no importable function — every line sits under `if __name__` — so there has never been anything for `patch_all` to call, and nothing else invokes it either. The patcher itself works when run by hand, which is what this ticket asked for; whether the boot splash should also be re-rendered on every theme switch is a separate question and still open.
+    - (2026-08-30) correction: it was not, and had never been. The module exposed no importable function — every line sat under `if __name__` — so there was nothing for `patch_all` to call, and nothing else invoked it either.
+    - (2026-08-30) now true. `patch_plymouth(configuration)` exists and is in the `PATCHERS` registry. The blocker was that the theme installs into root-owned `/usr/share/plymouth/themes/`, so the patcher was split: rendering goes to a staging directory and needs no privileges, and installing promotes via `sudo -n` or `pkexec`. The pipeline never prompts — it installs only where root is already available and otherwise logs the command — so a theme switch cannot block on a password dialog.
 - [ ] Automate installation of web-greeter
 - [ ] Automate installation of plymouth
+    - (2026-08-30) partly done: `python helper/patch_plymouth.py --install --rebuild` now performs the copy into `/usr/share/plymouth/themes/` and the `mkinitcpio` rebuild that used to be two manual commands in the theme README, prompting for root once. What is left is `install.py` running it, which means deciding whether a desktop install should rebuild the initramfs unattended.
 - [ ] Automatically patch README.md on color theme change
 - [x] Create VSC color theme
     - (2026-01-02) added crude VSC theme color mapping script (does not work well in light mode)
