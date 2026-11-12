@@ -34,3 +34,8 @@ alias yay-update-all='export TMPFILE="$(mktemp)"; \
 
 PS1='[\u@\h \W]\$ '
 eval "$(starship init bash)"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/yths/.local/bin:$PATH"
+export PATH="/home/yths/.local/bin:$PATH"

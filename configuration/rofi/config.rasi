@@ -8,6 +8,9 @@ configuration {
         sorting-method: "name";
     }
     display-run: " ";
+    display-window: "  ";
+    window-format: "[{w}]  {c}   {t}";
+    window-match-fields: "title,class,desktop";
 }
 
 @theme "theme"
