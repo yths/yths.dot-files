@@ -8,6 +8,7 @@ to resolve.
 """
 
 import datetime
+import os
 import pathlib
 import subprocess
 import sys
@@ -148,3 +149,64 @@ def test_the_gate_passes_while_the_real_documentation_is_stale() -> None:
     )
     assert result.returncode == 0
     assert "verification date" in result.stderr
+
+
+# ------------------------------------------------ the generators run without an install
+#
+# `gendocs.py` had never run on a clone the installer had not touched. `list_keybindings` read
+# `configuration/tmux/tmux.conf` and the drift report read four more patcher outputs -- all
+# gitignored, so all absent, so `read_text()` raised and took the whole script, and the
+# pre-commit hook with it. A contributor's first commit failed on a repository they had only
+# cloned to edit.
+#
+# Asserted by doing it rather than by reading the source. A first attempt scanned for
+# `"configuration/..."` literals and passed while the bug was still present, because
+# `list_keybindings` builds its paths one path component at a time and the pattern matched
+# none of them. Copying the tracked files out and running the real script cannot be fooled
+# that way.
+
+
+def _tracked_checkout(destination: pathlib.Path) -> pathlib.Path:
+    """The working tree's *tracked* files only -- a fresh clone of this state."""
+    listing = subprocess.run(
+        ["git", "-C", str(gendocs.REPO_ROOT), "ls-files", "-z"],
+        capture_output=True, text=True, check=True,
+    ).stdout.split("\0")
+    for name in filter(None, listing):
+        source = gendocs.REPO_ROOT / name
+        if not source.is_file():          # a gitignored path git still lists, or a dead symlink
+            continue
+        target = destination / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+    # It has to be a repository, not just a directory of files: `list_dependencies` and
+    # `utils.tracked_bundles` both ask git what this repository ships, so without an index they
+    # see nothing and every recorded package looks unused. An index is enough; no commit needed.
+    for command in (["git", "init", "-q"], ["git", "add", "-A"]):
+        subprocess.run(command, cwd=destination, check=True,
+                       env={**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null"})
+    return destination
+
+
+def test_gendocs_runs_on_a_checkout_the_installer_has_never_touched(
+    tmp_path: pathlib.Path,
+) -> None:
+    checkout = _tracked_checkout(tmp_path / "clone")
+    # The property under test, stated as a precondition so the test cannot pass by accident.
+    assert not (checkout / "configuration/tmux/tmux.conf").exists(), (
+        "tmux.conf is generated output; if it is tracked, this test proves nothing"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "helper/gendocs.py", "--check"],
+        cwd=checkout, capture_output=True, text=True, check=False,
+    )
+    assert "Traceback" not in result.stderr, (
+        f"a generator raised with no generated files present:\n{result.stderr}"
+    )
+    assert "FileNotFoundError" not in result.stderr, result.stderr
+    assert result.returncode == 0, (
+        f"the blocks a fresh clone generates differ from the committed ones, so they depend on "
+        f"this machine:\n{result.stdout}{result.stderr}"
+    )

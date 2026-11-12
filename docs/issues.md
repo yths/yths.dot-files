@@ -24,6 +24,29 @@
 
 ## Documentation
 
+- [x] `gendocs.py` could not run on a clone the installer had not touched
+    - (2026-09-26) `list_keybindings` read `configuration/tmux/tmux.conf` and the drift report
+      read four more patcher outputs. All five are gitignored, so on a fresh clone none exists,
+      `read_text()` raised `FileNotFoundError`, and it took the whole script — and with it the
+      pre-commit gate. A contributor's first commit failed on a repository they had only cloned
+      to edit. Present at every commit back to at least `b177fcf`.
+    - (2026-09-26) fixed by reading the tracked template each value actually lives in, rather
+      than by guarding each read. tmux's bindings are in `tmux.conf.template` — `patch_tmux`
+      copies every non-`color` line through — and the drift report's whole subject is hex
+      hardcoded *outside* the palette, which is a property of the templates.
+    - (2026-09-26) two of the five were reporting nothing anyway: every value in `kitty.conf`
+      and `rofi/theme_config.rasi` is written from the palette moments earlier, so
+      reverse-mapping them said `exact` for all twenty-six. Both are generated whole, have no
+      template, and so have no drift; they are simply gone from the report.
+    - (2026-09-26) the generated blocks stopped depending on the active install as a
+      side-effect, which is what lets `--check` pass rather than merely not crash.
+    - (2026-09-26) pinned by `test_gendocs_runs_on_a_checkout_the_installer_has_never_touched`,
+      which copies the tracked files out, makes a repository of them and runs the real script.
+      A first attempt scanned the source for `"configuration/..."` literals and **passed while
+      the bug was still present**, because `list_keybindings` builds its paths one component at
+      a time and the pattern matched none of them.
+
+
 - [x] Manage backup/ directory — pre-refactor archive; consider deletion (git history preserves content)
     - (2026-08-29) the directory is not present in the working tree and was never tracked; the `backup/` entry in `.gitignore` is retained so a future archive stays out of the tree
 - [x] Add LICENSE.md at root

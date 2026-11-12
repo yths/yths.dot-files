@@ -760,23 +760,32 @@ def _pairs(relative: str, pattern: str) -> list[tuple[str, str]]:
 
 
 def _dunst_pairs() -> list[tuple[str, str]]:
-    pairs = _pairs("configuration/dunst/dunstrc", r'^\s*(\w+)\s*=\s*"?(#[0-9a-fA-F]{6})')
-    spans = _pairs("configuration/dunst/dunstrc", r"()foreground='(#[0-9a-fA-F]{6})'")
+    template = "configuration/dunst/dunstrc.template"
+    pairs = _pairs(template, r'^\s*(\w+)\s*=\s*"?(#[0-9a-fA-F]{6})')
+    spans = _pairs(template, r"()foreground='(#[0-9a-fA-F]{6})'")
     return pairs + [("urgency span", hex_value) for _, hex_value in spans]
 
 
+#: Where hex is hardcoded *outside* the palette: the tracked templates.
+#:
+#: Not the patcher outputs, which is what this read before. Every value in kitty.conf and
+#: rofi/theme_config.rasi was written from the palette moments earlier, so reverse-mapping them
+#: reported `exact` for all twenty-six and said nothing at all; those two files are generated
+#: whole, have no template, and so have no drift to report. The three that remain each keep
+#: hand-written settings beside palette-derived ones, and it is the template's own stock hex
+#: that is the drift.
+#:
+#: Reading tracked files is also what lets `gendocs.py` run on a clone where the installer has
+#: not: the outputs are gitignored, so reading them raised FileNotFoundError and took the whole
+#: script -- and the pre-commit gate -- with it.
 DRIFT_TOOLS = [
-    ("kitty", "configuration/kitty/kitty.conf",
-     lambda: _pairs("configuration/kitty/kitty.conf", r"^(\S+)\s+(#[0-9a-fA-F]{6})\b")),
-    ("tmux", "configuration/tmux/tmux.conf",
-     lambda: _pairs("configuration/tmux/tmux.conf", r"^(color\d+)\s*=\s*(#[0-9a-fA-F]{6})")),
-    ("starship", "configuration/starship/starship.toml",
-     lambda: _pairs("configuration/starship/starship.toml",
+    ("tmux", "configuration/tmux/tmux.conf.template",
+     lambda: _pairs("configuration/tmux/tmux.conf.template",
+                    r"^(color\d+)\s*=\s*(#[0-9a-fA-F]{6})")),
+    ("starship", "configuration/starship/starship.toml.template",
+     lambda: _pairs("configuration/starship/starship.toml.template",
                     r'^(color\d+)\s*=\s*"(#[0-9a-fA-F]{6})"')),
-    ("dunst", "configuration/dunst/dunstrc", _dunst_pairs),
-    ("rofi", "configuration/rofi/theme_config.rasi",
-     lambda: _pairs("configuration/rofi/theme_config.rasi",
-                    r"^\s*(COLOR\d+):\s*(#[0-9a-fA-F]{6})")),
+    ("dunst", "configuration/dunst/dunstrc.template", _dunst_pairs),
 ]
 
 
@@ -789,7 +798,8 @@ def _drift_section(config: dict) -> str:
     theme = config.get("state", {}).get("theme", "dark")
     palette_variant = config["palette"].get(theme, {})
     lines.append(
-        f"Each tool below hardcodes hex outside the palette. Colors are matched against "
+        f"Each template below hardcodes hex outside the palette. Colors are matched "
+        f"against "
         f"the active **{theme}** palette"
         + (" (CAM16-UCS ΔE)." if _HAVE_COLOUR else " (exact match only — `colour` not installed).")
     )
@@ -803,7 +813,7 @@ def _drift_section(config: dict) -> str:
         rows = list(dict.fromkeys(extractor()))
         lines += [f"#### {tool} (`{rel_path}`)", ""]
         if not rows:
-            lines += ["_Not generated yet; run a theme switch._", ""]
+            lines += ["_No hardcoded hex._", ""]
             continue
         lines += ["| Local name | Hex | Nearest token | ΔE |", "| --- | --- | --- | --- |"]
         for label, hex_value in rows:

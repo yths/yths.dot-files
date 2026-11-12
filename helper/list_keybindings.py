@@ -191,12 +191,23 @@ TMUX_BIND_RE = re.compile(r"^\s*(?:bind|bind-key)\b\s+(?:-\S+\s+)*(\S+)\s+(.*)$"
 
 
 def _tmux_section() -> str:
-    path = REPO_ROOT / "configuration" / "tmux" / "tmux.conf"
+    """tmux's bindings, read from the template rather than the generated file.
+
+    ``configuration/tmux/tmux.conf`` is patcher output and gitignored, so on a clone where the
+    installer has not run it does not exist -- and this raised ``FileNotFoundError``, which took
+    the whole of ``gendocs.py`` with it and so the pre-commit gate. The bindings are not in that
+    file's generated half anyway: ``patch_tmux`` rewrites the ``color*`` lines and the one
+    ``display`` message and copies every other line through from the template, which is tracked.
+
+    Reading the template also stops this block depending on the active install, the way the
+    palette's does.
+    """
+    path = REPO_ROOT / "configuration" / "tmux" / "tmux.conf.template"
     text = path.read_text()
     prefix_override = re.search(r"^\s*set\b.*\bprefix\b\s+(\S+)", text, re.MULTILINE)
     prefix = prefix_override.group(1) if prefix_override else "C-b"
 
-    lines = ["### tmux (`configuration/tmux/tmux.conf`)", ""]
+    lines = ["### tmux (`configuration/tmux/tmux.conf.template`)", ""]
     lines.append(f"Prefix: `{prefix}` (tmux default — not overridden here).")
     lines.append("")
     lines.append("| Keys | Command |")
@@ -215,6 +226,12 @@ def _tmux_section() -> str:
         f"`{prefix} c` new window, `{prefix} %` / `{prefix} \"` split, "
         f"`{prefix} d` detach, `{prefix} [` copy mode, `{prefix} ,` rename window. "
         "Full list: the *DEFAULT KEY BINDINGS* section of `man tmux`."
+    )
+    lines.append("")
+    lines.append(
+        "Read from the tracked template, so these are the bindings as written. The reload "
+        "binding's message is the one theme-substituted string in that file — see "
+        "[symbols.md](symbols.md) — so a bundle may word it differently than shown."
     )
     return "\n".join(lines)
 

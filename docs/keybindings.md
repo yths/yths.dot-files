@@ -77,7 +77,7 @@ qtile has no built-in default keybindings beyond what this config defines, so th
 
 These override a handful of bindings; vim's hundreds of built-in defaults (`i` insert, `:w` write, `dd` delete line, `/` search, `gg` / `G` jump, `u` undo, …) remain active. Full list: `:help index`.
 
-### tmux (`configuration/tmux/tmux.conf`)
+### tmux (`configuration/tmux/tmux.conf.template`)
 
 Prefix: `C-b` (tmux default — not overridden here).
 
@@ -87,6 +87,8 @@ Prefix: `C-b` (tmux default — not overridden here).
 | `C-b C` | `new-window -c "#{pane_current_path}"` |
 
 tmux ships an extensive default key table that stays active, e.g. `C-b c` new window, `C-b %` / `C-b "` split, `C-b d` detach, `C-b [` copy mode, `C-b ,` rename window. Full list: the *DEFAULT KEY BINDINGS* section of `man tmux`.
+
+Read from the tracked template, so these are the bindings as written. The reload binding's message is the one theme-substituted string in that file — see [symbols.md](symbols.md) — so a bundle may word it differently than shown.
 
 ### qutebrowser (`configuration/qutebrowser/config.py`)
 
