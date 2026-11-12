@@ -31,6 +31,11 @@ Neither directory needs an `__init__.py`.
   a widget is on *both* sides of the move. One crossing of that strip left a cell expanded
   with the pointer elsewhere. `HoverBar` bounds the hit test to where widgets are actually
   drawn and dispatches on every change, including to and from nothing.
+- **`task_list.py`** — `CentredTaskList`, the window-title cell. qtile's `TaskList` draws
+  its text at a fixed padding from the top of the bar instead of centring it like every
+  other cell, which left the titles seven pixels above the icons beside them. This derives
+  the padding from the font's line height, so the titles share the bar's centre line at any
+  size.
 - **`idle_guard.py`** — `guard()` resets X's idle counter while anything holds a logind idle
   inhibitor, so a playing film does not get locked over. `xss-lock` locks from the X screen
   saver, which counts input; logind's idle clock is a separate one, and nothing joined the
@@ -59,5 +64,6 @@ gate refuses a module in `widgets/` that is not one.
 
 Prefer not importing `libqtile` here: `stream`, `state`, `monitors` and `spectrum` are all
 pure, which is why they can be tested, and reused by `helper/`, without a running window
-manager. `hover_bar` is the exception and has to be, since it subclasses a qtile class — its
-tests build the bar geometry by hand rather than starting qtile.
+manager. `hover_bar` and `task_list` are the exceptions and have to be, since each
+subclasses a qtile class — their tests build the bar geometry by hand rather than starting
+qtile.

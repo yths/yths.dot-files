@@ -92,6 +92,7 @@ import shared.hover_bar
 import shared.idle_guard
 import shared.monitors
 import shared.session
+import shared.task_list
 import symbols as vocabulary
 import widgets.audio
 import widgets.bluetooth
@@ -698,7 +699,7 @@ screens = [
                         * configuration["font"]["size"]
                     )
                 ),
-                widget.TaskList(
+                shared.task_list.CentredTaskList(
                     icon_size=0,
                     highlight_method="block",
                     borderwidth=0,
@@ -715,11 +716,6 @@ screens = [
                     padding_x=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
-                    ),
-                    padding_y=round(
-                        configuration["monitors"][monitor]["scaling_factor"]
-                        * configuration["font"]["size"]
-                        / 3
                     ),
                 ),
                 widget.Chord(
