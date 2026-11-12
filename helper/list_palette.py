@@ -16,8 +16,8 @@ Four views, emitted as markdown:
 3. **Configuration file -> theme values** -- for each generated file, what it carries and
    where each field came from. Answers "where did this value in my dunstrc come from?"
 4. **Drift report** -- tools that hardcode hex *outside* the palette; each colour is
-   reverse-mapped to its nearest palette token via the perceptual ``closest_color``
-   machinery reused from ``patch_vsc.py``.
+   reverse-mapped to its nearest palette token through ``helper/color_match.py``, the same
+   matcher the VSCode and qutebrowser patchers resolve their colours with.
 
 Views 2 and 3 are two renderings of one list of :class:`Usage` records, recovered by reading
 the patcher sources with ``ast`` rather than by running them. Static extraction is what lets
@@ -49,10 +49,9 @@ CONFIG_PATH = Path(os.path.expanduser("~/.config/config.json"))
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{6}")
 
-try:  # the perceptual sections reuse patch_vsc + the `colour` library
-    import colour
+try:  # the perceptual sections reuse the shared matcher in helper/color_match.py
+    import color_match
     import patch_vsc
-    from patch_vsc import color_str_to_tuple
 
     _HAVE_COLOUR = True
 except ImportError:
@@ -659,9 +658,13 @@ def _vsc_matches(config: dict) -> dict[str, list[tuple[str, str, float]]]:
         for key, value in sorted(defaults[mode].get("colors", {}).items()):
             if not isinstance(value, str) or not value.startswith("#"):
                 continue
-            candidates = patch_vsc._filter_candidates(key, palette_map[mode])
-            token, delta = _nearest(value[:7], candidates)
-            rows.append((key, token, delta))
+            # The engine strips the alpha itself, so this no longer keeps its own copy of
+            # that rule -- which is where the two implementations had drifted.
+            found = color_match.nearest(
+                value, color_match.filter_candidates(key, palette_map[mode])
+            )
+            if found is not None:
+                rows.append((key, found.label, found.delta))
         matches[mode] = rows
     return matches
 
@@ -777,27 +780,6 @@ DRIFT_TOOLS = [
 ]
 
 
-def _build_candidates(palette_variant: dict) -> list:
-    """Pre-compute CAM16-UCS coordinates for every palette token (perceptual path)."""
-    candidates = []
-    for label, hex_value in palette_variant.items():
-        rgb = color_str_to_tuple(hex_value)
-        cam16 = colour.XYZ_to_CAM16UCS(colour.sRGB_to_XYZ(rgb))
-        candidates.append({"label": label, "hex": hex_value, "cam16": cam16})
-    return candidates
-
-
-def _nearest(hex_value: str, candidates: list) -> tuple[str | None, float]:
-    rgb = color_str_to_tuple(hex_value)
-    cam16 = colour.XYZ_to_CAM16UCS(colour.sRGB_to_XYZ(rgb))
-    best_label, best_delta = None, float("inf")
-    for candidate in candidates:
-        delta = float(colour.delta_E(cam16, candidate["cam16"], method="CAM16-UCS"))
-        if delta < best_delta:
-            best_label, best_delta = candidate["label"], delta
-    return best_label, best_delta
-
-
 def _drift_section(config: dict) -> str:
     lines = ["### Drift report — hardcoded hex vs. nearest palette token", ""]
     if not config or "palette" not in config:
@@ -814,7 +796,8 @@ def _drift_section(config: dict) -> str:
     lines.append("")
 
     exact_lookup = {v.lower(): k for k, v in palette_variant.items()}
-    candidates = _build_candidates(palette_variant) if _HAVE_COLOUR else None
+    candidates = (color_match.build_palette_map({"one": palette_variant})["one"]
+                  if _HAVE_COLOUR else None)
 
     for tool, rel_path, extractor in DRIFT_TOOLS:
         rows = list(dict.fromkeys(extractor()))
@@ -828,8 +811,8 @@ def _drift_section(config: dict) -> str:
             if exact is not None:
                 token, delta = exact, "exact"
             elif _HAVE_COLOUR:
-                token, distance = _nearest(hex_value, candidates)
-                delta = f"{distance:.1f}"
+                found = color_match.nearest(hex_value, candidates)
+                token, delta = found.label, f"{found.delta:.1f}"
             else:
                 token, delta = "—", "drift"
             lines.append(f"| `{_escape(label)}` | `{hex_value}` | `{_escape(token)}` | {delta} |")

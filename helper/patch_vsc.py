@@ -6,77 +6,20 @@ light and dark variants from the active theme bundle.
 """
 
 import argparse
-import collections
 import json
 import os
 import pickle
 import sys
 
-import colour
-
 try:
+    from helper import color_match
     from helper.utils import logger
 except ImportError:
     # Reached when this file runs as a script: sys.path[0] is then helper/, not the
     # repository root, so the package-qualified form cannot resolve. Both branches land on
     # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    import color_match
     from utils import logger
-
-HIGHLIGHT_KEY_MARKERS = (
-    "selection",
-    "highlight",
-    "hover",
-    "focus",
-    "drop",
-    "match",
-    "range",
-)
-HIGHLIGHT_EXCLUDED_LABELS = frozenset({"background"})
-
-
-def _excludes_background(key: str | None) -> bool:
-    if not key:
-        return False
-    kl = key.lower()
-    if "background" not in kl:
-        return False
-    return any(marker in kl for marker in HIGHLIGHT_KEY_MARKERS)
-
-
-def _filter_candidates(key: str | None, colors: list) -> list:
-    if _excludes_background(key):
-        return [c for c in colors if c["label"] not in HIGHLIGHT_EXCLUDED_LABELS]
-    return colors
-
-
-def color_str_to_tuple(s: str) -> tuple[float, ...]:
-    return tuple(int(s[i : i + 2], 16) / 255 for i in (1, 3, 5))
-
-
-def closest_color(v: str, colors: list, lookup_colors: list | None = None) -> str:
-    if lookup_colors is None:
-        lookup_colors = colors
-    if len(v) == 9:
-        alpha = v[7:9]
-        v = v[:7]
-    else:
-        alpha = ""
-    v_rgb = color_str_to_tuple(v)
-    v_xyz = colour.sRGB_to_XYZ(v_rgb)
-    v_cam16 = colour.XYZ_to_CAM16UCS(v_xyz)
-    min_delta_E = float("inf")
-    best_color = v
-    for color in colors:
-        delta_E = colour.delta_E(
-            v_cam16, color["cam16"], method="CAM16-UCS"
-        )
-        if delta_E < min_delta_E:
-            min_delta_E = delta_E
-            for lookup_color in lookup_colors:
-                if lookup_color["label"] == color["label"]:
-                    best_color = lookup_color["hex"]
-                    break
-    return best_color + alpha
 
 def dict_replace_value(d: dict, colors: list, lookup_colors: list | None = None) -> dict:
     if lookup_colors is None:
@@ -87,11 +30,12 @@ def dict_replace_value(d: dict, colors: list, lookup_colors: list | None = None)
             entry = dict_replace_value(value, colors, lookup_colors)
         elif isinstance(value, list):
             entry = list_replace_value(value, colors, lookup_colors, parent_key=key)
-        elif isinstance(value, str) and value.startswith("#") and len(value) in (7, 9):
-            entry = closest_color(
+        elif isinstance(value, str) and value.startswith("#"):
+            entry = color_match.replace(
                 value,
-                _filter_candidates(key, colors),
-                _filter_candidates(key, lookup_colors),
+                color_match.filter_candidates(key, colors),
+                None if lookup_colors is None
+                else color_match.filter_candidates(key, lookup_colors),
             )
         else:
             entry = value
@@ -111,11 +55,12 @@ def list_replace_value(
             entry = list_replace_value(value, colors, lookup_colors, parent_key=parent_key)
         elif isinstance(value, dict):
             entry = dict_replace_value(value, colors, lookup_colors)
-        elif isinstance(value, str) and value.startswith("#") and len(value) in (7, 9):
-            entry = closest_color(
+        elif isinstance(value, str) and value.startswith("#"):
+            entry = color_match.replace(
                 value,
-                _filter_candidates(parent_key, colors),
-                _filter_candidates(parent_key, lookup_colors),
+                color_match.filter_candidates(parent_key, colors),
+                None if lookup_colors is None
+                else color_match.filter_candidates(parent_key, lookup_colors),
             )
         else:
             entry = value
@@ -131,23 +76,9 @@ USER_SETTINGS_PATH = os.path.join("~", ".config", "Code", "User", "settings.json
 
 
 def build_palette_map(palette: dict) -> dict[str, list]:
-    """Precompute each palette colour's CAM16-UCS coordinates, per mode.
-
-    Done once up front because ``closest_color`` compares every candidate against every
-    colour it is asked about, and the conversion is the expensive half of that.
-    """
-    palette_map = collections.defaultdict(list)
-    for mode in MODES:
-        for label, hex_value in palette[mode].items():
-            colour_xyz = colour.sRGB_to_XYZ(color_str_to_tuple(hex_value))
-            palette_map[mode].append(
-                {
-                    "label": label,
-                    "hex": hex_value,
-                    "cam16": colour.XYZ_to_CAM16UCS(colour_xyz),
-                }
-            )
-    return palette_map
+    """The palette's CAM16-UCS coordinates. Kept as a name here because
+    ``helper/list_palette.py`` and the tests reach for it through this module."""
+    return color_match.build_palette_map(palette)
 
 
 def load_default_themes(input_path: str | None) -> dict[str, dict]:
