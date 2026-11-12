@@ -8,6 +8,9 @@ inside, and the difference between mapping each mode against its own palette and
 mode's colours for another's matches.
 """
 
+import json
+import pathlib
+
 import color_match
 import patch_vsc
 import pytest
@@ -102,3 +105,70 @@ def test_every_colour_in_the_stock_themes_is_one_the_matcher_can_read() -> None:
     for mode, theme in themes.items():
         for key, value in theme["colors"].items():
             assert color_match.to_rgb(value) is not None, f"{mode}: {key} = {value!r}"
+
+
+# ------------------------------------------------------------------------- the base theme
+#
+# Every colour the template does not name is filled by VSCode from the active theme, unmapped.
+# With no theme pinned that was VSCode's default, and 1.140 changed the default from Dark
+# Modern to Dark 2026: 155 colours this patcher never saw, grey workbench borders among them.
+
+
+def _theme_defaults(root: pathlib.Path) -> str:
+    """A theme-defaults extension shaped like VSCode's: a manifest and an include chain."""
+    themes = root / "themes"
+    themes.mkdir(parents=True)
+    (root / "package.json").write_text(json.dumps({"contributes": {"themes": [
+        {"id": "Dark Modern", "path": "./themes/dark_modern.json"},
+        {"id": "Light Modern", "path": "./themes/light_modern.json"},
+    ]}}))
+    # VSCode's theme files carry comments and trailing commas; json.loads does not accept them.
+    (themes / "dark_plus.json").write_text(
+        '{\n  // the included base\n  "colors": {"statusBar.border": "#111111", "a": "#222222",},\n}'
+    )
+    (themes / "dark_modern.json").write_text(
+        json.dumps({"include": "./dark_plus.json", "colors": {"a": "#333333"}})
+    )
+    return str(root)
+
+
+def test_the_base_theme_resolves_its_include_chain(tmp_path: pathlib.Path) -> None:
+    found = patch_vsc.base_theme("dark", (str(tmp_path / "absent"), _theme_defaults(tmp_path)))
+    assert found == ("Dark Modern", {"statusBar.border": "#111111", "a": "#333333"}), (
+        "the theme overrides what it includes, and the include still contributes the rest"
+    )
+
+
+def test_no_vscode_installed_means_no_base_theme(tmp_path: pathlib.Path) -> None:
+    assert patch_vsc.base_theme("dark", (str(tmp_path),)) is None
+
+
+def test_the_template_wins_over_its_base_and_the_base_fills_the_rest() -> None:
+    layered = patch_vsc.with_base_colors(
+        {"dark": {"name": "t", "colors": {"a": "#ffffff"}}},
+        {"dark": {"a": "#000000", "statusBar.border": "#2a2b2c"}},
+    )
+    assert layered["dark"]["colors"] == {"a": "#ffffff", "statusBar.border": "#2a2b2c"}
+    assert layered["dark"]["name"] == "t"
+
+
+def test_a_colour_only_the_base_names_is_mapped_to_the_palette(palette_map: dict) -> None:
+    """The point of layering: the grey border is recoloured instead of reaching VSCode raw."""
+    themes = patch_vsc.build_themes(
+        patch_vsc.with_base_colors(
+            {mode: {"colors": {}} for mode in patch_vsc.MODES},
+            {"dark": {"statusBar.border": "#2a2b2c"}, "light": None},
+        ),
+        palette_map, "nearest_neighbor",
+    )
+    assert themes["dark"]["colors"]["statusBar.border"] == "#000000"
+
+
+def test_the_base_theme_is_pinned_in_the_settings(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "settings.json.template").write_text("{}")
+    monkeypatch.setattr(patch_vsc, "template_path", lambda _app, name: str(tmp_path / name))
+    assert patch_vsc.apply_to_user_settings({"colors": {}}, "Dark Modern")
+    written = json.loads((tmp_path / "settings.json").read_text())
+    assert written["workbench.colorTheme"] == "Dark Modern"
