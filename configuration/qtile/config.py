@@ -80,6 +80,13 @@ except FileNotFoundError:
 
 theme = configuration["state"]["theme"]
 
+# Outline the screen that currently has focus. Set the width to 0 to switch the whole
+# feature off: no extra bars are constructed, the top bar keeps its original geometry, and
+# the hooks below are never registered.
+FOCUS_BORDER_WIDTH = 3
+FOCUS_BORDER_ACTIVE = configuration["palette"][theme]["highlight"]
+FOCUS_BORDER_INACTIVE = configuration["palette"][theme]["background"]
+
 mod = "mod4"
 terminal = "kitty"  # guess_terminal()
 
@@ -402,6 +409,50 @@ if configuration["state"].get("condition") == "urgent":
 wallpaper = configuration["wallpapers"].get(
     wallpaper_key, configuration["wallpapers"][configuration["state"]["theme"]]
 )
+
+
+def focus_border_size(monitor: str) -> int:
+    """Outline thickness for one monitor, scaled like every other measurement here."""
+    scaled = round(configuration["monitors"][monitor]["scaling_factor"] * FOCUS_BORDER_WIDTH)
+    return max(scaled, 1)
+
+
+def focus_border_bar(monitor: str) -> bar.Bar:
+    """One edge of the focused-screen outline.
+
+    The Spacer is load-bearing, not decoration. ``Bar.draw()`` returns early when a bar has
+    no widgets, so a widget-less bar could never repaint when focus moves between monitors.
+    The Spacer also fills the bar using ``self.background or self.bar.background``, which is
+    what actually applies the colour set by ``highlight_focused_screen`` below.
+    """
+    return bar.Bar(
+        [widget.Spacer()],
+        size=focus_border_size(monitor),
+        background=FOCUS_BORDER_INACTIVE,
+    )
+
+
+def highlight_focused_screen() -> None:
+    """Recolour every screen's outline so only the focused one is accented."""
+    for screen in qtile.screens:
+        colour = (
+            FOCUS_BORDER_ACTIVE if screen is qtile.current_screen else FOCUS_BORDER_INACTIVE
+        )
+        # The top edge is the main bar's own border; the other three are dedicated bars.
+        if screen.top is not None:
+            screen.top.border_color = [colour] * 4
+            screen.top.draw()
+        for edge in (screen.bottom, screen.left, screen.right):
+            if edge is not None:
+                edge.background = colour
+                edge.draw()
+
+
+if FOCUS_BORDER_WIDTH:
+    hook.subscribe.current_screen_change(highlight_focused_screen)
+    # Also on startup, so the focused screen is outlined before the pointer first moves.
+    hook.subscribe.startup_complete(highlight_focused_screen)
+
 screens = [
     Screen(
         top=bar.Bar(
@@ -654,7 +705,18 @@ screens = [
             ),
             margin=[0, 0, 0, 0],
             background=configuration["palette"][theme]["background"],
+            # North, east and west only: the south edge of the bar is interior to the
+            # screen, so it never forms part of the outline.
+            border_width=(
+                [focus_border_size(monitor), focus_border_size(monitor), 0, focus_border_size(monitor)]
+                if FOCUS_BORDER_WIDTH
+                else 0
+            ),
+            border_color=FOCUS_BORDER_INACTIVE,
         ),
+        bottom=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
+        left=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
+        right=focus_border_bar(monitor) if FOCUS_BORDER_WIDTH else None,
         background=configuration["palette"][theme]["background"],
         wallpaper=wallpaper,
         wallpaper_mode="fill",
