@@ -87,3 +87,30 @@ plymouth --quit
 ```
 
 Logs land in `~/plymouth-test.log` for inspection afterwards.
+
+## Troubleshooting
+
+### The Keyring Hangs After the First Login
+
+On the first login after `gnome-keyring` is installed, PAM creates the login keyring from the
+login password in the same moment the keyring daemon starts, and the daemon can miss it: the
+`login` collection is listed but never loaded. Anything that stores a secret then waits on a
+prompt that never draws — `secret-tool store` sits after asking for the value, and VSCode
+cannot keep a sign-in.
+
+Restart the daemon, or log in once more:
+
+```bash
+systemctl --user restart gnome-keyring-daemon
+```
+
+After a restart the keyring is locked until the next login, so the next secret stored asks
+for the login password once. From the second login on, the file exists before the daemon
+starts, and the login unlocks it without a prompt. To check:
+
+```bash
+echo test | secret-tool store --label="keyring test" dotfiles probe && secret-tool lookup dotfiles probe
+secret-tool clear dotfiles probe
+```
+
+It prints `test` with no dialog when the keyring works.
