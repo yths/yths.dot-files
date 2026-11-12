@@ -28,6 +28,7 @@
 # still contains substantial portions of it, which the MIT licence requires the notice to
 # accompany. Everything below the imports is this repository's.
 
+import datetime
 import importlib
 import json
 import os
@@ -93,6 +94,7 @@ import shared.hover_bar
 import shared.idle_guard
 import shared.launcher
 import shared.monitors
+import shared.screenshot
 import shared.session
 import shared.task_list
 import symbols as vocabulary
@@ -142,8 +144,12 @@ icons = {
 }
 
 
+#: The power menu's entries and actions, as a rofi script mode; see the script itself.
+POWER_MENU = os.path.join(REPOSITORY_ROOT, "configuration", "rofi", "power-menu.sh")
+
+
 @lazy.function
-def open_launcher(qtile: Any, mode: str) -> None:
+def open_launcher(qtile: Any, mode: str, script: str | None = None) -> None:
     """Show rofi on the focused screen, inside its outline; see ``shared.launcher``."""
     screen = qtile.current_screen
     edges = [edge.size if edge is not None else 0 for edge in (screen.left, screen.right)]
@@ -152,6 +158,22 @@ def open_launcher(qtile: Any, mode: str) -> None:
         mode,
         screen.output.port if screen.output else None,
         shared.launcher.Clearance(screen.width, top, *edges),
+        script,
+    ))
+
+
+@lazy.function
+def take_screenshot(qtile: Any, kind: str) -> None:
+    """Capture a region, the focused screen or the focused window; see ``shared.screenshot``."""
+    screen = qtile.current_screen
+    window = qtile.current_window
+    qtile.spawn(shared.screenshot.capture_command(
+        kind,
+        shared.screenshot.target_path(
+            shared.screenshot.pictures_directory(), datetime.datetime.now(datetime.UTC).astimezone()
+        ),
+        shared.screenshot.Geometry(screen.width, screen.height, screen.x, screen.y),
+        window.wid if window is not None else None,
     ))
 
 
@@ -252,6 +274,52 @@ keys = [
         "XF86AudioRaiseVolume",
         lazy.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%"),
         desc="Raise volume",
+    ),
+    # Media keys act on whichever player MPRIS reports as active -- a browser tab, mpv, a
+    # music player -- without needing to know which.
+    Key([], "XF86AudioPlay", lazy.spawn("playerctl play-pause"), desc="Play or pause media"),
+    Key([], "XF86AudioPause", lazy.spawn("playerctl pause"), desc="Pause media"),
+    Key([], "XF86AudioStop", lazy.spawn("playerctl stop"), desc="Stop media"),
+    Key([], "XF86AudioNext", lazy.spawn("playerctl next"), desc="Next track"),
+    Key([], "XF86AudioPrev", lazy.spawn("playerctl previous"), desc="Previous track"),
+    # Nothing happens on a machine without a backlight; brightnessctl finds none and exits.
+    Key(
+        [], "XF86MonBrightnessUp", lazy.spawn("brightnessctl set +5%"),
+        desc="Raise screen brightness",
+    ),
+    Key(
+        [], "XF86MonBrightnessDown", lazy.spawn("brightnessctl set 5%-"),
+        desc="Lower screen brightness",
+    ),
+    # Each screenshot is on Print and on Super+p, for keyboards without a Print key; Shift
+    # and Ctrl choose the same thing on both.
+    Key(
+        [], "Print", take_screenshot("region"),
+        desc="Screenshot a region: saved, copied to the clipboard",
+    ),
+    Key(
+        ["shift"], "Print", take_screenshot("screen"),
+        desc="Screenshot the focused screen: saved, copied to the clipboard",
+    ),
+    Key(
+        ["control"], "Print", take_screenshot("window"),
+        desc="Screenshot the focused window: saved, copied to the clipboard",
+    ),
+    Key(
+        [mod], "p", take_screenshot("region"),
+        desc="Screenshot a region: saved, copied to the clipboard",
+    ),
+    Key(
+        [mod, "shift"], "p", take_screenshot("screen"),
+        desc="Screenshot the focused screen: saved, copied to the clipboard",
+    ),
+    Key(
+        [mod, "control"], "p", take_screenshot("window"),
+        desc="Screenshot the focused window: saved, copied to the clipboard",
+    ),
+    Key(
+        [mod], "Escape", open_launcher("power", POWER_MENU),
+        desc="Power menu: lock, suspend, log out, reboot, shut down",
     ),
     Key(
         [],

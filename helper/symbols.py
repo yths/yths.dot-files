@@ -83,6 +83,7 @@ SYMBOLS: dict[str, str | tuple[str, ...]] = {
     # --- the launcher's mode prompts
     "rofi.run": ">",
     "rofi.window": "#",
+    "rofi.power": "!",
     # --- the shell prompt. Only the four characters the prompt itself draws: starship's
     # forty-three distro logos and its per-language icons stay in starship.toml.template,
     # which is already the file you edit to change them.

@@ -30,11 +30,14 @@ class Clearance(NamedTuple):
     right: int = 0
 
 
-def rofi_command(mode: str, output: str | None, clearance: Clearance) -> list[str]:
+def rofi_command(
+    mode: str, output: str | None, clearance: Clearance, script: str | None = None
+) -> list[str]:
     """The argv that shows rofi's ``mode`` on ``output``, clear of the bar and the outline.
 
     rofi's ``north`` anchor centres the window, so uneven side edges are evened out with
-    ``x-offset``.
+    ``x-offset``. ``script`` makes ``mode`` a script mode backed by that executable -- how the
+    power menu is a rofi mode like ``run`` and opens in the same place.
     """
     geometry = (
         f"window {{ width: {clearance.width - clearance.left - clearance.right}px; "
@@ -42,6 +45,8 @@ def rofi_command(mode: str, output: str | None, clearance: Clearance) -> list[st
         f"y-offset: {clearance.top}px; }}"
     )
     command = ["rofi", "-show", mode]
+    if script:
+        command += ["-modi", f"{mode}:{script}"]
     if output:
         command += ["-m", output]
     return [*command, "-theme-str", geometry]

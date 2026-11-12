@@ -36,11 +36,15 @@ Neither directory needs an `__init__.py`.
   other cell, which left the titles seven pixels above the icons beside them. This derives
   the padding from the font's line height, so the titles share the bar's centre line at any
   size.
-- **`launcher.py`** — `rofi_command(mode, output, clearance)`, the argv the rofi key bindings
-  spawn. It names the focused screen's output, because rofi's own default is the monitor
+- **`launcher.py`** — `rofi_command(mode, output, clearance, script)`, the argv the rofi key
+  bindings spawn, the power menu's script mode included. It names the focused screen's output, because rofi's own default is the monitor
   under the pointer, and passes that screen's geometry inside the focus outline as a
   `-theme-str`, because the theme's averaged width and offset covered the outline's edges
   and the bottom of the bar.
+- **`screenshot.py`** — `capture_command(kind, path, screen, window)`, the argv behind the
+  three Print keys: a dragged region, the focused screen or the focused window, saved under
+  the XDG pictures directory, copied to the clipboard and announced. qtile passes the screen
+  geometry and window id, because `maim` alone captures every monitor at once.
 - **`idle_guard.py`** — `guard()` resets X's idle counter while anything holds a logind idle
   inhibitor, so a playing film does not get locked over. `xss-lock` locks from the X screen
   saver, which counts input; logind's idle clock is a separate one, and nothing joined the

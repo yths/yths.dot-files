@@ -65,6 +65,10 @@ core = [
     # carries. Without it, VSCode and other Electron apps keep their secrets under a key
     # built into Electron, which anything running as this user can decrypt.
     "gnome-keyring", "libsecret",
+    # The everyday keys. maim captures and xclip copies the screenshot keys' images;
+    # playerctl drives whichever media player is active; brightnessctl the backlight, where
+    # there is one. notify-send (libnotify) announces where a screenshot was saved.
+    "maim", "xclip", "playerctl", "brightnessctl", "libnotify",
 ]
 
 # The login screen and the boot splash.
