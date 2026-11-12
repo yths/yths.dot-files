@@ -57,6 +57,12 @@ docs: one word for the palette
 
 Explain in the body why the change is right, not what the diff already shows.
 
+That is also where a change's history belongs. A comment may say why the code is the way it
+is — present tense, aimed at the reader who would otherwise undo it — but not when or how it
+got that way. Git holds the chronology and cannot go stale; a docstring retelling it can, and
+a module that narrates its own past grows a paragraph per fix. The same story told in a
+docstring, a tracker entry and a commit message is one story with two copies to maintain.
+
 ## Where the Conventions Live
 
 Each component documents its own, next to the code it governs:

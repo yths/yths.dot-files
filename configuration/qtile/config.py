@@ -347,10 +347,10 @@ keys.extend(
     ]
 )
 
-# `layouts` and `widget_defaults` are module-level, so they cannot vary per screen. They
-# previously indexed configuration["monitors"][monitor] using the loop variable left over
-# from the group/chord loops above — whichever monitor happened to sort last. Name the
-# primary monitor instead, which is the one `screens` puts first.
+# `layouts` and `widget_defaults` are module-level, so they cannot vary per screen: they
+# need one monitor's scaling factor, chosen deliberately. Name the primary monitor, which is
+# the one `screens` puts first. Indexing with a loop variable left over from the loops above
+# reads as if it were per-screen and is not — it picks whichever monitor sorted last.
 primary_monitor = next(
     (name for name in configuration["monitors"] if configuration["monitors"][name]["is_primary"]),
     next(iter(configuration["monitors"]), None),
@@ -401,8 +401,9 @@ widget_defaults = {
 }
 extension_defaults = widget_defaults.copy()
 
-# Fall back to the plain theme wallpaper rather than leaving `wallpaper` unbound: any
-# unexpected `condition` value used to raise NameError below and take the config down.
+# Fall back to the plain theme wallpaper rather than leaving `wallpaper` unbound: an
+# unexpected `condition` value would otherwise raise NameError below and take the whole
+# configuration down, which qtile answers by loading its own default.
 wallpaper_key = configuration["state"]["theme"]
 if configuration["state"].get("condition") == "urgent":
     wallpaper_key = f"{wallpaper_key}-highlight"
