@@ -21,6 +21,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_kitty** — Patch kitty: the terminal's settings and its sixteen ANSI colours, in one file.
 - **patch_lock** — Patch the lock screen: its colours, font and what it is willing to display.
 - **patch_plymouth** — Patch plymouth: the boot splash's palette, fonts and rendered assets.
+- **patch_qutebrowser** — Patch qutebrowser: every colour the browser draws, mapped from its own stock defaults.
 - **patch_rofi** — Patch rofi: the launcher's theme colours, font, width and vertical offset.
 - **patch_starship** — Patch starship: the prompt's named palette entries.
 - **patch_tmux** — Patch tmux: the four palette colours its status line reads.
