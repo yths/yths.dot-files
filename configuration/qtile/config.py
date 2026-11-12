@@ -212,7 +212,7 @@ keys = [
         lazy.window.toggle_floating(),
         desc="Toggle floating on the focused window",
     ),
-    Key([mod, "control"], "r", lazy.restart(), desc="Reload the config"),
+    Key([mod, "control"], "r", lazy.restart(), desc="Restart qtile, reloading its configuration"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key([mod], "r", open_launcher("run"), desc="Spawn a command using rofi"),
     Key(

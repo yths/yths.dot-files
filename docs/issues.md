@@ -95,8 +95,6 @@
     - (2026-09-13) `patch_plymouth.py` renders the splash from `configuration/plymouth/themes/<name>/` and `patch_web_greeter.py` fills the login theme's variables from its own role map, both from the palette alone. The two entries described output of the generator's plymouth and web-greeter steps, which had no reader on this side and are gone over there (its ADR-0004). `docs/notes.md` lists what a bundle is now: the manifest, `palette.pkl`, four wallpapers and, optionally, `wallpapers.json`.
     - (2026-09-13) the generator's manifest also stops carrying a `schema_version` this repository never documented or read, and its `state` block gained `audio_mode` to match `config-schema.md`. `assets/default/` is unchanged: it already satisfied the contract as it now stands.
 
-## Themes
-
 - [ ] `yths.themes` does not emit the `symbols` and `strings` blocks
     - (2026-09-19) the bundle manifest gained two optional keys, and the generator writes
       neither, so every exported bundle currently falls back to the ASCII vocabulary. That is
@@ -109,6 +107,10 @@
       an override is partial. `helper/symbols.py` holds the list; `gendocs.py` already
       refuses a bundle here that overrides a key nothing declares, so the generator emitting
       an unknown key fails the gate on this side rather than silently doing nothing.
+    - (2026-10-04) the same holds for `bluetooth_devices`, the optional MAC-to-icon map the
+      bar's bluetooth widget reads (`docs/config-schema.md`). It is per-user data rather than
+      design, so the generator may reasonably leave it to whoever owns the devices — but the
+      contract should say so on both sides.
 
 ## Configurations
 
@@ -176,6 +178,47 @@
     - (2026-09-08) the bridge itself works: it holds `org.freedesktop.ScreenSaver` and opens a matching logind idle inhibitor for each inhibit taken, verified end to end with `systemd-inhibit --list`. Only the indicator is missing.
     - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.
     - (2026-09-08) an error reply with no body is legal D-Bus, so the fix belongs in `dbus-fast`. qtile catching a non-`DBusError` around the optional icons would also do it. Nothing in this repository can close it.
+
+- [ ] qutebrowser's configuration fails to load on a machine with no monitors recorded
+    - (2026-10-04) `configuration/qutebrowser/config.py:2038` divides by
+      `len(padding_sizes)`, which is zero when `~/.config/config.json` has no `monitors`.
+      The tab padding needs a fallback, the way `helper/utils.monitor_average` gives one.
+- [ ] The VSCode patcher recolours `semanticTokenColors` and then discards them
+    - (2026-10-04) both templates carry a `semanticTokenColors` block, which the mapping walk
+      recolours, but `apply_to_user_settings` writes only `workbench.colorCustomizations` and
+      `editor.tokenColorCustomizations`. Either write
+      `editor.semanticTokenColorCustomizations` too or stop computing the block; writing it
+      changes what the editor renders, so it wants a look first.
+- [ ] The VSCode light template is an export of classic Light+, not Light Modern
+    - (2026-10-04) both templates come from the classic themes, while the patcher pins the
+      Modern ones underneath. Light+ drew the activity bar dark in light mode, now worked
+      around by letting the base theme decide `activityBar.*`. Re-exporting both templates
+      from the Modern themes — with this repository's colour customisations switched off,
+      or they end up in the export — would remove the workaround and the vintage mismatch.
+- [ ] The rofi theme fails to parse when loaded on its own
+    - (2026-10-04) `rofi -dump-theme -theme configuration/rofi/theme.rasi` reports "unexpected
+      invalid property name, expecting end of file". Loaded through `config.rasi`'s
+      `@theme`, the normal path, it parses, so nothing visible breaks — but `rofi -theme`
+      is the obvious way to preview it.
+- [ ] rofi's own geometry is an average across monitors
+    - (2026-10-04) `helper/patch_rofi.py` writes `WIDTH` and `YOFFSET` from the mean width and
+      scaling factor, which is right for no monitor when they differ. The qtile key bindings
+      now override both per screen (`configuration/qtile/shared/launcher.py`), so this only
+      shows when rofi is started some other way. One source of geometry would be better than
+      two.
+- [ ] web-greeter's installed name follows the theme's directory name
+    - (2026-10-04) renaming `configuration/web-greeter/themes/<name>/` installs a new theme
+      under the new name and leaves LightDM pointing at the old one until `--activate` runs
+      — the same staleness that kept the login screen four months behind once. Plymouth was
+      moved to a constant name for this reason; the greeter could follow.
+- [ ] The `nippur` host script positions a monitor relative to itself
+    - (2026-10-04) `configuration/hardware/hosts/nippur.sh` runs
+      `xrandr --output DP-1-5 --right-of DP-1-5`, carried over unchanged from `~/.xinitrc`.
+      It was almost certainly meant to be `--right-of DP-1-6`; it needs checking on that
+      machine.
+- [ ] `docs/os-build.md` is past its own verification date
+    - (2026-10-04) last verified 2026-05-16 on Arch ISO 2026.04.01; the gate has warned on
+      every commit since. Re-run it against a current ISO and bump the date.
 
 - [x] Map all colors for `qutebrowser`
     - (2026-09-20) twenty-eight of its hundred-and-five colour settings were themed, by

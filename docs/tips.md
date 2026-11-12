@@ -2,21 +2,24 @@
 
 ## Switch the Active Theme
 
-Re-run `install.py` to pick a different preset. The current `~/.config/config.json` is preserved as `~/.config/config.json.<timestamp>.bak` first, so the previous selection can be recovered.
-
-Re-running also rewrites `state` to its defaults — `theme: light`, `condition: normal`, `theme_mode: automatic` — so a manually pinned dark theme reverts to automatic switching. Restore it by editing `~/.config/config.json`, or with the location widget's middle- and right-click bindings.
+On an installed machine, migrate to the bundle rather than reinstalling:
 
 ```bash
-python install.py
+python install.py --migrate --theme <bundle>
 ```
 
-For non-interactive use (e.g. provisioning), name the theme instead of answering the prompt:
+That relinks the bundle's palette and wallpapers, re-runs every patcher and reloads the
+running programs, and keeps `state` — a pinned theme stays pinned. Add `--no-reload` to
+write the files without touching what is running. The login screen and boot splash need
+root, so they follow with their own commands; the [README](../README.md#switch-theme) has
+all three on one line.
 
-```bash
-python install.py --theme default
-```
+A plain `python install.py --theme <bundle>` reinstalls instead. It backs the current
+`~/.config/config.json` up as `~/.config/config.json.<timestamp>.bak` and rewrites `state`
+to its defaults — `theme: light`, `condition: normal`, `theme_mode: automatic` — so a
+manually pinned dark theme reverts to automatic switching. Use it for a new machine.
 
-An unknown name exits non-zero and lists the bundles it found, before anything is installed.
+An unknown name exits non-zero and lists the bundles it found, before anything is changed.
 
 Copying a bundle's `config.json` into place does not work, and never did: the installer
 assembles `~/.config/config.json` from several sources — the palette comes from
@@ -51,10 +54,15 @@ Replace `<country-code>` with your ISO country code (e.g. `DE`, `US`, `GB`).
 
 ## Prevent Monitor Energy Saving in Videos
 
-`qutebrowser` does not currently inhibit the screensaver during video playback. The workaround is to pipe the page through `mpv` instead; the qtile config binds this to `,m`:
+`qutebrowser` sends no screensaver inhibit during video playback, so the screen blanks and
+locks over it. (Firefox does send one; `inhibit-bridge` and the idle guard in
+`configuration/qtile/shared/idle_guard.py` keep the screen on for it.) The workaround is to
+play the video in `mpv`, which holds the screen itself. qutebrowser's configuration binds two
+hints for that:
 
 ```text
-,m  →  mpv "$current_url"
+,m  →  hint a link, play it in mpv full screen
+,M  →  hint a link, play it in mpv windowed
 ```
 
 ## Preview a Web-Greeter Theme

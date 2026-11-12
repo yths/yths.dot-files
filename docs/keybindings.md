@@ -41,7 +41,7 @@ the parser cannot read from the files are summarised from curated knowledge inst
 | `Super + w` | `lazy.window.kill()` | Kill focused window |
 | `Super + Ctrl + f` | `lazy.window.toggle_fullscreen()` | Toggle fullscreen on the focused window |
 | `Super + t` | `lazy.window.toggle_floating()` | Toggle floating on the focused window |
-| `Super + Ctrl + r` | `lazy.restart()` | Reload the config |
+| `Super + Ctrl + r` | `lazy.restart()` | Restart qtile, reloading its configuration |
 | `Super + Ctrl + q` | `lazy.shutdown()` | Shutdown Qtile |
 | `Super + r` | `open_launcher('run')` | Spawn a command using rofi |
 | `Super + Shift + r` | `open_launcher('window')` | Switch to any window via rofi (entries prefixed with their group number). |

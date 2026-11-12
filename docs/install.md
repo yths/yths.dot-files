@@ -129,9 +129,30 @@ python install.py
 
 The theme comes from `[desktop] theme` in [../setup.toml](../setup.toml); `--theme <name>` overrides it, and clearing it in setup.toml restores an interactive prompt. Bundles are discovered under `assets/`, one directory per preset, named for the preset. The selected one's `config.json` is assembled into `~/.config/config.json`, which qtile and every helper read.
 
-The installer also arms this clone's pre-commit gate, so `ruff` and `helper/gendocs.py` run on every commit — see [CONTRIBUTING.md](../CONTRIBUTING.md). It is reported, never prompted, and a failure to arm it does not stop the install.
+The installer also arms this clone's pre-commit gate, so `ruff`, `pytest` and `helper/gendocs.py --check` run on every commit — see [CONTRIBUTING.md](../CONTRIBUTING.md). It is reported, never prompted, and a failure to arm it does not stop the install.
 
 The installer reads configuration and themes from the clone it is run from, wherever that is. The `DOTFILES_REPOSITORY_PATH` environment variable redirects it to another clone; the installer and the helpers under `helper/` honour it. Hook arming deliberately ignores it, so redirecting where configuration is read from cannot arm a different clone.
+
+## Updating
+
+Pull, then migrate. A migration refreshes `~/.config/config.json` against the repository
+and re-runs every patcher, but keeps this machine's `state`, monitors and wallpapers, and
+symlinks nothing new. Without `--theme` it stays on the installed bundle:
+
+```bash
+git pull
+python install.py --migrate
+```
+
+Re-running a plain `python install.py` instead resets `state` — a pinned theme goes back to
+automatic switching — so keep that for a new machine.
+
+## Switching Themes
+
+The same migration, naming a different bundle with `--theme <bundle>`. The login screen and
+boot splash are root-owned and follow with their own commands; the
+[README](../README.md#switch-theme) has the one-line form, and
+[tips.md](tips.md#switch-the-active-theme) the details.
 
 ## Calibrating the Display
 
