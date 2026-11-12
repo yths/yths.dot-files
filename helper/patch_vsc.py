@@ -12,7 +12,14 @@ import os
 import pickle
 
 import colour
-import utils
+
+try:
+    from helper.utils import logger
+except ImportError:
+    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
+    # repository root, so the package-qualified form cannot resolve. Both branches land on
+    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    from utils import logger
 
 HIGHLIGHT_KEY_MARKERS = (
     "selection",
@@ -198,14 +205,14 @@ if __name__ == "__main__":
 
 
     if args.mode == "dark":
-        utils.logger.info("Patching Visual Studio Code settings to dark theme...")
+        logger.info("Patching Visual Studio Code settings to dark theme...")
         target_config = patched_config_dark
     else:
-        utils.logger.info("Patching Visual Studio Code settings to light theme...")
+        logger.info("Patching Visual Studio Code settings to light theme...")
         target_config = patched_config_light
 
     if os.path.exists(os.path.expanduser("~/.config/Code/User/settings.json")):
-        utils.logger.info("Patching Visual Studio Code settings...")
+        logger.info("Patching Visual Studio Code settings...")
         with open(
             os.path.expanduser("~/.config/Code/User/settings.json")
         ) as input_handle:
@@ -222,11 +229,11 @@ if __name__ == "__main__":
             os.path.expanduser("~/.config/Code/User/settings.json"), "w"
         ) as output_handle:
             json.dump(user_config, output_handle, indent=4)
-        utils.logger.info("Patched Visual Studio Code settings.")
+        logger.info("Patched Visual Studio Code settings.")
 
     if args.output_path is not None:
         output_path = os.path.expanduser(args.output_path)
-        utils.logger.info(f"Saving patched Visual Studio Code settings to {output_path}...")
+        logger.info(f"Saving patched Visual Studio Code settings to {output_path}...")
         with open(os.path.join(output_path, "vsc_patched_dark.json"), "w") as output_handle:
             json.dump(patched_config_dark, output_handle, indent=4)
 

@@ -12,8 +12,15 @@ import os
 import subprocess
 
 import cairo
-import loguru
 import PIL.Image
+
+try:
+    from helper.utils import logger
+except ImportError:
+    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
+    # repository root, so the package-qualified form cannot resolve. Both branches land on
+    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    from utils import logger
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -45,7 +52,7 @@ if __name__ == "__main__":
     with open(os.path.expanduser(args.configuration_file_path)) as config_handle:
         configuration = json.load(config_handle)
 
-    loguru.logger.info(f"Patching plymouth theme at '{args.plymouth_path}' with theme '{args.theme}' ...")
+    logger.info(f"Patching plymouth theme at '{args.plymouth_path}' with theme '{args.theme}' ...")
 
     plymouth_configuration = configparser.ConfigParser(interpolation=None)
     plymouth_configuration.optionxform = str
