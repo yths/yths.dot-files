@@ -20,13 +20,19 @@ CONFIGURATION_FILE_PATH = os.path.expanduser(os.path.join("~", ".config", "confi
 
 #: State keys written before the current vocabulary, mapped onto it. ``mode`` became
 #: ``theme_mode`` once ``audio_mode`` existed and the unprefixed name no longer said which
-#: mode it meant.
+#: mode it meant (7fbbdd5, 2026-08-29).
+#:
+#: Delete once every machine's ``~/.config/config.json`` has been written since that date.
+#: ``install.py`` rebuilds the file from scratch, so one install per machine is enough; the
+#: file is not tracked, so no commit here can do it for them. Nothing detects when that is
+#: true, which is why the date is recorded rather than the condition being left to memory.
 LEGACY_STATE_KEYS = {"mode": "theme_mode"}
 
 #: The two keys that answer "does this follow the system, or did the user pin it".
 MODE_KEYS = ("theme_mode", "audio_mode")
 
-#: ``audio_mode`` spelled ``"auto"`` what ``mode`` spelled ``"automatic"``. One spelling now.
+#: ``audio_mode`` spelled ``"auto"`` what ``mode`` spelled ``"automatic"``. One spelling now,
+#: renamed alongside the keys above and removable on the same condition and date.
 LEGACY_MODE_VALUES = {"auto": "automatic"}
 
 

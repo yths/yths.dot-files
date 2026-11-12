@@ -15,6 +15,7 @@ The script is idempotent: running it twice in a row produces no diff.
 
 import argparse
 import ast
+import datetime
 import json
 import pickle
 import re
@@ -182,6 +183,49 @@ def stale_preview() -> list[str]:
     if digest_path.read_text().strip() != expected:
         return [f"rendered from a different palette than assets/{setup['desktop']['theme']}/"]
     return []
+
+
+#: docs/style.md requires this line on a procedure that ties to an external version.
+VERIFICATION_MARKER = re.compile(r"^> Last verified (\d{4}-\d{2}-\d{2})\b", re.MULTILINE)
+
+#: How long such a claim stands before it is worth saying out loud again. A quarter, because
+#: the only document carrying one pins an Arch ISO and those are cut monthly -- so by here the
+#: guide names an image three releases behind whatever a reader would actually download.
+VERIFICATION_INTERVAL = datetime.timedelta(days=90)
+
+
+def stale_verification_markers(today: datetime.date | None = None) -> list[str]:
+    """Documents whose "Last verified" claim has aged past ``VERIFICATION_INTERVAL``.
+
+    ``docs/style.md`` asks for the marker "so staleness is visible". It is visible to whoever
+    opens the file and to nothing else, which is how ``docs/os-build.md`` sat three and a half
+    months past its claim without anyone noticing.
+
+    Warned about rather than failed. Nobody can re-verify a bare-metal Arch install to satisfy
+    a commit hook, and a gate that fails on a date would start refusing unrelated work
+    overnight, with the only available remedy being to edit the date -- which is worse than
+    saying nothing, because it teaches the marker to lie.
+    """
+    # UTC rather than local: the threshold is six months, so which side of midnight the
+    # machine is on cannot change the answer, and an aware clock keeps ruff's DTZ rules
+    # meaningful everywhere else in this file.
+    today = today or datetime.datetime.now(tz=datetime.UTC).date()
+    stale = []
+    for path in documentation_files():
+        match = VERIFICATION_MARKER.search(path.read_text())
+        if match is None:
+            continue
+        try:
+            verified = datetime.date.fromisoformat(match.group(1))
+        except ValueError:
+            stale.append(f"{path.relative_to(REPO_ROOT)} — unreadable date {match.group(1)!r}")
+            continue
+        age = today - verified
+        if age > VERIFICATION_INTERVAL:
+            stale.append(
+                f"{path.relative_to(REPO_ROOT)} — last verified {verified}, {age.days} days ago"
+            )
+    return sorted(stale)
 
 
 def invariants() -> list[tuple[str, list[str], str]]:
@@ -402,6 +446,13 @@ def main() -> int:
 
     if report_violation():
         return 1
+
+    warnings = stale_verification_markers()
+    if warnings:
+        print("Documentation past its own verification date:", file=sys.stderr)
+        for warning in warnings:
+            print(f"  {warning}", file=sys.stderr)
+        print("  re-check it and bump the date, or drop the claim.", file=sys.stderr)
 
     if args.check:
         stale = stale_blocks()

@@ -13,7 +13,10 @@ import redis.exceptions
 #: Streams renamed here before yths.backend-service could follow. ``read_measurement``
 #: falls back to the old name, so a cell keeps working against a backend that still
 #: publishes it: this repository and the backend are separate deployments and cannot change
-#: in the same commit. Delete an entry once no machine runs a backend old enough to need it.
+#: in the same commit. Delete an entry once no machine runs a backend old enough to need it
+#: -- for ``broadcast``, one published by yths.backend-service before 2026-08-30, which is
+#: when jobs/broadcast.py there began writing the new name.
+#: A stale key also outlives the job that wrote it: `redis-cli -n 1 DEL stream` clears it.
 LEGACY_STREAM_NAMES = {"broadcast": "stream"}
 
 #: Everything a malformed entry, an absent stream or an unreachable server can raise.
