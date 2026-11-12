@@ -23,6 +23,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
+# The notice above is qtile's, and stays: this file began as their default configuration and
+# still contains substantial portions of it, which the MIT licence requires the notice to
+# accompany. Everything below the imports is this repository's.
 
 import json
 import os
@@ -40,8 +44,6 @@ from libqtile.config import (
     Screen,
 )
 from libqtile.lazy import lazy
-
-# from libqtile.utils import guess_terminal
 
 try:
     import redis
@@ -509,13 +511,9 @@ screens = [
                     ),
                     active=configuration["palette"][theme]["foreground"],
                     inactive=configuration["palette"][theme]["neutral"],
-                    # highlight_color="#999900",
                     this_current_screen_border=configuration["palette"][theme][
                         "highlight"
                     ],
-                    # this_screen_border="#ff00ff",
-                    # other_current_screen_border="#990000",
-                    # other_screen_border="#000099",
                     urgent_text=configuration["palette"][theme]["notification"],
                     urgent_border=configuration["palette"][theme]["notification"],
                 ),
@@ -721,12 +719,8 @@ screens = [
         background=configuration["palette"][theme]["background"],
         wallpaper=wallpaper,
         wallpaper_mode="fill",
-        # You can uncomment this variable if you see that on X11 floating resize/moving is laggy
-        # By default we handle these events delayed to already improve performance,
-        # however your system might still be struggling
-        # This variable is set to None (no cap) by default, but you can set it to 60 to
-        # indicate that you limit it to 60 events per second
-        # x11_drag_polling_rate = 60,
+        # If dragging or resizing floating windows feels laggy on X11, capping the event
+        # rate helps: set x11_drag_polling_rate to e.g. 60. Uncapped by default.
     )
     for m, monitor in enumerate(
         sorted(
@@ -787,12 +781,7 @@ wl_input_rules = None
 wl_xcursor_theme = None
 wl_xcursor_size = 24
 
-# XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
-# string besides java UI toolkits; you can see several discussions on the
-# mailing lists, GitHub issues, and other WM documentation that suggest setting
-# this string if your java app doesn't work correctly. We may as well just lie
-# and say that we're a working one by default.
-#
-# We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
-# java that happens to be on java's whitelist.
+# A deliberate lie, inherited from qtile's default configuration. Only java UI toolkits read
+# this string, and they misbehave under a window manager they do not recognise; LG3D is on
+# their whitelist. Change it only if a java application is misrendering.
 wmname = "LG3D"
