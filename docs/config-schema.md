@@ -51,6 +51,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 | `state` | object | initialised by `install.py`; mutated at runtime | qtile, patchers — drives the active light/dark variant |
 | `symbols` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#symbols` merged over them | qtile widgets, plymouth, dunst, rofi, starship, web-greeter — see [symbols.md](symbols.md) |
 | `strings` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#strings` merged over them | plymouth's boot messages, tmux, the bar's one widget with words |
+| `bluetooth_devices` | object | bundle `config.json#bluetooth_devices`, copied as-is | the qtile bluetooth widget |
 
 ## Symbols and Strings
 
@@ -59,6 +60,18 @@ a Nerd Font; a bundle overrides what it cares about, and an override is partial 
 key keeps the rest. A value is either a string (one icon, one message) or a list (a ramp
 indexed by a level, such as the battery's eleven rungs). See [symbols.md](symbols.md) for the
 full vocabulary, what each key falls back to, and which file reads it.
+
+`bluetooth_devices` maps a device's MAC address to the icon the bar draws for it, in either
+case. A value naming a symbol key (`"bluetooth.headphones"`) resolves through the vocabulary,
+so it keeps its ASCII fallback; any other value is drawn as written. A connected device the
+block does not name is drawn as `bluetooth.device`.
+
+```json
+"bluetooth_devices": {
+    "CC:98:8B:99:F4:E5": "bluetooth.headphones",
+    "AC:80:0A:A4:66:EB": "\udb80\udf7d"
+}
+```
 
 ## Palette
 

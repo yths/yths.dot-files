@@ -301,7 +301,8 @@ MACHINE_OWNED = ("state", "monitors", "wallpapers")
 
 
 def theme_vocabulary(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """The symbol and string vocabulary: ASCII defaults with the bundle's overrides on top.
+    """The symbol and string vocabulary, ASCII defaults with the bundle's overrides on top,
+    and the bundle's per-device bluetooth icons.
 
     One definition, called from both paths below, because an install and a migration have to
     produce the same thing -- a machine where the two disagreed would look different before
@@ -310,6 +311,7 @@ def theme_vocabulary(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         "symbols": merge_overrides(helper.symbols.SYMBOLS, bundle.get("symbols") or {}),
         "strings": merge_overrides(helper.symbols.STRINGS, bundle.get("strings") or {}),
+        "bluetooth_devices": dict(bundle.get("bluetooth_devices") or {}),
     }
 
 
@@ -348,7 +350,7 @@ def migrate_configuration(
     }
     migrated.update(theme_vocabulary(bundle))
 
-    for field in ("name", "palette", "font", "symbols", "strings"):
+    for field in ("name", "palette", "font", "symbols", "strings", "bluetooth_devices"):
         if existing.get(field) != migrated[field]:
             was = "added" if field not in existing else "refreshed"
             changes.append(f"{was} {field}")

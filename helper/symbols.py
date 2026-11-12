@@ -64,7 +64,8 @@ SYMBOLS: dict[str, str | tuple[str, ...]] = {
     "battery.charging": _BATTERY_RAMP,
     "battery.grid": "AC",
     # --- per-widget icons
-    "bluetooth.headphones": "bt",
+    "bluetooth.device": "bt",
+    "bluetooth.headphones": "hp",
     "broadcast.on": "rec",
     "broadcast.off": "off",
     "claude.icon": "AI",
@@ -195,6 +196,24 @@ def resolve(configuration: dict[str, Any]) -> tuple[dict[str, Any], dict[str, st
     symbols = merge_overrides(SYMBOLS, _ramps(configuration.get("symbols") or {}))
     strings = merge_overrides(STRINGS, configuration.get("strings") or {})
     return symbols, strings
+
+
+def bluetooth_devices(configuration: dict[str, Any], symbols: dict[str, Any]) -> dict[str, str]:
+    """The glyph a theme gives particular bluetooth devices, keyed by upper-case MAC.
+
+    Read from the configuration's ``bluetooth_devices`` block. A value naming a symbol key --
+    ``"bluetooth.headphones"`` -- resolves through the vocabulary, so it keeps its ASCII
+    fallback and follows the bundle's override of that key; anything else is drawn as
+    written. A device absent from the block is drawn as ``bluetooth.device``. Keys are
+    upper-cased because BlueZ reports addresses that way and a hand-typed MAC need not be.
+    """
+    resolved = {}
+    for address, value in (configuration.get("bluetooth_devices") or {}).items():
+        if not isinstance(value, str):
+            continue
+        glyph = symbols.get(value, value)
+        resolved[address.upper()] = glyph if isinstance(glyph, str) else value
+    return resolved
 
 
 def undeclared(configuration: dict[str, Any]) -> list[str]:

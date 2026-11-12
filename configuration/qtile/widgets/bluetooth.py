@@ -1,7 +1,9 @@
 """Qtile widget: connected bluetooth devices and their battery levels.
 
-Reads the latest entry from the ``bluetooth`` Redis stream and renders a per-device
-battery glyph. ``BackgroundPoll`` based.
+Reads the latest entry from the ``bluetooth`` Redis stream and renders one icon per
+connected device, followed by its battery level where the device reports one. A device the
+theme maps by MAC (``bluetooth_devices`` in ``config.json``) gets that icon; any other gets
+``bluetooth.device``. ``BackgroundPoll`` based.
 """
 
 from typing import Any
@@ -17,7 +19,7 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
     def __init__(
         self,
         r: redis.Redis | None,
-        icons: dict[str, str] | None = None,
+        devices: dict[str, str] | None = None,
         warning_color: str = "#ff0000",
         symbols: dict[str, Any] | None = None,
         **config: Any,
@@ -25,11 +27,12 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
-        self.icons = icons if icons is not None else {}
         self.warning_color = warning_color
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws something.
         self.symbols = symbols or vocabulary.SYMBOLS
+        #: Upper-case MAC -> icon, as ``symbols.bluetooth_devices`` resolves it.
+        self.devices = {address.upper(): icon for address, icon in (devices or {}).items()}
 
     def _scale(
         self, value: float, in_min: float, in_max: float, out_min: float, out_max: float
@@ -48,13 +51,14 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
         if measurement is None:
             return ""
 
-        # Iterate the measurement, not self.icons, so devices keep the order the backend
-        # reports them in.
+        # The backend publishes connected devices only, so every entry is drawn, in the
+        # order it reports them.
         output = ""
         for device, device_state in measurement.items():
-            if device not in self.icons or not isinstance(device_state, dict):
+            if not isinstance(device_state, dict):
                 continue
-            output += f"{self.icons[device]} "
+            icon = self.devices.get(str(device).upper(), self.symbols["bluetooth.device"])
+            output += f"{icon} "
             capacity = device_state.get("capacity")
             if capacity == "Unknown":
                 continue

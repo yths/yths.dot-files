@@ -135,9 +135,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:216` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `animation-001.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `entry.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:900` |
-| qtile | `configuration/qtile/config.py` | `layout.Floating(border_normal=)` | direct | `configuration/qtile/config.py:947` |
-| qtile | `configuration/qtile/config.py` | `shared.hover_bar.HoverBar(background=)` | direct | `configuration/qtile/config.py:887` |
+| qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:897` |
+| qtile | `configuration/qtile/config.py` | `layout.Floating(border_normal=)` | direct | `configuration/qtile/config.py:944` |
+| qtile | `configuration/qtile/config.py` | `shared.hover_bar.HoverBar(background=)` | direct | `configuration/qtile/config.py:884` |
 | qtile | `configuration/qtile/config.py` | `widget.TaskList(markup_focused=)` | direct | `configuration/qtile/config.py:682` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR0` | direct | `helper/patch_rofi.py:63` |
 | tmux | `~/.config/tmux/tmux.conf` | `color0` | direct | `helper/patch_tmux.py:38` |
@@ -245,12 +245,12 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `accent_bg_color` | via role `accent` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `accent_color` | via role `accent` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `capslock.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `layout.Floating(border_focus=)` | direct | `configuration/qtile/config.py:946` |
+| qtile | `configuration/qtile/config.py` | `layout.Floating(border_focus=)` | direct | `configuration/qtile/config.py:943` |
 | qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:702` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(this_current_screen_border=)` | direct | `configuration/qtile/config.py:657` |
 | qtile | `configuration/qtile/config.py` | `widget.TaskList(border=)` | direct | `configuration/qtile/config.py:679` |
-| qtile | `configuration/qtile/config.py` | `widgets.location.WidgetLocation(notification_color=)` | direct | `configuration/qtile/config.py:828` |
-| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(notification_color=)` | direct | `configuration/qtile/config.py:795` |
+| qtile | `configuration/qtile/config.py` | `widgets.location.WidgetLocation(notification_color=)` | direct | `configuration/qtile/config.py:825` |
+| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(notification_color=)` | direct | `configuration/qtile/config.py:792` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR4` | direct | `helper/patch_rofi.py:67` |
 | starship | `~/.config/starship.toml` | `palettes.theme.color4` | direct | `helper/patch_starship.py:34` |
 | tmux | `~/.config/tmux/tmux.conf` | `color2` | direct | `helper/patch_tmux.py:40` |
@@ -299,7 +299,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `widgets.audio.WidgetAudio(notification_color=)` | direct | `configuration/qtile/config.py:759` |
 | qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(notification_color=)` | direct | `configuration/qtile/config.py:621` |
 | qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(notification_color=)` | direct | `configuration/qtile/config.py:743` |
-| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(warning_color=)` | direct | `configuration/qtile/config.py:796` |
+| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(warning_color=)` | direct | `configuration/qtile/config.py:793` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--notification` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.red`
@@ -331,12 +331,12 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color warning` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `warning_color` | via role `warning` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:89` |
-| qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(warning_color=)` | direct | `configuration/qtile/config.py:779` |
+| qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(warning_color=)` | direct | `configuration/qtile/config.py:776` |
 | qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(warning_color=)` | direct | `configuration/qtile/config.py:622` |
 | qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | direct | `configuration/qtile/config.py:742` |
-| qtile | `configuration/qtile/config.py` | `widgets.power_supply.WidgetPowerSupply(warning_color=)` | direct | `configuration/qtile/config.py:812` |
-| qtile | `configuration/qtile/config.py` | `widgets.service_state.WidgetServiceState(warning_color=)` | direct | `configuration/qtile/config.py:873` |
-| qtile | `configuration/qtile/config.py` | `widgets.vpn.WidgetVPN(warning_color=)` | direct | `configuration/qtile/config.py:844` |
+| qtile | `configuration/qtile/config.py` | `widgets.power_supply.WidgetPowerSupply(warning_color=)` | direct | `configuration/qtile/config.py:809` |
+| qtile | `configuration/qtile/config.py` | `widgets.service_state.WidgetServiceState(warning_color=)` | direct | `configuration/qtile/config.py:870` |
+| qtile | `configuration/qtile/config.py` | `widgets.vpn.WidgetVPN(warning_color=)` | direct | `configuration/qtile/config.py:841` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--warning` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.yellow`
