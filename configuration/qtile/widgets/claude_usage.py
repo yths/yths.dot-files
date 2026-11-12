@@ -279,6 +279,32 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         """Re-render from the current state. Always called on the event loop."""
         libqtile.widget.base.BackgroundPoll.update(self, self._render())
 
+    def _pointer_is_on_me(self) -> bool:
+        """Whether the pointer is really inside this cell, asked of the pointer itself.
+
+        Neither of qtile's own answers is dependable here. ``Bar._has_cursor`` is cleared
+        by ``process_pointer_motion`` without the widget being told whenever the pointer
+        lands somewhere no widget covers. And ``Bar.get_widget_in_position`` bounds the
+        vertical hit test with ``border_width[3]`` -- the *west* border -- so the focused
+        screen outline leaves a band at the top of the bar that reports no widget at all.
+
+        Measuring the pointer against this widget's own rectangle sidesteps both. Returns
+        the current flag when the position cannot be read, so an unavailable pointer never
+        forces a state change.
+        """
+        bar = getattr(self, "bar", None)
+        window = getattr(bar, "window", None)
+        core = getattr(getattr(self, "qtile", None), "core", None)
+        if window is None or core is None:
+            return self.expanded
+        try:
+            pointer_x, pointer_y = core.get_mouse_position()
+        except (AttributeError, TypeError, OSError):
+            return self.expanded
+        x = pointer_x - window.x
+        y = pointer_y - window.y
+        return self.offsetx <= x < self.offsetx + self.length and 0 <= y < bar.size
+
     def update(self, text: str) -> None:
         """Apply the *current* state, not the text handed in.
 
@@ -290,20 +316,17 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         that stale snapshot made hover sometimes fail to expand, and sometimes fail to
         contract on leave.
 
-        Separately, ``Bar.process_pointer_motion`` clears its ``_has_cursor`` *without*
-        calling ``mouse_leave`` when the pointer lands somewhere no widget occupies -- a
-        gap between cells, or the bar's own border. The cell is then never told it lost
-        the pointer and stays expanded indefinitely. Reconciling against what the bar
-        believes heals that within one poll.
+        Separately, the enter and leave events cannot be relied on to arrive in pairs:
+        ``Bar.process_pointer_motion`` drops the ``mouse_leave`` whenever the pointer
+        lands somewhere no widget covers. So rather than trusting the flag, every poll
+        re-derives it from where the pointer actually is -- in both directions, so a
+        missed *enter* is corrected as well as a missed *leave*.
 
-        Only the poll path may reconcile: ``process_pointer_enter`` calls
-        ``mouse_enter`` *before* it assigns ``_has_cursor``, so doing this on the hover
-        path would cancel every expansion the moment it started. The hover handlers call
-        ``_refresh`` directly for that reason.
+        Only the poll path reconciles. The hover handlers call ``_refresh`` directly,
+        because they run before the pointer has settled and re-deriving there would fight
+        the very event being handled.
         """
-        bar = getattr(self, "bar", None)
-        if self.expanded and bar is not None and getattr(bar, "_has_cursor", self) is not self:
-            self.expanded = False
+        self.expanded = self._pointer_is_on_me()
         self._refresh()
 
     def poll(self) -> str:
