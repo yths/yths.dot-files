@@ -125,6 +125,7 @@ STATIC_INSTALLS = (
     ("picom", "~/.config/picom", "picom"),
     ("tmux", "~/.config/tmux", "tmux"),
     ("kitty", "~/.config/kitty", "kitty"),
+    ("lock", "~/.config/lock", "lock"),
     ("dunst", "~/.config/dunst", "dunst"),
     ("rofi", "~/.config/rofi", "rofi"),
     ("qutebrowser/config.py", "~/.config/qutebrowser/config.py", "qutebrowser"),

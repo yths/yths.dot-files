@@ -35,6 +35,10 @@ configuration/kitty/themes/*.conf
 # file; theme.rasi and config.rasi are the source and stay tracked.
 configuration/rofi/theme_config.rasi
 
+# The lock screen's colours, written whole by helper/patch_lock.py. lock.sh is the source and
+# stays tracked.
+configuration/lock/environment
+
 # Three apps keep hand-written settings alongside palette-derived ones, so the patcher reads
 # a tracked <name>.template and writes the output here. Only the output is ignored.
 configuration/tmux/tmux.conf

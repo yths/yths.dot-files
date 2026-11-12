@@ -45,7 +45,8 @@ the parser cannot read from the files are summarised from curated knowledge inst
 | `Super + Ctrl + q` | `lazy.shutdown()` | Shutdown Qtile |
 | `Super + r` | `lazy.spawn('rofi -show run')` | Spawn a command using rofi |
 | `Super + Shift + r` | `lazy.spawn('rofi -show window')` | Switch to any window via rofi (entries prefixed with their group number). |
-| `Super + Home` | `lazy.spawn('xsecurelock')` | Lock the screen |
+| `Super + Home` | `lazy.spawn(os.path.expanduser('~/.config/lock/lock.sh'))` | Lock the screen |
+| `XF86ScreenSaver` | `lazy.spawn(os.path.expanduser('~/.config/lock/lock.sh'))` | Lock the screen |
 | `XF86AudioMute` | `lazy.spawn('pactl set-sink-mute @DEFAULT_SINK@ toggle')` | Toggle mute |
 | `XF86AudioLowerVolume` | `lazy.spawn('pactl set-sink-volume @DEFAULT_SINK@ -5%')` | Lower volume |
 | `XF86AudioRaiseVolume` | `lazy.spawn('pactl set-sink-volume @DEFAULT_SINK@ +5%')` | Raise volume |

@@ -43,6 +43,10 @@ core = [
     "qtile", "python-dbus-fast",
     "ttc-iosevka",
     "kitty", "rofi", "dunst", "picom",
+    # The screen lock, and the daemon that fires it on idle, on suspend, and when systemd
+    # asks for a session lock. xsecurelock fails closed: if it cannot grab the screen it
+    # refuses to exit, rather than leaving an unlocked desktop behind.
+    "xsecurelock", "xss-lock",
 ]
 
 # The login screen and the boot splash.
