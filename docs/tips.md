@@ -10,9 +10,8 @@ python install.py --migrate --theme <bundle>
 
 That relinks the bundle's palette and wallpapers, re-runs every patcher and reloads the
 running programs, and keeps `state` — a pinned theme stays pinned. Add `--no-reload` to
-write the files without touching what is running. The login screen and boot splash need
-root, so they follow with their own commands; the [README](../README.md#switch-theme) has
-all three on one line.
+write the files without touching what is running. Add `--system` to switch the login screen
+and boot splash too: they need root, which it asks for once, before anything changes.
 
 A plain `python install.py --theme <bundle>` reinstalls instead. It backs the current
 `~/.config/config.json` up as `~/.config/config.json.<timestamp>.bak` and rewrites `state`

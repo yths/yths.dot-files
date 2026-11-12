@@ -149,10 +149,14 @@ automatic switching — so keep that for a new machine.
 
 ## Switching Themes
 
-The same migration, naming a different bundle with `--theme <bundle>`. The login screen and
-boot splash are root-owned and follow with their own commands; the
-[README](../README.md#switch-theme) has the one-line form, and
-[tips.md](tips.md#switch-the-active-theme) the details.
+The same migration, naming a different bundle with `--theme <bundle>`, and `--system` to
+switch the root-owned login screen and boot splash with it:
+
+```bash
+python install.py --migrate --theme <bundle> --system
+```
+
+[tips.md](tips.md#switch-the-active-theme) has the details.
 
 ## Calibrating the Display
 

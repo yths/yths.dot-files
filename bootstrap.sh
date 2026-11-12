@@ -84,30 +84,24 @@ say "Installing $(printf '%s' "$packages" | wc -w) packages"
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
 
-# --- the dot files themselves ------------------------------------------------------------
-say "Installing the configuration"
-run python "$REPOSITORY_PATH/install.py"
-
-# --- the two that write outside $HOME, and so need root -----------------------------------
-# Deliberately last: everything above is reversible by re-running, while these two change how
-# the machine boots and logs in. --skip-system leaves both, and each has its own command.
+# --- the dot files, and with --system the two that write outside $HOME ---------------------
+# install.py --system asks for root once, before it changes anything, and installs the login
+# screen and boot splash last: everything before them is reversible by re-running, while they
+# change how the machine boots and logs in. --skip-system leaves both.
 if $system; then
-    say "Installing the login screen"
-    run python "$REPOSITORY_PATH/helper/patch_web_greeter.py" --install --activate
-
-    say "Installing the boot splash"
-    run python "$REPOSITORY_PATH/helper/patch_plymouth.py" --install --rebuild
+    say "Installing the configuration, the login screen and the boot splash"
+    run python "$REPOSITORY_PATH/install.py" --system
 else
-    say "Skipping the boot splash and login screen (--skip-system)"
+    say "Installing the configuration (--skip-system: no login screen or boot splash)"
+    run python "$REPOSITORY_PATH/install.py"
 fi
 
 say "Done"
 cat <<'EOF'
     Start the desktop with `startx`, or reboot into the display manager.
 
-    To do the system half later, or again:
-      python helper/patch_web_greeter.py --install --activate    the login screen
-      python helper/patch_plymouth.py --install --rebuild        the boot splash
+    To install the login screen and boot splash later, or again:
+      python install.py --migrate --system
 
-    docs/install.md has both, with what they change and why.
+    docs/install.md has what they change and why.
 EOF

@@ -83,9 +83,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:128` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_family` | direct | `helper/patch_kitty.py:56` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:90` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | direct, always dark | `helper/patch_plymouth.py:225` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | direct, always dark | `helper/patch_plymouth.py:227` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | direct, always dark | `helper/patch_plymouth.py:226` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | direct, always dark | `helper/patch_plymouth.py:230` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | direct, always dark | `helper/patch_plymouth.py:232` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | direct, always dark | `helper/patch_plymouth.py:231` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | direct | `helper/patch_rofi.py:57` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--font-family` | direct | `helper/patch_web_greeter.py:68` |
 
@@ -98,9 +98,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:128` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_size` | × 0.714 | `helper/patch_kitty.py:57` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:90` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | × 1.25, always dark | `helper/patch_plymouth.py:225` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:227` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | × 1.25, always dark | `helper/patch_plymouth.py:226` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.Font` | × 1.25, always dark | `helper/patch_plymouth.py:230` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:232` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | × 1.25, always dark | `helper/patch_plymouth.py:231` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | × 1.214 | `helper/patch_rofi.py:57` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--font-size` | pinned to 20 | `configuration/web-greeter/themes/standard/theme.json#font_overrides` |
 
@@ -129,9 +129,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | kitty | `~/.config/kitty/kitty.conf` | `selection_foreground` | direct | `helper/patch_kitty.py:61` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:86` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:85` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundEndColor` | direct, always dark | `helper/patch_plymouth.py:231` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundStartColor` | direct, always dark | `helper/patch_plymouth.py:230` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:234` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundEndColor` | direct, always dark | `helper/patch_plymouth.py:236` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.BackgroundStartColor` | direct, always dark | `helper/patch_plymouth.py:235` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:239` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `animation-001.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `entry.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:1008` |
@@ -201,7 +201,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | kitty | `~/.config/kitty/kitty.conf` | `foreground` | direct | `helper/patch_kitty.py:59` |
 | kitty | `~/.config/kitty/kitty.conf` | `selection_background` | direct | `helper/patch_kitty.py:60` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_FOREGROUND_COLOR` | direct | `helper/patch_lock.py:87` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:233` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:238` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `bullet.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-01.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus_stack=)` | direct | `configuration/qtile/config.py:624` |
@@ -275,7 +275,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | dunst | `~/.config/dunst/dunstrc` | `urgency_low.format` | embedded | `helper/patch_dunst.py:62` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color muted` | direct | `helper/patch_gtk.py:ROLES` |
 | kitty | `~/.config/kitty/kitty.conf` | `color15` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ProgressBarBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:232` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.ProgressBarBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:237` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `keyboard.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `lock.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-02.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |

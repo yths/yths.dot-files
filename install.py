@@ -44,6 +44,7 @@ import helper.patch_configurations
 import helper.screen_configuration
 import helper.symbols
 from helper.utils import (
+    authenticate,
     install_credentials,
     install_file,
     install_folder,
@@ -408,11 +409,17 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         help="with --migrate, write the files but leave the running programs alone",
     )
     parser.add_argument(
+        "--system",
+        action="store_true",
+        help="also install the login screen and boot splash for the theme, which needs root: "
+             "asked for once, before anything changes",
+    )
+    parser.add_argument(
         "--migrate",
         action="store_true",
         help="Refresh an existing ~/.config/config.json against the current repository and "
              "re-run the patchers, keeping this machine's state. Symlinks nothing and "
-             "prompts for nothing. Use after pulling an update; use a plain install for a "
+             "prompts for nothing unless --system. Use after pulling an update; use a plain install for a "
              "new machine.",
     )
     return parser.parse_args(argv)
@@ -481,9 +488,35 @@ def run_migration(
     return 0
 
 
+def install_system_surfaces() -> int:
+    """Install the login screen and boot splash for the configuration just written.
+
+    Read back from ``~/.config/config.json`` rather than passed in, so it covers an install
+    and a migration alike: both end with that file describing the theme now in place.
+    """
+    path = os.path.expanduser(os.path.join("~", ".config", "config.json"))
+    with open(path, encoding="utf-8") as handle:
+        configuration = json.load(handle)
+    failed = helper.patch_configurations.install_system(configuration, prompt=True)
+    if failed:
+        logger.warning(
+            f"Not installed: {', '.join(failed)}. The desktop is switched; re-run with "
+            "--system once the cause is fixed."
+        )
+        return 1
+    logger.info(f"The login screen and boot splash are {configuration.get('name')!r}.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     enable_git_hooks()
+
+    # Root first, before anything changes: a refused password then leaves the machine as it
+    # was, rather than switched in the session and not at the login screen.
+    if arguments.system and authenticate() is None:
+        logger.warning("--system needs root, which was not granted; nothing was changed.")
+        return 1
 
     # This clone, wherever it was made, unless the variable redirects it. The default used to
     # be ~/repositories/yths.dot-files, so a clone anywhere else -- which bootstrap.sh runs
@@ -495,10 +528,13 @@ def main(argv: list[str] | None = None) -> int:
     assets_folder_path = os.path.join(repository_folder_path, "assets")
 
     if arguments.migrate:
-        return run_migration(
+        result = run_migration(
             assets_folder_path, arguments.theme,
             reload_applications=not arguments.no_reload,
         )
+        if result != 0 or not arguments.system:
+            return result
+        return install_system_surfaces()
 
     try:
         theme_paths = discover_themes(assets_folder_path)
@@ -528,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
     configuration = assemble_configuration(bundle_path, wallpapers)
     write_configuration(configuration)
     generate_application_configuration(configuration)
-    return 0
+    return install_system_surfaces() if arguments.system else 0
 
 
 if __name__ == "__main__":

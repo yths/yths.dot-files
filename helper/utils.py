@@ -74,6 +74,21 @@ def root_prefix(*, prompt: bool) -> list[str] | None:
     return None
 
 
+def authenticate() -> list[str] | None:
+    """Ask for root now, so the steps after it can use it without asking. ``None`` if refused.
+
+    With sudo this caches the credentials (``sudo -v``), and every later ``root_prefix`` finds
+    them through ``sudo -n``: one prompt, before anything has changed, rather than one in the
+    middle of a half-applied switch. pkexec has no such cache and asks at each step.
+    """
+    prefix = root_prefix(prompt=True)
+    if prefix != ["sudo"]:
+        return prefix
+    if subprocess.run(["sudo", "-v"], check=False).returncode != 0:
+        return None
+    return ["sudo", "-n"]
+
+
 #: Left in every theme directory installed under a system path, so a later install may remove
 #: it once another has replaced it -- and never removes a directory something else put there,
 #: like the themes a greeter package ships beside ours.

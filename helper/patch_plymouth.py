@@ -6,13 +6,18 @@ Unlike every other patcher, plymouth's target is not under ``~``: themes live in
 rewrites it for the active palette — no privileges, nothing in the repository touched.
 **Install** copies the staged theme into the system path, which needs root.
 
-This does not run on a theme switch, and is not in ``patch_all``'s registry. The boot splash
-is a property of the machine rather than of whoever is logged into it: it is drawn before
-login, needs root to install and an ``mkinitcpio`` run to take effect, and is always rendered
-dark. Re-rendering it twice a day would prompt for a password, rebuild the initramfs, and
-change something nobody is looking at.
+This does not run on the twice-daily light/dark switch, and is not in ``patch_all``'s
+registry. The boot splash is a property of the machine rather than of whoever is logged into
+it: it is drawn before login, needs root to install and an ``mkinitcpio`` run to take effect,
+and is always rendered dark. Re-rendering it twice a day would prompt for a password, rebuild
+the initramfs, and change something nobody is looking at.
 
-Run it when the palette itself changes::
+It does run when the theme itself changes, through ``install_system`` -- which
+``install.py --system`` calls, after asking for root once::
+
+    python install.py --migrate --theme <bundle> --system
+
+or on its own::
 
     python helper/patch_plymouth.py --install --rebuild
 
@@ -134,7 +139,7 @@ def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool
     if prefix is None:
         logger.info(
             f"Rendered the plymouth theme, but writing {destination} needs root. Run "
-            "`python helper/patch_plymouth.py --install --rebuild` to be prompted for it."
+            "`python install.py --migrate --system` to be asked for it."
         )
         return False
 
@@ -297,23 +302,26 @@ def render_theme(
     render_assets(configuration, theme_path, theme)
 
 
-def patch_plymouth(configuration: dict[str, Any]) -> None:
-    """Render the boot splash from ``configuration``'s palette and install it if root is free.
+def install_system(
+    configuration: dict[str, Any], *, prompt: bool = False, rebuild: bool = True
+) -> bool:
+    """Render the boot splash for ``configuration``, install it and make it the default.
 
-    The importable entry point, for a caller that already holds a configuration -- an
-    installer, or a script regenerating a preset. It is deliberately not in ``patch_all``'s
-    registry: see this module's docstring. Never prompts, so an unattended caller cannot
-    block on a password.
+    The system patchers' common entry point; ``patch_web_greeter.install_system`` is the
+    other, and ``helper/patch_configurations.SYSTEM_PATCHERS`` lists both. Rebuilds the
+    initramfs by default, since that is what makes the change visible. ``prompt`` decides
+    whether root may be asked for; without it this succeeds only when root is already
+    available. Returns whether the splash is installed.
     """
     source = theme_source()
     if source is None:
         logger.info(f"No plymouth theme under {THEME_SOURCE}; skipping the boot splash.")
-        return
+        return False
     staged = stage_theme(source)
     try:
         name = installed_theme_name(configuration)
         render_theme(configuration, staged, PALETTE_VARIANT, name)
-        install_theme(staged, name, prompt=False)
+        return install_theme(staged, name, prompt=prompt, rebuild=rebuild)
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 
