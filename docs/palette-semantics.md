@@ -40,13 +40,20 @@ The qtile config and widgets in this repo currently read these six tokens. A bun
 
 Adding new consumers (a new widget, a new patcher) widens this set; track changes here so theme authors know what to ship.
 
-## Optional Tokens
+## The Rest of the Vocabulary
 
-Beyond the minimum, bundles are free to ship additional tokens for use by their own patchers, web-greeter themes, or future widgets. The current presets carry different supersets:
+The six above are what qtile needs before it draws. The patchers need more, and they are not optional in practice — a bundle without them installs and then fails at the first theme switch:
 
-- The shipped preset adds `success`, `failure`, plus a `*_variant` family for softer hue versions (`red_variant`, `blue_variant`, `foreground_variant`, ...).
+| Token | Read by |
+|---|---|
+| `foreground_variant` | `patch_kitty` (the "black" ANSI slot, so black text stays legible, and the cursor) |
+| `success`, `failure` | `patch_starship` (the prompt's two outcome colours) |
+| `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` | `patch_kitty`, ANSI slots 1–6 |
+| `red_variant`, `green_variant`, `yellow_variant`, `blue_variant`, `magenta_variant`, `cyan_variant` | `patch_kitty`, ANSI slots 9–14 |
 
-The two vocabularies do not perfectly overlap. A widget that needs a token outside the minimum set should fall back gracefully (read with `.get(token, default)`) so it can run against either preset.
+Twenty-one tokens in total, and the set is closed rather than a floor: [yths.themes](https://github.com/yths/yths.themes) holds the same list as an enum and has a contract test that reads this repository's tracked `assets/default/palette.pkl` and fails if the two ever disagree. That test exists because they did — the generator emitted a thirty-token vocabulary from a preset that no longer ships, and every bundle it produced would have raised `KeyError` in `patch_kitty`.
+
+A hue and its `_variant` are a pair: `patch_kitty` builds ANSI slot *i* from the base and slot *i + 8* from the variant, so a hue shipped without its partner is half a terminal palette.
 
 ## Light vs Dark Variants
 
@@ -69,8 +76,8 @@ git grep -nE 'palette\[[^]]+\]\[[^]]+\]' configuration/ helper/
 
 When a new consumer (widget, patcher) reads a palette token the minimum set doesn't yet contain:
 
-1. Add the token to the *Minimum Required Tokens* table above, with a one-line description of what the consumer uses it for.
-2. Ensure every shipped bundle's `palette.pkl` defines the new token for both `light` and `dark`. (This is `yths.themes` work.)
-3. Open an issue in [issues.md](issues.md) tracking any bundle that still lacks the new token.
+1. Add the token to the table above, with a one-line description of what the consumer uses it for.
+2. Add it to `ColorToken` in `yths.themes`, and give the seeding there a rule for choosing its colour. Its contract test fails until this repository's tracked bundle carries it too, which is the point: the two halves land together or not at all.
+3. Regenerate `assets/default/palette.pkl` by exporting in `default` mode, and commit it.
 
 Avoid adding required tokens lightly — each one is a constraint every preset must honour.

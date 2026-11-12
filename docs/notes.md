@@ -4,43 +4,57 @@ Long-lived concepts. For the whole-system picture, start with [architecture.md](
 
 ## Theme System
 
-A theme is a bundle under `assets/theme-<uuid>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.pkl`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
+A theme is a bundle under `assets/<name>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.pkl`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
+
+One bundle is tracked: `assets/default/`, which ships with this repository. Every other one is somebody's own — exported beside it and gitignored, so `git status` stays clean while `install.py --theme <name>` treats it exactly like the tracked one. Discovery is by the presence of a `config.json`, not by the directory being committed.
 
 Presets share the semantic token names (see [palette-semantics.md](palette-semantics.md)); only the concrete colors differ between them.
 
 ## Theme-Bundle Contract with yths.themes
 
-`yths.themes` writes into `{DOTFILES_REPOSITORY_PATH}/assets/theme-<uuid>/`. The directory layout it produces is the contract `install.py` reads:
+`yths.themes` writes into `{DOTFILES_REPOSITORY_PATH}/assets/<name>/`, where `<name>` is the
+bundle's directory *and* the `name` in its manifest — the two are written from one value, so a
+bundle can be identified from a file listing rather than by opening the JSON inside it. The
+layout is the contract `install.py` reads:
 
 ```text
-assets/theme-<uuid>/
+assets/<name>/
   config.json                       # name, font, wallpapers, state
-  palette.pkl                       # pickled palette object consumed by qtile and the patch scripts
+  palette.pkl                       # {mode: {token: hex}} — the colours everything downstream reads
   wallpapers/
     wallpaper-light.png
     wallpaper-light-highlight.png
     wallpaper-dark.png
     wallpaper-dark-highlight.png
+  wallpapers.json                   # optional: which renderer drew them, and at what size
   plymouth/                         # optional: .plymouth INI + tarball for plymouth-set-default-theme
   web-greeter-handoff.json          # optional: hints for the future web-greeter generator
-  wallpaper-handoff.json            # optional: hints for the future wallpaper generator
 ```
 
-Any change to this schema needs to land in both repos at once.
+Any change to this schema needs to land in both repositories at once.
 
-Of the manifest, `install.py` currently consumes only `name`. It detects `monitors` from
-the hardware, loads `palette` from `palette.pkl`, and takes `wallpapers`, `font` and
-`state` from its own defaults, so the remaining keys are descriptive rather than
-load-bearing —
+`palette.pkl` is a plain dict — `{"light": {token: hex}, "dark": {token: hex}}` — and nothing
+else. `install.py` unpickles it straight into `~/.config/config.json` under `palette`, on a
+machine that has no theme generator installed, so anything needing a library to load is
+unreadable here. The token vocabulary is in
+[palette-semantics.md](palette-semantics.md); `yths.themes` holds the same list as an enum and
+has a contract test asserting the two agree against this repository's tracked bundle.
+
+Of the manifest, `install.py` consumes only `name`. It detects `monitors` from the hardware,
+loads `palette` from `palette.pkl`, links `wallpapers` from the bundle's own `wallpapers/`
+directory, and takes `font` and `state` from [setup.toml](../setup.toml), so the remaining
+keys are descriptive rather than load-bearing —
 they record what the bundle was generated for. Keep them consistent with
-[config-schema.md](config-schema.md) regardless: a manifest that disagreed with the schema
-is what made the "copy a bundle's `config.json` into place" recipe silently unusable.
+[config-schema.md](config-schema.md) regardless: a manifest that disagreed with the schema is
+what made the "copy a bundle's `config.json` into place" recipe silently unusable. A bundle
+carries no `monitors` block at all, for the same reason — it recorded the geometry of the
+machine that generated the theme, which no reader ever consulted.
 
 ## qtile Widgets
 
 The widgets under `configuration/qtile/widgets/` each render a small status segment. Eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service); `service_state.py` reports whether that service is running and so polls `systemctl` directly, since it cannot ask the service it monitors whether it is alive. Most inherit from `libqtile.widget.base.BackgroundPoll` so the poll runs off the qtile event loop; a few (e.g. `audio`) use `InLoopPollText` because they need to integrate with a callback running on its own thread.
 
-A widget's module name is the Redis stream it reads, with one exception recorded in [issues.md](issues.md): `broadcast.py` reads a stream the backend still publishes as `stream`, and `shared/stream.py` bridges the two until the backend follows.
+A widget's module name is the Redis stream it reads. `shared/stream.py` carries a fallback for one stream that was renamed — see `LEGACY_STREAM_NAMES` there — which stays until no machine runs a backend old enough to need it.
 
 Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB` environment variables — the same ones the backend service reads. If Redis is unreachable at qtile startup, the widgets silently fall back to empty values.
 
