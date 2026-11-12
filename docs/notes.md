@@ -14,7 +14,7 @@ Presets share the semantic token names (see [color-semantics.md](color-semantics
 
 ```text
 assets/theme-<uuid>/
-  config.json                       # name, font, palette, wallpapers, state
+  config.json                       # name, font, monitors, wallpapers, state
   palette.pkl                       # pickled palette object consumed by qtile and the patch scripts
   wallpapers/
     wallpaper-light.png
@@ -27,6 +27,13 @@ assets/theme-<uuid>/
 ```
 
 Any change to this schema needs to land in both repos at once.
+
+Of the manifest, `install.py` currently consumes only `name`. It rebuilds `monitors` from
+the detected hardware, `palette` from `palette.pkl`, and `wallpapers`, `font` and `state`
+from its own defaults, so the remaining keys are descriptive rather than load-bearing —
+they record what the bundle was generated for. Keep them consistent with
+[config-schema.md](config-schema.md) regardless: a manifest that disagreed with the schema
+is what made the "copy a bundle's `config.json` into place" recipe silently unusable.
 
 ## qtile Widgets
 
