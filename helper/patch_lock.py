@@ -10,18 +10,32 @@ are free information about you and the machine, offered to someone you are not t
 challenge.
 """
 
+import argparse
 import json
 import os
+import subprocess
+import sys
 from typing import Any
 
 # Resolves whether this runs as ``helper.patch_lock`` or as a script; see helper/README.md.
 try:
-    from helper.utils import logger
+    from helper.utils import logger, template_path
 except ImportError:
-    from utils import logger
+    from utils import logger, template_path
 
 #: Where the generated environment lands. install.py symlinks configuration/lock/ here.
 ENVIRONMENT_PATH = os.path.join("~", ".config", "lock", "environment")
+
+#: The lock screen's own PAM service, and where the package that owns it puts the file.
+#: Naming a service that has no file in /etc/pam.d makes unlocking *impossible* -- PAM falls
+#: through to /etc/pam.d/other, which on Arch denies everything -- so the variable below is
+#: set only when the file is actually there. A machine without the package keeps Arch's
+#: `system-auth`, which is the behaviour this repository had all along.
+PAM_SERVICE = "xsecurelock"
+PAM_SERVICE_PATH = "/etc/pam.d/xsecurelock"
+
+#: Where the package that installs it lives, for the message that says how.
+PAM_PACKAGE_PATH = "configuration/lock/pam"
 
 #: Settings that are a decision rather than a colour, with the reason attached.
 BEHAVIOUR = {
@@ -75,7 +89,30 @@ def lock_environment(configuration: dict[str, Any]) -> dict[str, str]:
         "XSECURELOCK_AUTH_WARNING_COLOR": palette["warning"],
         "XSECURELOCK_FONT": f"{font['family']}:size={round(font['size'] * 0.85)}",
         **BEHAVIOUR,
+        **pam_service(),
     }
+
+
+def pam_service() -> dict[str, str]:
+    """Point xsecurelock at its own PAM stack, if one is installed.
+
+    Arch compiles xsecurelock with ``--with-pam-service-name=system-auth``, and Arch's
+    system-auth answers a wrong password with no message -- pam_unix fails silently and
+    pam_faillock's ``authfail`` dies at once -- so the screen had nothing to draw and showed
+    an empty field. ``configuration/lock/pam/`` packages a stack that says so.
+
+    Conditional, and deliberately so. This is the one setting here that can make the screen
+    impossible to unlock rather than merely uninformative, and the failure is silent until
+    somebody is locked out in front of it.
+    """
+    if not os.path.exists(PAM_SERVICE_PATH):
+        logger.info(
+            f"No {PAM_SERVICE_PATH}; the lock screen will use Arch's system-auth and stay "
+            f"silent on a wrong password. Install it with: "
+            f"cd {PAM_PACKAGE_PATH} && makepkg --syncdeps --install"
+        )
+        return {}
+    return {"XSECURELOCK_PAM_SERVICE": PAM_SERVICE}
 
 
 def patch_lock(configuration: dict[str, Any]) -> None:
@@ -89,6 +126,63 @@ def patch_lock(configuration: dict[str, Any]) -> None:
     logger.info("Patched lock configuration ...")
 
 
-if __name__ == "__main__":
-    with open(os.path.expanduser("~/.config/config.json")) as input_handle:
+def install_pam_service() -> bool:
+    """Build and install the package that owns ``/etc/pam.d/xsecurelock``.
+
+    A package rather than a copy, because this file decides whether a screen unlocks: pacman
+    then names its owner, removes it cleanly, and leaves a ``.pacnew`` rather than replacing a
+    stack somebody edited. The two patchers that install into root-owned directories copy with
+    ``root_prefix``; nothing there could have offered any of that.
+
+    ``makepkg`` is run rather than ``sudo makepkg``: it refuses to run as root and calls pacman
+    for the install step itself, which is where the prompt belongs.
+    """
+    directory = template_path("lock", "pam")
+    if not os.path.isfile(os.path.join(directory, "PKGBUILD")):
+        logger.warning(f"No PKGBUILD in {directory}; nothing to install.")
+        return False
+    try:
+        result = subprocess.run(
+            ["makepkg", "--syncdeps", "--install", "--needed", "--noconfirm"],
+            cwd=directory, check=False,
+        )
+    except OSError as error:
+        logger.warning(f"Could not run makepkg: {error}")
+        return False
+    if result.returncode != 0:
+        logger.warning(f"makepkg exited {result.returncode}; the PAM service is not installed.")
+        return False
+
+    logger.info(f"Installed {PAM_SERVICE_PATH}.")
+    logger.info(
+        "Re-run this patcher to point the lock screen at it, then verify once before "
+        "relying on it: lock the screen, type a wrong password, and check that it says so. "
+        "If a correct password is ever refused, switch to another terminal with Ctrl-Alt-F1 "
+        "and run `killall xsecurelock`."
+    )
+    return True
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--configuration", default="~/.config/config.json", dest="configuration_file_path",
+        help="path to the active configuration (default: ~/.config/config.json)",
+    )
+    parser.add_argument(
+        "--install-pam", action="store_true",
+        help=f"build and install the package owning {PAM_SERVICE_PATH}, so a wrong password "
+             "says so instead of showing an empty field",
+    )
+    arguments = parser.parse_args(argv)
+
+    if arguments.install_pam and not install_pam_service():
+        return 1
+
+    with open(os.path.expanduser(arguments.configuration_file_path)) as input_handle:
         patch_lock(json.load(input_handle))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -83,4 +83,14 @@ optional = [
 ]
 
 # Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them.
-development = ["ruff", "python-pytest"]
+development = [
+    "ruff",
+    "python-pytest",
+    # tests/test_lock_pam.py exercises the lock screen's PAM stack by compiling a small client
+    # against libpam and running it in a sandbox with a fake /etc/pam.d -- which is how the
+    # success path gets checked without a real password, and without touching the stack the
+    # rest of the system logs in through. Both are also what `makepkg` needs to build
+    # configuration/lock/pam/. Absent, that one test skips rather than fails.
+    "base-devel",
+    "bubblewrap",
+]

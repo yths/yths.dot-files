@@ -1,0 +1,27 @@
+# A local package, not an AUR one: it exists to put one file in /etc/pam.d and to be the
+# thing that owns it. `pacman -Qo /etc/pam.d/xsecurelock` then names it, `pacman -R` removes
+# it cleanly, and an xsecurelock update cannot quietly replace it -- which is more than a
+# `cp` from an installer can offer for a file that decides whether a screen unlocks.
+#
+# Build and install:
+#
+#     cd configuration/lock/pam && makepkg --syncdeps --install
+#
+# makepkg refuses to run as root and calls pacman for the install step itself, so run it as
+# your own user and let it prompt.
+pkgname=yths-lock-pam
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="PAM service for xsecurelock that reports a failed unlock attempt"
+arch=('any')
+url='https://github.com/yths/yths.dot-files'
+license=('MIT')
+depends=('pam' 'xsecurelock')
+# pacman leaves a .pacnew rather than overwriting a stack somebody has edited by hand.
+backup=('etc/pam.d/xsecurelock')
+source=('xsecurelock.pam')
+sha256sums=('d85ef276394304530163bfcbe6d6640d6a45c5835a7b860d34d20a4c6713461b')
+
+package() {
+    install -Dm644 "$srcdir/xsecurelock.pam" "$pkgdir/etc/pam.d/xsecurelock"
+}

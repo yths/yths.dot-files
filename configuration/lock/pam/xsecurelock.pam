@@ -1,0 +1,37 @@
+#%PAM-1.0
+#
+# The lock screen's own authentication stack, so that a wrong password says so.
+#
+# xsecurelock draws only what the PAM conversation gives it. Arch builds it with
+# `--with-pam-service-name=system-auth`, and Arch's system-auth answers a wrong password with
+# no message at all -- pam_unix fails silently and pam_faillock's `authfail` dies immediately.
+# So the screen showed `Processing...`, then an empty field, and nothing to say why.
+#
+# This is system-auth's auth stack with one line added: a pam_echo on the failure path, which
+# reaches the screen as a PAM_TEXT_INFO and is drawn in XSECURELOCK_AUTH_WARNING_COLOR.
+# Selected by XSECURELOCK_PAM_SERVICE=xsecurelock, which helper/patch_lock.py sets only when
+# this file is installed -- so the stack the rest of the system logs in through is never
+# touched, and an error here can affect nothing but the lock screen.
+#
+# The jump counts are the whole risk. pam_systemd_home skips to pam_permit; pam_unix skips
+# past the echo and the authfail to the same place. Adding a line between them means both
+# counts move, and a wrong count either shows no message or -- much worse -- lets the stack
+# reach a permit it should not. tests/test_lock_pam.py checks both branches.
+#
+# If this file is ever broken enough to make unlocking impossible: switch to another terminal
+# with Ctrl-Alt-F1, log in, and run `killall xsecurelock`. Upstream's README says the same.
+
+auth       required                    pam_faillock.so      preauth
+-auth      [success=3 default=ignore]  pam_systemd_home.so
+auth       [success=2 default=bad]     pam_unix.so          try_first_pass nullok
+auth       optional                    pam_echo.so          Wrong password.
+auth       [default=die]               pam_faillock.so      authfail
+auth       optional                    pam_permit.so
+auth       required                    pam_env.so
+auth       required                    pam_faillock.so      authsucc
+
+# Everything else is system-auth's, included per type rather than copied, so an Arch update to
+# the account, password or session stacks reaches the lock screen without an edit here.
+account    include                     system-auth
+password   include                     system-auth
+session    include                     system-auth
