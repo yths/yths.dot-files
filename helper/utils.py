@@ -1,8 +1,9 @@
-"""Common installer helpers used by ``install.py`` (file/folder symlinking, credentials prompt).
+"""Common helpers shared by ``install.py`` and the patchers.
 
-Exports ``install_file``, ``install_folder``, ``install_files``, ``install_folders``, and
-``install_credentials``. Each logs a one-line status via loguru (or stdlib logging if
-loguru is unavailable).
+Exports the install helpers -- ``install_file``, ``install_folder``, ``install_files``,
+``install_folders``, ``install_credentials`` -- plus ``monitor_average`` for the patchers
+that scale to the display, and the ``logger`` every one of them reports through. Each
+install helper logs a one-line status via loguru, or stdlib logging if loguru is absent.
 
 Nothing here copies. Every install path ends in ``os.symlink``, so an installed file *is*
 the repository file -- which is what lets a theme switch and a hand edit under
@@ -13,6 +14,7 @@ lands on a tracked file.
 import json
 import os
 import time
+from typing import Any
 
 try:
     import loguru
@@ -20,6 +22,21 @@ try:
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
+
+
+def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
+    """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
+
+    Three patchers scale something to the display -- rofi's width, xorg's DPI, dunst's
+    offset -- and each inlined the same loop-sum-divide. With no monitors that divides by
+    zero, which is how ``patch_xorg`` came to truncate ``~/.Xresources`` and then raise,
+    taking every later patcher with it. Callers treat ``None`` as "leave this app alone".
+    """
+    monitors = configuration.get("monitors") or {}
+    values = [monitor[key] for monitor in monitors.values() if key in monitor]
+    if not values:
+        return None
+    return sum(values) / len(values)
 
 
 def install_folders(folders_paths: dict[str, str], name: str | None = None) -> None:

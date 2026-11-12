@@ -65,11 +65,14 @@ The widgets, and the Redis contract they share, are described in [notes.md](note
 
 ## Per-App Patchers
 
-`helper/patch_configurations.py` exposes `patch_all`, an orchestrator that reads `~/.config/config.json` + `~/.config/palette.pkl` and pushes the active palette into per-app configs that cannot read JSON natively:
+Each application that cannot read `~/.config/config.json` natively has one patcher module, `helper/patch_<app>.py`, exposing `patch_<app>(configuration)` and runnable on its own. `helper/patch_configurations.py` is the registry that runs them; it holds no patching logic.
 
-- **Plymouth** — `helper/patch_plymouth.py` rewrites the target `.plymouth` INI and re-renders the boot background (PNG via PIL + cairo).
-- **Web-greeter** — `helper/patch_web_greeter.py` walks `configuration/web-greeter/themes/` and emits a `theme.css` per theme containing the palette as CSS variables, driven by the theme's own `theme.json#role_map` mapping.
-- **VSCode** — `helper/patch_vsc.py` maps the palette to VSCode editor and token colors using perceptual nearest-color matching.
+Seven are in the registry and run on every theme switch: **rofi**, **xorg** (the average DPI into `~/.Xresources`), **kitty**, **tmux**, **starship**, **dunst**, and **web-greeter** — the last walking `configuration/web-greeter/themes/` and emitting a `theme.css` per theme, driven by the theme's own `theme.json#role_map`.
+
+Two are not, and the distinction is worth knowing:
+
+- **VSCode** — `helper/patch_vsc.py` maps the palette to VSCode editor and token colors using perceptual nearest-color matching. It runs as a subprocess from the `__main__` block rather than through the registry, because it takes CLI arguments.
+- **Plymouth** — `helper/patch_plymouth.py` rewrites the target `.plymouth` INI and re-renders the boot background (PNG via PIL + cairo). Nothing runs it automatically: every line of it sits under `if __name__`, so there is no function to register. Whether the boot splash should be re-rendered on each theme switch is an open question — see [issues.md](issues.md).
 
 The full helper inventory is in [../helper/README.md](../helper/README.md); adding a new patcher is described there.
 

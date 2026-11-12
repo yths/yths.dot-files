@@ -51,6 +51,7 @@
     - (2026-05-14) added `helper/patch_web_greeter.py`, wired into `patch_all`; themes parameterized via CSS variables generated into each theme's `theme.css`
 - [x] Add plymouth to patch configuration
     - (2026-05-16) `helper/patch_plymouth.py` is wired into `helper/patch_configurations.py:patch_all`
+    - (2026-08-30) correction: it is not, and was not then. The module exposes no importable function — every line sits under `if __name__` — so there has never been anything for `patch_all` to call, and nothing else invokes it either. The patcher itself works when run by hand, which is what this ticket asked for; whether the boot splash should also be re-rendered on every theme switch is a separate question and still open.
 - [ ] Automate installation of web-greeter
 - [ ] Automate installation of plymouth
 - [ ] Automatically patch README.md on color theme change

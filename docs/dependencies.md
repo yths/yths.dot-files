@@ -30,7 +30,7 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 | `PIL` | `python-pillow` | `patch_plymouth` | renders boot background |
 | `cairo` | `python-pycairo` | `patch_plymouth` | renders boot background |
 | `colour` | `python-colour-science` **(AUR)** | `patch_vsc`, `list_palette` | perceptual nearest-color matching (`list_palette` reuses it for the drift report) |
-| `toml` | `python-toml` | `patch_configurations` | reads `pyproject.toml`-style configs |
+| `toml` | `python-toml` | `patch_starship` | reads and rewrites `~/.config/starship.toml` |
 
 ## qtile and Widgets (`configuration/qtile/`)
 
