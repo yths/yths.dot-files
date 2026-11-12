@@ -8,9 +8,6 @@ target-version = "py314"
 extend-exclude = [
     # Vendor-generated; `c = c` and `# noqa: F821` are qutebrowser idioms.
     "configuration/qutebrowser/config.py",
-    # Symlinks into helper/; the real files there are checked instead.
-    "configuration/qtile/widgets/patch_configurations.py",
-    "configuration/qtile/widgets/patch_vsc.py",
 ]
 
 [tool.ruff.lint]
