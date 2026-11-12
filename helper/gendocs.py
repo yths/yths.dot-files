@@ -123,7 +123,8 @@ def invariants() -> list[tuple[str, list[str], str]]:
         (
             "Imports and the recorded Arch packages disagree:",
             list_dependencies.mismatches(list_dependencies.third_party_imports()),
-            "Edit ARCH_PACKAGES in helper/list_dependencies.py.",
+            "Record the package in ARCH_PACKAGES (helper/list_dependencies.py), and list it\n"
+            "under [packages] in setup.toml so a fresh machine installs it.",
         ),
         (
             "Not widgets, but sitting in configuration/qtile/widgets/:",

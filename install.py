@@ -33,6 +33,7 @@ from helper.utils import (
     install_credentials,
     install_file,
     install_folder,
+    read_setup,
 )
 
 #: The repository this installer is part of, resolved through any symlink. Deliberately not
@@ -139,12 +140,8 @@ WALLPAPERS = (
     ("light-highlight", "wallpaper-light-highlight.png"),
 )
 
-#: Written into every fresh configuration, replacing whatever the bundle carried.
-DEFAULT_FONT = {"size": 14, "family": "Iosevka NF"}
-DEFAULT_STATE = {"theme": "light", "condition": "normal", "theme_mode": "automatic"}
-
-#: Credentials the installer offers to collect. See helper/utils.py:install_credentials.
-CREDENTIALS = ["IPINFO_TOKEN"]
+#: Everything a reader would change lives in setup.toml, not here. See helper/utils.py.
+SETUP = read_setup()
 
 
 def discover_themes(assets_folder_path: str) -> dict[str, str]:
@@ -236,8 +233,11 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
         configuration["palette"] = pickle.load(handle)
 
     configuration["wallpapers"] = wallpapers
-    configuration["font"] = dict(DEFAULT_FONT)
-    configuration["state"] = dict(DEFAULT_STATE)
+    configuration["font"] = {
+        "family": SETUP["desktop"]["font_family"],
+        "size": SETUP["desktop"]["font_size"],
+    }
+    configuration["state"] = dict(SETUP["state"])
     return configuration
 
 
@@ -278,7 +278,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         "--theme",
         type=str,
         default=None,
-        help="Install this theme by name, without prompting (e.g. --theme yths).",
+        help="Install this theme by name, overriding setup.toml's [desktop] theme.",
     )
     return parser.parse_args(argv)
 
@@ -299,15 +299,18 @@ def main(argv: list[str] | None = None) -> int:
     theme_paths = discover_themes(assets_folder_path)
     if not theme_paths:
         sys.exit(f"No theme bundles found under {assets_folder_path}.")
-    selected_theme = select_theme(theme_paths, arguments.theme)
+    selected_theme = select_theme(
+        theme_paths, arguments.theme or SETUP["desktop"]["theme"] or None
+    )
     print(f"Selected theme: {selected_theme}")
     bundle_path = theme_paths[selected_theme]
 
     install_static_configuration(configuration_folder_path)
     report_display_calibration()
 
-    if input("Do you want to install credentials? (y/n): ").lower() == "y":
-        install_credentials(CREDENTIALS)
+    wanted = SETUP["credentials"]["prompt"]
+    if wanted and input(f"Collect credentials ({', '.join(wanted)})? (y/n): ").lower() == "y":
+        install_credentials(wanted)
 
     install_file(
         os.path.join(bundle_path, "palette.pkl"),

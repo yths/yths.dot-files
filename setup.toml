@@ -1,0 +1,73 @@
+# Everything you would change to make this desktop yours.
+#
+# The installer, the bootstrap script and the dependency documentation all read this file, so
+# a change here reaches every one of them. Nothing else needs editing to adopt this
+# repository on a new machine: pick a theme, name your font, adjust the package list, and run
+# `./bootstrap.sh`.
+#
+# Read with tomllib, which is in the standard library — this adds no dependency.
+
+[desktop]
+# Which bundled theme to install without prompting. `install.py --theme <name>` overrides it,
+# and an empty string restores the interactive prompt. Run `python helper/list_themes.py` to
+# see what is available.
+theme = "yths"
+
+# The font the whole desktop derives from: the bar, the terminal, the launcher, the boot
+# splash. Every other size is computed from `size`, so changing it rescales everything
+# together. It must be a Nerd Font — the bar draws glyphs from the private use area.
+font_family = "Iosevka NF"
+font_size = 14
+
+[state]
+# How the desktop starts, and what `install.py` resets it to. `theme_mode = "automatic"` lets
+# the location widget flip light and dark at sunrise and sunset; "manual" leaves it to you.
+theme = "light"
+condition = "normal"
+theme_mode = "automatic"
+audio_mode = "automatic"
+
+[credentials]
+# Secrets the installer offers to collect into ~/.config/credentials.json, mode 0600. It only
+# ever asks; declining is fine and the desktop runs without them. IPINFO_TOKEN buys the
+# location widget its sunrise and sunset times, and with them the automatic theme switch.
+prompt = ["IPINFO_TOKEN"]
+
+[packages]
+# Installed by ./bootstrap.sh with `yay -S`. Grouped by what stops working without them, so
+# a group you do not want can be deleted whole.
+
+# The desktop itself. Without these there is nothing to log into.
+core = [
+    "xorg-server", "xorg-xinit", "xinit-xsession",
+    "qtile", "python-dbus-fast",
+    "ttc-iosevka",
+    "kitty", "rofi", "dunst", "picom",
+]
+
+# The login screen and the boot splash.
+boot = ["lightdm", "nody-greeter", "plymouth"]
+
+# The metrics service the bar reads from, and its pacman hook.
+backend = ["valkey", "python-redis", "pacman-contrib"]
+
+# Imported by the helper scripts. helper/list_dependencies.py checks this list against what
+# the code actually imports, and the pre-commit gate fails if they disagree.
+python = [
+    "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
+    "python-pillow", "python-pycairo", "python-websockets",
+    "python-colour-science", "python-sounddevice",
+]
+
+# Everything still works without these; each one buys a specific thing.
+optional = [
+    "displaycal",   # display colour calibration; without it, screens run uncalibrated
+    "mpv",          # video playback, bound to `,m` in qutebrowser
+    "qutebrowser",  # the browser the palette is mapped for
+    "tmux",
+    "starship",
+    "vim",
+]
+
+# Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them.
+development = ["ruff", "python-pytest"]

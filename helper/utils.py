@@ -14,6 +14,7 @@ lands on a tracked file.
 import json
 import os
 import time
+import tomllib
 from typing import Any
 
 try:
@@ -26,6 +27,21 @@ except ImportError:
 
 #: This repository, resolved through any symlink used to invoke a helper.
 REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+#: The one file a reader edits to adopt this repository: theme, font, initial state,
+#: credentials to prompt for, and the packages to install.
+SETUP_PATH = os.path.join(REPOSITORY_ROOT, "setup.toml")
+
+
+def read_setup(path: str | None = None) -> dict[str, Any]:
+    """Parse ``setup.toml``.
+
+    Read rather than imported so the values live in one editable file instead of as constants
+    spread through the installer, the bootstrap script and the documentation. ``tomllib`` is
+    in the standard library, so this costs no dependency.
+    """
+    with open(path or SETUP_PATH, "rb") as handle:
+        return tomllib.load(handle)
 
 
 def template_path(app: str, filename: str) -> str:
