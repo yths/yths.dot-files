@@ -9,9 +9,7 @@ rewrote tracked files twice a day and `git status` stopped meaning anything.
 
 | File | Written by |
 |---|---|
-| `kitty.conf` | `helper/patch_kitty.py` — remote control, audio bell, font size |
-| `themes/<preset>.conf` | `helper/patch_kitty.py` — the palette mapped onto kitty's sixteen ANSI slots |
-| `current-theme.conf` | `kitty +kitten themes`, which copies the active preset's file here |
+| `kitty.conf` | `helper/patch_kitty.py` — base settings and the palette on kitty's sixteen ANSI slots, in one file |
 
 ## Changing Something
 
@@ -22,13 +20,20 @@ python helper/patch_kitty.py
 ```
 
 A setting that is not palette-derived — a keybinding, a scrollback limit — goes in that
-script's `patched_configuration` dict, so it survives regeneration. Adding one to
-`kitty.conf` by hand does not.
+script's `BASE_SETTINGS` dict, so it survives regeneration. Adding one to `kitty.conf` by
+hand does not.
 
 ## One Thing to Know
 
-`patch_kitty.py` writes `kitty.conf` without the `BEGIN_KITTY_THEME` block, and
-`kitty +kitten themes` puts it back. A full theme switch runs both, so the file ends up
-correct. Running the patcher alone leaves kitty without its `include current-theme.conf`
-until the kitten runs — so prefer `helper/patch_configurations.py`, which does the whole
-sequence, over calling this patcher on its own.
+Writing `kitty.conf` is the whole of applying the theme. kitty watches that file and
+re-reads it about a tenth of a second after it changes, so every open window changes colour
+on its own — nothing is signalled, and no window is restarted. `auto_reload_config` in
+`BASE_SETTINGS` is what buys that, and it is written explicitly rather than left to kitty's
+default because kitty reads it once at startup and ignores it on reload: it has to already
+be in the file kitty starts with.
+
+This is why the palette is in `kitty.conf` itself rather than an `include`d theme file, and
+why nothing calls `kitty +kitten themes`. kitty watches only the config paths it was given
+at startup, not the files those include — so a palette in an included file would change
+without kitty noticing. The kitten did notice, but it also rewrote `kitty.conf` to add the
+`include` and left a `kitty.conf.bak` beside it, both inside this repository.

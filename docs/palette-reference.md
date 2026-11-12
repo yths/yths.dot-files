@@ -119,30 +119,30 @@ _Hex values reflect the active theme bundle and differ per install._
 
 Each tool below hardcodes hex outside the palette. Colors are matched against the active **dark** palette (CAM16-UCS ΔE).
 
-#### kitty (`configuration/kitty/current-theme.conf`)
+#### kitty (`configuration/kitty/kitty.conf`)
 
 | Local name | Hex | Nearest token | ΔE |
 | --- | --- | --- | --- |
 | `background` | `#322f2f` | `background` | exact |
-| `selection_background` | `#d5d1d1` | `foreground` | exact |
 | `foreground` | `#d5d1d1` | `foreground` | exact |
+| `selection_background` | `#d5d1d1` | `foreground` | exact |
 | `selection_foreground` | `#322f2f` | `background` | exact |
 | `cursor` | `#fffbfb` | `foreground_variant` | exact |
 | `color0` | `#fffbfb` | `foreground_variant` | exact |
-| `color1` | `#ffa3a4` | `red` | exact |
-| `color2` | `#91dca0` | `green` | exact |
-| `color3` | `#ffb565` | `yellow` | exact |
-| `color4` | `#95ceff` | `blue` | exact |
-| `color5` | `#f9a8ee` | `magenta` | exact |
-| `color6` | `#71dbe0` | `cyan` | exact |
-| `color7` | `#322f2f` | `background` | exact |
 | `color8` | `#d5d1d1` | `foreground` | exact |
+| `color1` | `#ffa3a4` | `red` | exact |
 | `color9` | `#cd6869` | `red_variant` | exact |
+| `color2` | `#91dca0` | `green` | exact |
 | `color10` | `#569c67` | `green_variant` | exact |
+| `color3` | `#ffb565` | `yellow` | exact |
 | `color11` | `#c07726` | `yellow_variant` | exact |
+| `color4` | `#95ceff` | `blue` | exact |
 | `color12` | `#4d91c7` | `blue_variant` | exact |
+| `color5` | `#f9a8ee` | `magenta` | exact |
 | `color13` | `#b66cac` | `magenta_variant` | exact |
+| `color6` | `#71dbe0` | `cyan` | exact |
 | `color14` | `#229ca0` | `cyan_variant` | exact |
+| `color7` | `#322f2f` | `background` | exact |
 | `color15` | `#afabab` | `neutral` | exact |
 
 #### tmux (`configuration/tmux/tmux.conf`)
