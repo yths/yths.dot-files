@@ -36,6 +36,11 @@ Neither directory needs an `__init__.py`.
   other cell, which left the titles seven pixels above the icons beside them. This derives
   the padding from the font's line height, so the titles share the bar's centre line at any
   size.
+- **`launcher.py`** — `rofi_command(mode, output, clearance)`, the argv the rofi key bindings
+  spawn. It names the focused screen's output, because rofi's own default is the monitor
+  under the pointer, and passes that screen's geometry inside the focus outline as a
+  `-theme-str`, because the theme's averaged width and offset covered the outline's edges
+  and the bottom of the bar.
 - **`idle_guard.py`** — `guard()` resets X's idle counter while anything holds a logind idle
   inhibitor, so a playing film does not get locked over. `xss-lock` locks from the X screen
   saver, which counts input; logind's idle clock is a separate one, and nothing joined the
