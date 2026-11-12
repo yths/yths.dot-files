@@ -1,6 +1,9 @@
 """The pure helpers: monitor geometry, dependency bookkeeping, calibration decisions."""
 
 import os
+import pathlib
+import platform
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -102,3 +105,41 @@ def test_a_configured_host_with_displays_goes_ahead() -> None:
 )
 def test_profile_names_are_canonicalised(given: str, expected: str) -> None:
     assert apply_icc.canonicalise(given) == expected
+
+
+# A calibration loaded into the video LUT corrects the greyscale response and nothing else. What
+# tells an application the panel's gamut is the `_ICC_PROFILE` X atom, and only `dispwin -I`
+# publishes it. Without it every colour-managed program assumes sRGB and skips the transform, so
+# two panels with different gamuts stay visibly mismatched -- calibrated, and still wrong. That
+# is what this ran as for a while: the atoms were simply absent.
+def test_profiles_are_installed_not_only_loaded(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    commands = []
+
+    def record(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        commands.append(argv)
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(apply_icc.subprocess, "run", record)
+    monkeypatch.setattr(apply_icc.shutil, "which", lambda _name: "/usr/bin/dispwin")
+    monkeypatch.setattr(apply_icc, "detect_displays", lambda: [("1", "HDMI-1")])
+    monkeypatch.setattr(apply_icc, "read_displays", lambda: {platform.node(): {"HDMI-1": "p"}})
+    profile = tmp_path / "p.icc"
+    profile.write_bytes(b"")
+    monkeypatch.setattr(apply_icc, "profile_path", lambda _name: str(profile))
+    monkeypatch.setattr(os.path, "exists", lambda path: path != apply_icc.DISABLED_SENTINEL)
+
+    apply_icc.apply_profiles(verbose=False)
+    assert commands, "nothing was handed to dispwin"
+    assert "-I" in commands[0], (
+        "dispwin was given the profile to load but not to install, so no _ICC_PROFILE atom is "
+        f"published and colour-managed applications see nothing: {commands[0]}"
+    )
+
+
+def test_it_is_not_the_run_forever_flag() -> None:
+    """`-i` is "run forever with random values", which the hand-written .xinitrc lines used."""
+    source = pathlib.Path("helper/apply_icc.py").read_text()
+    invocation = source[source.index('["dispwin", "-d", index'):]
+    assert '"-i"' not in invocation[:120]
