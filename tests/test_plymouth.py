@@ -7,8 +7,12 @@ rendered from the dark palette, and `state.theme` describes a session that does 
 And `ImageDir` is an absolute path into the system theme directory, so it has to name the
 directory `install_theme` is about to create. It did not: after the bundle was renamed from
 `yths` to `default` the theme installed to `.../themes/default` while its INI still pointed at
-`.../themes/yths`, which plymouth answers by drawing no images at all. Both the name and the
-path are derived from the source directory now, so they cannot drift from it again.
+`.../themes/yths`, which plymouth answers by drawing no images at all.
+
+The name is now a constant rather than the preset's, which is the other half of the same lesson.
+`/etc/plymouth/plymouthd.conf` names the theme and cannot follow a rename, so while the installed
+directory was the preset's name, renaming a preset left the config pointing at a theme nothing
+wrote any more -- and the splash on this machine stayed thirteen months old without a word.
 """
 
 import configparser
@@ -40,8 +44,8 @@ def configuration() -> dict:
 @pytest.fixture
 def staged(tmp_path: pathlib.Path) -> pathlib.Path:
     """A staging directory holding a copy of the shipped theme's INI."""
-    source = pathlib.Path("configuration/plymouth/themes/default/default.plymouth")
-    destination = tmp_path / "default.plymouth"
+    source = pathlib.Path("configuration/plymouth/theme/yths.plymouth")
+    destination = tmp_path / "yths.plymouth"
     shutil.copyfile(source, destination)
     return tmp_path
 
@@ -49,7 +53,7 @@ def staged(tmp_path: pathlib.Path) -> pathlib.Path:
 def _ini(path: pathlib.Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str
-    parser.read(path / "default.plymouth")
+    parser.read(path / "yths.plymouth")
     return parser
 
 
@@ -86,11 +90,34 @@ def test_image_dir_names_where_the_theme_installs(
     assert _ini(staged)["two-step"]["ImageDir"] == expected
 
 
-def test_the_theme_names_itself_after_its_directory(
+def test_the_theme_names_itself_after_what_it_installs_as(
     configuration: dict, staged: pathlib.Path
 ) -> None:
-    patch_plymouth.render_configuration(configuration, str(staged), "dark", "somepreset")
-    assert _ini(staged)["Plymouth Theme"]["Name"] == "somepreset"
+    """`ImageDir` is an absolute path into the system theme directory, so the name in the INI and
+    the directory it installs to have to be the same string."""
+    patch_plymouth.render_configuration(configuration, str(staged), "dark", "somename")
+    assert _ini(staged)["Plymouth Theme"]["Name"] == "somename"
+    assert _ini(staged)["two-step"]["ImageDir"].endswith("/somename")
+
+
+# The splash is one theme for every bundle. It was found by looking for a directory named after
+# the active preset, so a bundle exported under any other name silently got none -- and "a preset
+# need not ship one" made that indistinguishable from a deliberate omission.
+def test_the_splash_does_not_depend_on_which_bundle_is_installed() -> None:
+    for name in ("default", "autumn-dawn", "something-nobody-has-exported-yet", None):
+        assert patch_plymouth.theme_source({"name": name}) == patch_plymouth.THEME_SOURCE
+
+
+def test_it_installs_under_a_constant_name_not_the_presets() -> None:
+    """/etc/plymouth/plymouthd.conf names the theme, and cannot follow a renamed preset.
+
+    It did not: the installed splash was thirteen months old, from a preset called `yths` that
+    no longer existed, because every render since had installed under a different name.
+    """
+    source = pathlib.Path("helper/patch_plymouth.py").read_text()
+    body = source[source.index("def patch_plymouth("):source.index("def main(")]
+    assert "THEME_NAME" in body
+    assert "os.path.basename(source)" not in body
 
 
 def test_the_fonts_scale_from_the_configured_size(
@@ -110,9 +137,15 @@ def test_a_missing_ini_is_named_rather_than_guessed(
         patch_plymouth.render_configuration(configuration, str(tmp_path), "dark", "default")
 
 
-def test_a_preset_without_a_splash_is_not_an_error(configuration: dict) -> None:
-    configuration["name"] = "a-preset-that-ships-none"
-    assert patch_plymouth.theme_source(configuration) is None
+def test_a_bundle_without_its_own_splash_still_gets_one(configuration: dict) -> None:
+    """The opposite of what this asserted before, and the reason it changed.
+
+    A splash found by preset name meant a bundle exported under any other name got none, silently
+    -- "a preset need not ship one" made a missing directory indistinguishable from a choice.
+    There is one splash now, and every bundle gets it with its own colours.
+    """
+    configuration["name"] = "a-bundle-that-ships-none"
+    assert patch_plymouth.theme_source(configuration) is not None
 
 
 def test_the_shipped_preset_has_a_splash(configuration: dict) -> None:
@@ -124,7 +157,7 @@ def test_staging_refuses_a_dangling_wallpaper_link(tmp_path: pathlib.Path) -> No
     dangling link produces a theme that boots to nothing, so it is refused with the fix."""
     source = tmp_path / "theme"
     source.mkdir()
-    (source / "default.plymouth").write_text("[two-step]\n")
+    (source / "yths.plymouth").write_text("[two-step]\n")
     os.symlink(tmp_path / "no-such-wallpaper.png", source / "background-tile.png")
     with pytest.raises(FileNotFoundError, match=re.escape("install.py")):
         patch_plymouth.stage_theme(str(source))
@@ -134,12 +167,12 @@ def test_staging_copies_rather_than_rendering_in_place(tmp_path: pathlib.Path) -
     """Rendering in place would rewrite tracked files on every run."""
     source = tmp_path / "theme"
     source.mkdir()
-    (source / "default.plymouth").write_text("[two-step]\nFont=original\n")
+    (source / "yths.plymouth").write_text("[two-step]\nFont=original\n")
     staged = patch_plymouth.stage_theme(str(source))
     try:
         assert staged != str(source)
-        (pathlib.Path(staged) / "default.plymouth").write_text("[two-step]\nFont=changed\n")
-        assert "original" in (source / "default.plymouth").read_text()
+        (pathlib.Path(staged) / "yths.plymouth").write_text("[two-step]\nFont=changed\n")
+        assert "original" in (source / "yths.plymouth").read_text()
     finally:
         shutil.rmtree(staged, ignore_errors=True)
 

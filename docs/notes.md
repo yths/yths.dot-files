@@ -31,7 +31,7 @@ assets/<name>/
 ```
 
 The boot splash and the login screen are not part of a bundle. `helper/patch_plymouth.py`
-renders the splash from the palette at bootstrap, from `configuration/plymouth/themes/<name>/`,
+renders the splash from the palette at bootstrap, from `configuration/plymouth/theme/`,
 and `helper/patch_web_greeter.py` fills each login theme's variables from its own role map on
 every theme switch — so neither needs anything from the generator beyond the palette, and the
 `plymouth/` directory and `web-greeter-handoff.json` the contract used to list had no reader.

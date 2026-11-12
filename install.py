@@ -176,9 +176,10 @@ def discover_themes(assets_folder_path: str) -> dict[str, str]:
     The manifest's ``name`` has to agree, and is checked rather than trusted. The two are
     written from one value by ``yths.themes``, but nothing here can enforce that at the far
     end -- and a disagreement is not cosmetic: ``patch_plymouth`` finds a preset's boot splash
-    at ``configuration/plymouth/themes/<manifest name>``, so a bundle installed under a
-    directory that says something else would quietly ship no splash at all. Refused here,
-    before anything is installed, rather than discovered at the next boot.
+    where the two disagreeing is a problem in its own right: ``install.py --theme <name>`` names
+    a directory, while everything downstream reads the manifest's ``name``, so a bundle whose two
+    disagree is installed under one identity and configured under another. Refused here, before
+    anything is installed, rather than found later.
 
     Sorted so the numbering the prompt shows is the same on every machine; ``os.listdir``
     order is not.
