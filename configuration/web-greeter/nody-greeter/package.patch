@@ -1,0 +1,119 @@
+--- old/install.js	2024-07-21 11:42:13.920979705 +0900
++++ new/install.js	2024-07-21 11:42:36.466023502 +0900
+@@ -43,9 +43,5 @@ DEST_DIR = argv.DEST_DIR;
+ export async function install() {
+   console.log(`Copying nody-greeter to "${DEST_DIR}"...`);
+   await makeCopy(INSTALL_ROOT, DEST_DIR);
+-  fs.createSymlinkSync(
+-    path.join(DEST_DIR, "opt/nody-greeter/nody-greeter"),
+-    path.join(DEST_DIR, PREFIX, "bin/nody-greeter")
+-  );
+   console.log("\x1b[92mSUCCESS!!\x1b[0m");
+ }
+--- old/package.json
++++ new/package.json
+@@ -7,7 +7,7 @@
+   "type": "module",
+   "scripts": {
+     "start": "electron .",
+-    "rebuild": "electron-rebuild -w node-gtk",
++    "rebuild": "node -e \"require('@electron/rebuild').rebuild({buildPath:process.cwd(),electronVersion:require('electron/package.json').version,extraModules:['node-gtk'],projectRootPath:process.cwd()}).catch(error=>{console.error(error);process.exitCode=1})\"",
+     "build": "npm run build:compile && node make build",
+     "build:compile": "node compile.js && npm run build:themes",
+     "build:theme:gruvbox": "tsc --build themes/themes/gruvbox",
+@@ -63,5 +63,9 @@
+     "node-gtk": "^0.14.0",
+     "winston": "^3.3.3",
+     "yargs": "^17.5.1"
+-  }
++  },
++  "allowScripts": {
++    "electron@27.3.11": true,
++    "esbuild@0.21.5": true
++  }
+ }
+--- old/build.js
++++ new/build.js
+@@ -3,7 +3,9 @@
+  * Then, you can package the "unpacked" folder to whatever you want~
+  */
+ 
+-import packageJson from "./package.json" assert { type: "json" };
++import packageJson from "./package.json" with { type: "json" };
++import electronPackage from "electron/package.json" with { type: "json" };
++import electronRebuild from "@electron/rebuild";
+ import fs from "fs-extra";
+ import path from "path";
+ import childProcess from "child_process";
+@@ -125,24 +127,18 @@ async function compile_bindings() {
+   });
+   spinner.start();
+ 
+-  await new Promise((resolve) => {
+-    childProcess.exec(
+-      `npx electron-rebuild -m . --arch ${ARCH}`,
+-      {
+-        cwd: "./out/main/bindings",
+-        encoding: "utf-8",
+-        stdio: "ignore",
+-      },
+-      (error) => {
+-        if (error) {
+-          console.error(error);
+-          spinner.fail("electron-rebuild failed");
+-          process.exit(1);
+-        }
+-        resolve();
+-      }
+-    );
+-  });
++  try {
++    await electronRebuild.rebuild({
++      buildPath: path.resolve("./out/main/bindings"),
++      electronVersion: electronPackage.version,
++      arch: ARCH,
++      projectRootPath: process.cwd(),
++    });
++  } catch (error) {
++    console.error(error);
++    spinner.fail("electron-rebuild failed");
++    process.exit(1);
++  }
+   spinner.succeed("Bindings compiled succesfully");
+ }
+ 
+@@ -224,22 +220,17 @@ async function ensure_electron_binding() {
+       });
+       spinner.start();
+ 
+-      await new Promise((resolve) => {
+-        childProcess.exec(
+-          `npx electron-rebuild -w node-gtk --build-from-source --arch ${ARCH}`,
+-          {
+-            encoding: "utf-8",
+-            stdio: "ignore",
+-          },
+-          (error) => {
+-            if (error) {
+-              console.error(error);
+-              spinner.fail("electron-rebuild failed");
+-              process.exit(1);
+-            }
+-            resolve();
+-          }
+-        );
+-      });
++      await electronRebuild.rebuild({
++        buildPath: process.cwd(),
++        electronVersion: electronPackage.version,
++        arch: ARCH,
++        extraModules: ["node-gtk"],
++        buildFromSource: true,
++        projectRootPath: process.cwd(),
++      }).catch((error) => {
++        console.error(error);
++        spinner.fail("electron-rebuild failed");
++        process.exit(1);
++      });
+       spinner.succeed("Node-gtk compiled");
+ 
