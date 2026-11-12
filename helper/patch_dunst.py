@@ -11,16 +11,17 @@ from typing import Any
 
 # Resolves whether this runs as ``helper.patch_dunst`` or as a script; see helper/README.md.
 try:
-    from helper.utils import logger, monitor_average
+    from helper.utils import logger, monitor_average, template_path
 except ImportError:
-    from utils import logger, monitor_average
+    from utils import logger, monitor_average, template_path
 
 
 def patch_dunst(configuration: dict[str, Any]) -> None:
+    source_path = template_path("dunst", "dunstrc.template")
     configuration_path = os.path.expanduser("~/.config/dunst/dunstrc")
 
     theme = configuration["state"]["theme"]
-    with open(configuration_path) as input_handle:
+    with open(source_path) as input_handle:
         dunst_configuration = configparser.ConfigParser(interpolation=None)
         dunst_configuration.read_file(input_handle)
 

@@ -27,6 +27,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 import helper.apply_icc
+import helper.patch_configurations
 import helper.screen_configuration
 from helper.utils import (
     install_credentials,
@@ -253,6 +254,22 @@ def write_configuration(configuration: dict[str, Any]) -> None:
     logger.info(f"Installed global configuration to {path}.")
 
 
+def generate_application_configuration(configuration: dict[str, Any]) -> None:
+    """Write the palette-derived half of every app's configuration.
+
+    Installing symlinks the static files; this produces the ones computed from the palette,
+    which are gitignored and therefore absent from a fresh clone. Without it rofi would start
+    with no colour variables to import and kitty with no configuration at all, until the
+    first theme switch happened to generate them.
+    """
+    failed = helper.patch_configurations.patch_all(configuration)
+    if failed:
+        logger.warning(
+            f"These applications were not configured: {', '.join(failed)}. "
+            "Run `python helper/patch_configurations.py` once the cause is fixed."
+        )
+
+
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Install the yths dot files and one of the bundled themes."
@@ -298,7 +315,9 @@ def main(argv: list[str] | None = None) -> int:
         "palette",
     )
     wallpapers = install_wallpapers(bundle_path)
-    write_configuration(assemble_configuration(bundle_path, wallpapers))
+    configuration = assemble_configuration(bundle_path, wallpapers)
+    write_configuration(configuration)
+    generate_application_configuration(configuration)
     return 0
 
 

@@ -10,17 +10,18 @@ from typing import Any
 
 # Resolves whether this runs as ``helper.patch_tmux`` or as a script; see helper/README.md.
 try:
-    from helper.utils import logger
+    from helper.utils import logger, template_path
 except ImportError:
-    from utils import logger
+    from utils import logger, template_path
 
 
 def patch_tmux(configuration: dict[str, Any]) -> None:
+    source_path = template_path("tmux", "tmux.conf.template")
     configuration_path = os.path.expanduser("~/.config/tmux/tmux.conf")
 
     theme = configuration["state"]["theme"]
     output = []
-    with open(configuration_path) as input_handle:
+    with open(source_path) as input_handle:
         for line in input_handle:
             if line.startswith("color"):
                 continue

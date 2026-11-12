@@ -12,16 +12,17 @@ import toml
 
 # Resolves whether this runs as ``helper.patch_starship`` or as a script; see helper/README.md.
 try:
-    from helper.utils import logger
+    from helper.utils import logger, template_path
 except ImportError:
-    from utils import logger
+    from utils import logger, template_path
 
 
 def patch_starship(configuration: dict[str, Any]) -> None:
+    source_path = template_path("starship", "starship.toml.template")
     configuration_path = os.path.expanduser("~/.config/starship.toml")
 
     theme = configuration["state"]["theme"]
-    with open(configuration_path) as input_handle:
+    with open(source_path) as input_handle:
         starship_configuration = toml.load(input_handle)
 
     starship_configuration["palettes"]["theme"]["color0"] = configuration["palette"][theme]["foreground"]

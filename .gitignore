@@ -30,6 +30,16 @@ configuration/kitty/kitty.conf
 configuration/kitty/current-theme.conf
 configuration/kitty/themes/*.conf
 
+# rofi's colour variables, written whole by helper/patch_rofi.py. theme.rasi @imports this
+# file; theme.rasi and config.rasi are the source and stay tracked.
+configuration/rofi/theme_config.rasi
+
+# Three apps keep hand-written settings alongside palette-derived ones, so the patcher reads
+# a tracked <name>.template and writes the output here. Only the output is ignored.
+configuration/tmux/tmux.conf
+configuration/starship/starship.toml
+configuration/dunst/dunstrc
+
 ### web-greeter generated artifacts ###
 # Produced by helper/patch_web_greeter.py — should not be committed.
 configuration/web-greeter/themes/*/theme.css

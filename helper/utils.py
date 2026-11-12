@@ -24,6 +24,21 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 
+#: This repository, resolved through any symlink used to invoke a helper.
+REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+
+def template_path(app: str, filename: str) -> str:
+    """The tracked source a patcher reads for an app whose output lands on a tracked path.
+
+    ``~/.config/<app>`` is a symlink into this repository, so a patcher that read and rewrote
+    its own target would rewrite a tracked file on every theme switch. Reading a template and
+    writing the output beside it keeps the source in version control and the output out of
+    it, which is what .gitignore covers.
+    """
+    return os.path.join(REPOSITORY_ROOT, "configuration", app, filename)
+
+
 def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
     """Mean of ``key`` across the detected monitors, or ``None`` when there are none.
 
