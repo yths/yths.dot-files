@@ -9,7 +9,7 @@
 - [ ] Integrate wallpaper generation script
 - [ ] Add screen lock feature
 - [x] Reference VM with dot files
-    - (2026-05-16) `docs/install.md` carries the QEMU walkthrough under "Setting Up the Virtual Machine"
+    - (2026-05-16) `docs/os-build.md` carries the QEMU walkthrough under "Setting Up the Virtual Machine"
 - [x] Change color names to something meaningful, also show dark theme colors
     - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; both `light` and `dark` modes covered
 

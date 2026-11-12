@@ -35,7 +35,7 @@ Use `-` (hyphen) for bullet lists. Use indentation (two spaces) for nesting. Do 
 
 ## Placeholders
 
-Use `<angle-brackets>` for values the reader must substitute. Define each placeholder on first use within a file — either inline (`<user>` is your Arch username) or in a table at the top of the file (as `docs/install.md` does).
+Use `<angle-brackets>` for values the reader must substitute. Define each placeholder on first use within a file — either inline (`<user>` is your Arch username) or in a table at the top of the file (as `docs/os-build.md` does).
 
 ```bash
 ssh <user>@<remote-ip>
@@ -93,11 +93,12 @@ A README must not:
 
 ## `docs/` Genres
 
-Four files; each one has a single job. Do not blur them.
+Five files; each one has a single job. Do not blur them.
 
 | File | Genre | What goes here |
 |---|---|---|
-| `docs/install.md` | procedure | Step-by-step instructions for getting from a blank disk to a working system. Imperative voice. |
+| `docs/install.md` | procedure | Step-by-step instructions for installing this desktop onto an existing Arch system. Imperative voice. |
+| `docs/os-build.md` | procedure | Step-by-step instructions for getting from a blank disk to a bootable Arch system. Imperative voice. |
 | `docs/notes.md` | concepts | Long-lived explanations of how the system fits together. Declarative voice. Stable across normal development. |
 | `docs/tips.md` | recipes | Short, recipe-style pointers for specific tasks (theme switching, debugging Plymouth, etc.). Imperative voice. |
 | `docs/issues.md` | tracker | Checklist of open and closed work. Closed items get a date and a one-line resolution note. |
@@ -116,7 +117,7 @@ Subdirectory READMEs (`configuration/*/README.md`, `helper/README.md`, `configur
 
 - Frame docs around long-lived concepts. "Widgets subscribe to Redis streams" is stable. "There are 8 widgets: bluetooth, audio, ..." is volatile — put the enumeration in an auto-generated block or omit it.
 - Code is authoritative. If readers need to know "what widgets exist" they can `ls configuration/qtile/widgets/` or read the generated block — the docs don't carry that information independently.
-- Version-pin only where unavoidable. If `docs/install.md` ties to a specific Arch ISO release, add a `> Last verified <date> on Arch ISO <version>` blockquote at the top of the file so staleness is visible.
+- Version-pin only where unavoidable. If `docs/os-build.md` ties to a specific Arch ISO release, add a `> Last verified <date> on Arch ISO <version>` blockquote at the top of the file so staleness is visible.
 
 ## Voice
 
@@ -124,6 +125,7 @@ Subdirectory READMEs (`configuration/*/README.md`, `helper/README.md`, `configur
 |---|---|
 | README | declarative, third-person ("Configuration files...", "Two presets ship...") |
 | `docs/install.md` | imperative, second-person ("Install...", "Replace...", "Run...") |
+| `docs/os-build.md` | imperative, second-person ("Partition...", "Mount...", "Reboot...") |
 | `docs/notes.md` | declarative, technical ("A theme is a bundle...", "Widgets read...") |
 | `docs/tips.md` | imperative, recipe-style ("Run...", "Drop...", "Add...") |
 | `docs/issues.md` | terse summary form ("Add screenshots", "Map all colors for qutebrowser") |
