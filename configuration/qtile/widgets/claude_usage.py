@@ -16,10 +16,10 @@ from typing import Any
 import libqtile.widget.base
 import redis
 import shared.stream
+import symbols as vocabulary
 
 
 class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
-    ICON = "󰚩"
     # The robot glyph's ink overruns its cell by 0.418em where the bluetooth headset only
     # overruns by 0.250em, so a single space leaves it visually glued to the bars. Iosevka
     # forces every space character to a full cell, so the shortfall is made up with a
@@ -28,11 +28,9 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     #: Shown instead of ICON when the backend cannot authenticate at all. The producer
     #: reads ~/.claude/.credentials.json and deliberately never refreshes it, so an
     #: expired token is a normal steady state, not a blip -- worth its own glyph.
-    ICON_DEAD = "󱚡"  # U+F16A1 md-robot_dead
     #: ``reason`` values that mean "re-authenticate". Everything else (network_error,
     #: bad_response, a non-auth http_*) is transient and keeps the live glyph, dimmed.
     AUTH_FAILURES = frozenset({"no_credentials", "token_expired", "http_401", "http_403"})
-    LEVELS = ("▁", "▂", "▃", "▄", "▅", "▆", "▇", "█")
     DIM_ALPHA = 24576
 
     def __init__(
@@ -42,10 +40,16 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         notification_color: str = "#ff0000",
         warning_threshold: float = 75,
         critical_threshold: float = 90,
+        symbols: dict[str, Any] | None = None,
+        strings: dict[str, str] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
+        self.strings = strings or vocabulary.STRINGS
 
         self.warning_color = warning_color
         self.notification_color = notification_color
@@ -85,7 +89,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
 
     def _level(self, percent: float) -> str:
         percent = min(max(percent, 0), 100)
-        return self.LEVELS[round(self._scale(percent, 0, 100, 0, len(self.LEVELS) - 1))]
+        return self.symbols['meter.ramp'][round(self._scale(percent, 0, 100, 0, len(self.symbols['meter.ramp']) - 1))]
 
     def _duration(self, seconds: Any) -> str:
         seconds = self._number(seconds)
@@ -172,16 +176,16 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return ""
 
         if not measurement.get("available"):
-            reason = measurement.get("reason") or "unavailable"
+            reason = measurement.get("reason") or self.strings["claude.unavailable"]
             if reason in self.AUTH_FAILURES:
                 # Full opacity, unlike the transient states below: this one needs acting
                 # on, and the dim "no data right now" treatment would bury it.
                 if self.expanded:
-                    return f"{self.ICON_DEAD}{self.ICON_GAP}{reason}"
-                return self._icon_only(self.ICON_DEAD)
-            body = self._icon_only(self.ICON)
+                    return f"{self.symbols['claude.dead']}{self.ICON_GAP}{reason}"
+                return self._icon_only(self.symbols['claude.dead'])
+            body = self._icon_only(self.symbols['claude.icon'])
             if self.expanded:
-                body = f"{self.ICON}{self.ICON_GAP}{reason}"
+                body = f"{self.symbols['claude.icon']}{self.ICON_GAP}{reason}"
             return f"<span alpha='{self.DIM_ALPHA}'>{body}</span>"
 
         readings = [
@@ -190,7 +194,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         ]
         readings = [reading for reading in readings if reading is not None]
         if not readings:
-            return f"<span alpha='{self.DIM_ALPHA}'>{self._icon_only(self.ICON)}</span>"
+            return f"<span alpha='{self.DIM_ALPHA}'>{self._icon_only(self.symbols['claude.icon'])}</span>"
 
         if self.expanded:
             parts = [self._detail(reading) for reading in readings]
@@ -201,13 +205,13 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
                         f"{scoped['model']} {scoped['percent']:.0f}%", scoped["severity"]
                     )
                 )
-            output = f"{self.ICON}{self.ICON_GAP}" + "  ".join(parts)
+            output = f"{self.symbols['claude.icon']}{self.ICON_GAP}" + "  ".join(parts)
         else:
             blocks = "".join(
                 self._colorize(self._level(reading["percent"]), reading["severity"])
                 for reading in readings
             )
-            output = f"{self.ICON}{self.ICON_GAP}{blocks}"
+            output = f"{self.symbols['claude.icon']}{self.ICON_GAP}{blocks}"
 
         if measurement.get("stale"):
             output = f"<span alpha='{self.DIM_ALPHA}'>{output}</span>"
@@ -230,14 +234,14 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     def _summary(self) -> str:
         measurement = self.measurement
         if not measurement:
-            return "no data"
+            return self.strings["claude.no_data"]
         if not measurement.get("available"):
             return f"unavailable ({measurement.get('reason') or 'unknown'})"
 
         parts = []
         for label, kind, window_key in (
-            ("session", "session", "five_hour"),
-            ("weekly", "weekly_all", "seven_day"),
+            (self.strings["claude.session"], "session", "five_hour"),
+            (self.strings["claude.weekly"], "weekly_all", "seven_day"),
         ):
             reading = self._reading(measurement, kind, window_key)
             if reading is not None:
@@ -246,7 +250,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
                 )
 
         if not parts:
-            return "no data"
+            return self.strings["claude.no_data"]
 
         scoped = self._scoped(measurement)
         if scoped is not None:
@@ -255,7 +259,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         extra_usage = self._dict(measurement.get("extra_usage"))
         parts.append("credits " + ("enabled" if extra_usage.get("is_enabled") else "disabled"))
         if measurement.get("stale"):
-            parts.append("stale")
+            parts.append(self.strings["claude.stale"])
 
         return "   ".join(parts)
 
@@ -264,7 +268,8 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         # a single line of plain text.
         with contextlib.suppress(OSError):
             subprocess.Popen(
-                args=["notify-send", "-u", "low", "Claude usage", self._summary()]
+                args=["notify-send", "-u", "low", self.strings["claude.notification_title"],
+                      self._summary()]
             )
 
     def mouse_enter(self, x: int, y: int) -> None:

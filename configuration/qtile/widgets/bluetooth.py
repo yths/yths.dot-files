@@ -9,16 +9,17 @@ from typing import Any
 import libqtile.widget.base
 import redis
 import shared.stream
+import symbols as vocabulary
 
 
 class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
-    CAPACITY_SYMBOLS = ("▁", "▂", "▃", "▄", "▅", "▆", "▇", "█")
 
     def __init__(
         self,
         r: redis.Redis | None,
         icons: dict[str, str] | None = None,
         warning_color: str = "#ff0000",
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
@@ -26,6 +27,9 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
 
         self.icons = icons if icons is not None else {}
         self.warning_color = warning_color
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
     def _scale(
         self, value: float, in_min: float, in_max: float, out_min: float, out_max: float
@@ -37,7 +41,7 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
 
     def _level_index(self, capacity: float) -> int:
         capacity = min(max(capacity, 0), 100)
-        return round(self._scale(capacity, 0, 100, 0, len(self.CAPACITY_SYMBOLS) - 1))
+        return round(self._scale(capacity, 0, 100, 0, len(self.symbols["meter.ramp"]) - 1))
 
     def poll(self) -> str:
         measurement = shared.stream.read_measurement(self.r, "bluetooth")
@@ -58,7 +62,7 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
                 index = self._level_index(float(capacity))
             except (TypeError, ValueError):
                 continue
-            level = self.CAPACITY_SYMBOLS[index]
+            level = self.symbols["meter.ramp"][index]
             if index < 2:
                 output += f"<span color='{self.warning_color}'>{level}</span>"
             else:

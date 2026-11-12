@@ -18,12 +18,30 @@
     function strings() { return state.config.strings || {}; }
     function symbols() { return state.config.symbols || {}; }
 
-    async function load_theme_config() {
+    async function fetch_json(name) {
         try {
-            const r = await fetch("theme.json", { cache: "no-store" });
+            const r = await fetch(name, { cache: "no-store" });
             if (!r.ok) return null;
             return await r.json();
         } catch (_) { return null; }
+    }
+
+    // The desktop's own symbol and string vocabulary, written here by
+    // helper/patch_web_greeter.py from the active theme bundle. It is the *base*: this theme's
+    // theme.json is merged over it, so a login theme still has the last word on anything it
+    // names, and inherits the rest rather than restating every icon the bar already defines.
+    // Absent on a greeter that has not been patched, which is why every read has a fallback.
+    async function load_theme_config() {
+        const [vocabulary, theme] = await Promise.all([
+            fetch_json("vocabulary.json"),
+            fetch_json("theme.json"),
+        ]);
+        if (!vocabulary && !theme) return null;
+        return {
+            ...(theme || {}),
+            symbols: { ...(vocabulary || {}).symbols, ...((theme || {}).symbols || {}) },
+            strings: { ...(vocabulary || {}).strings, ...((theme || {}).strings || {}) },
+        };
     }
 
     function apply_theme_config(tj) {

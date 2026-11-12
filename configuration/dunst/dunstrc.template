@@ -5,7 +5,7 @@ frame_width = 0
 font = "Iosevka NF 10"
 padding = 4
 horizontal_padding = 4
-format = " %s %b"
+format = "%s %b"
 offset = 0x67
 origin = top-left
 width = 4096
@@ -21,13 +21,13 @@ progress_bar_frame_width = 0
 
 [urgency_normal]
 foreground = "#d5d1d1"
-format = " <span foreground='#c07726'>%s</span>\n  %b"
+format = "<span foreground='#c07726'>%s</span>\n  %b"
 
 [urgency_critical]
 foreground = "#d5d1d1"
-format = " <span foreground='#958e28'>%s</span>\n  %b"
+format = "<span foreground='#958e28'>%s</span>\n  %b"
 
 [urgency_low]
 foreground = "#d5d1d1"
-format = " <span foreground='#afabab'>%s</span>\n  %b"
+format = "<span foreground='#afabab'>%s</span>\n  %b"
 

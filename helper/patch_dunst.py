@@ -11,8 +11,10 @@ from typing import Any
 
 # Resolves whether this runs as ``helper.patch_dunst`` or as a script; see helper/README.md.
 try:
+    from helper import symbols
     from helper.utils import logger, monitor_average, template_path
 except ImportError:
+    import symbols
     from utils import logger, monitor_average, template_path
 
 
@@ -21,12 +23,17 @@ def patch_dunst(configuration: dict[str, Any]) -> None:
     configuration_path = os.path.expanduser("~/.config/dunst/dunstrc")
 
     theme = configuration["state"]["theme"]
+    glyphs, _ = symbols.resolve(configuration)
+    prefix = glyphs["notification.prefix"]
     with open(source_path) as input_handle:
         dunst_configuration = configparser.ConfigParser(interpolation=None)
         dunst_configuration.read_file(input_handle)
 
     dunst_configuration["global"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["global"]["background"] = f'"{configuration["palette"][theme]["background"]}"'
+    # The global format is the fallback for any urgency the sections below do not name.
+    # Written here rather than left in the template so the prefix is declared once.
+    dunst_configuration["global"]["format"] = f'"{prefix} %s %b"'
     dunst_configuration["global"]["separator_color"] = f'"{configuration["palette"][theme]["background"]}"'
     dunst_font_size = round(configuration["font"]["size"] * 0.714)
     dunst_configuration["global"]["font"] = (
@@ -42,17 +49,17 @@ def patch_dunst(configuration: dict[str, Any]) -> None:
 
     dunst_configuration["urgency_normal"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_normal"]["format"] = (
-        f"\" <span foreground='{configuration["palette"][theme]["notification"]}'>%s</span>\\n  %b\""
+        f"\"{prefix} <span foreground='{configuration["palette"][theme]["notification"]}'>%s</span>\\n  %b\""
     )
 
     dunst_configuration["urgency_critical"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_critical"]["format"] = (
-        f"\" <span foreground='{configuration["palette"][theme]["warning"]}'>%s</span>\\n  %b\""
+        f"\"{prefix} <span foreground='{configuration["palette"][theme]["warning"]}'>%s</span>\\n  %b\""
     )
 
     dunst_configuration["urgency_low"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_low"]["format"] = (
-        f"\" <span foreground='{configuration["palette"][theme]["neutral"]}'>%s</span>\\n  %b\""
+        f"\"{prefix} <span foreground='{configuration["palette"][theme]["neutral"]}'>%s</span>\\n  %b\""
     )
 
     with open(configuration_path, "w") as output_handle:

@@ -15,6 +15,7 @@ import pickle
 
 import patch_web_greeter
 import pytest
+import symbols
 
 PALETTE = {"background": "#322f2f", "foreground": "#d5d1d1", "highlight": "#4d91c7",
            "neutral": "#afabab", "failure": "#cd6869"}
@@ -98,3 +99,49 @@ def test_available_themes_skips_the_shared_assets() -> None:
 
 def test_the_default_theme_is_one_that_exists() -> None:
     assert patch_web_greeter.DEFAULT_THEME in patch_web_greeter.available_themes()
+
+
+# ------------------------------------------------- the desktop vocabulary under the theme
+#
+# The login screen had its own symbols and strings before the rest of the desktop did, and
+# they stay: its three-layer fallback (inline HTML, a CSS var() default, `|| "..."` in JS)
+# works when JavaScript never runs, which nothing else here can claim. What changes is where
+# the *base* comes from -- the bundle, so an icon shared with the bar is named once.
+
+
+def test_the_vocabulary_is_namespaced_for_the_greeter(configuration: dict) -> None:
+    vocabulary = patch_web_greeter.theme_vocabulary(configuration)
+    assert "shutdown" in vocabulary["symbols"], "greeter.* should arrive without its prefix"
+    assert "auth_failed" in vocabulary["strings"]
+    # The bar's entries must not leak in: theme.json's keys are unprefixed, so a stray
+    # `battery.charging` would sit beside the greeter's own `battery_charging` and confuse
+    # whichever of the two a reader found first.
+    assert not any("." in key for key in vocabulary["symbols"])
+    assert not any("." in key for key in vocabulary["strings"])
+
+
+def test_the_greeter_theme_still_has_the_last_word() -> None:
+    """vocabulary.json is the base; theme.json is merged over it in _shared/logic.js."""
+    logic = (
+        pathlib.Path(patch_web_greeter.THEME_SOURCE_ROOT) / "_shared" / "logic.js"
+    ).read_text()
+    merge = logic[logic.index("async function load_theme_config"):]
+    merge = merge[: merge.index("\n    }")]
+    assert "vocabulary.json" in merge and "theme.json" in merge
+    # The spread order is the whole contract: vocabulary first, theme second.
+    assert merge.index("(vocabulary || {}).symbols") < merge.index("(theme || {}).symbols")
+    assert merge.index("(vocabulary || {}).strings") < merge.index("(theme || {}).strings")
+
+
+def test_a_theme_that_names_no_symbols_inherits_the_desktops(configuration: dict) -> None:
+    vocabulary = patch_web_greeter.theme_vocabulary(configuration)
+    assert vocabulary["symbols"]["shutdown"] == symbols.SYMBOLS["greeter.shutdown"]
+
+
+def test_the_vocabulary_falls_back_to_ascii(configuration: dict) -> None:
+    """A bundle carrying no overrides must still give the login screen something to draw."""
+    configuration.pop("symbols", None)
+    vocabulary = patch_web_greeter.theme_vocabulary(configuration)
+    assert vocabulary["symbols"]
+    assert all(value.isascii() for value in vocabulary["symbols"].values())
+    assert all(value.isascii() for value in vocabulary["strings"].values())

@@ -15,6 +15,7 @@ import redis
 import shared.spectrum
 import shared.state
 import shared.stream
+import symbols as vocabulary
 
 try:
     import sounddevice
@@ -47,6 +48,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         device_id: int = 31,
         notification_color: str = "#ff0000",
         configuration_file_path: str | None = None,
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
@@ -78,6 +80,9 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             self.device_properties = None
             self.stream = None
         self.visualization = shared.spectrum.SILENCE * self.NUM_BARS
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws a meter.
+        self.symbols = symbols or vocabulary.SYMBOLS
         self.past_values = numpy.zeros(self.NUM_BARS, dtype=float)
 
         self.mode = self._load_mode()
@@ -216,7 +221,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             # Capture too short to fill the bars; keep the previous frame on screen.
             return
         self.past_values = SMOOTHING * self.past_values + (1 - SMOOTHING) * current
-        self.visualization = shared.spectrum.render(self.past_values)
+        self.visualization = shared.spectrum.render(self.past_values, self.symbols["meter.ramp"])
 
     def poll(self) -> str:
         if self.stream is None:

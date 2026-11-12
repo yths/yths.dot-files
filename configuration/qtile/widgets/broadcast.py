@@ -18,6 +18,7 @@ import libqtile.widget.base
 import redis
 import shared.state
 import shared.stream
+import symbols as vocabulary
 
 
 class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
@@ -27,6 +28,7 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
         notification_color: str = "#00ff00",
         warning_color: str = "#ff0000",
         configuration_file_path: str | None = None,
+        symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
@@ -34,6 +36,9 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
 
         self.warning_color = warning_color
         self.notification_color = notification_color
+        #: The active vocabulary, passed down from config.py the same way the colours are.
+        #: Defaults to ASCII so a widget built without one still draws something.
+        self.symbols = symbols or vocabulary.SYMBOLS
 
         self.configuration_file_path = (
             configuration_file_path
@@ -76,7 +81,7 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
         streaming = measurement.get("streaming", False)
         obs = measurement.get("obs", False)
 
-        icon = "󱗝" if obs else "󰅘"
+        icon = self.symbols["broadcast.on" if obs else "broadcast.off"]
 
         if streaming:
             if self.condition != "urgent":

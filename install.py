@@ -5,6 +5,19 @@ Discovers theme bundles under ``assets/``, picks the one setup.toml names, write
 ``~/.config/config.json``, and symlinks each per-app configuration tree from
 ``configuration/`` into ``~/.config/``. Nothing is copied, so the installed configuration is
 this repository. See docs/architecture.md for the full theme-bundle lifecycle.
+
+Two ways in, and the difference is which machine you are on::
+
+    python install.py                 # a new machine: symlink everything, write the
+                                      # configuration, apply the theme
+    python install.py --migrate       # a machine already installed, after pulling an
+                                      # update: refresh the configuration against the
+                                      # repository, keeping the state this machine is in
+
+A plain install resets ``state`` to setup.toml's defaults, which is right for a machine that
+has none yet and wrong for one that has been running -- a pinned theme would revert to
+automatic switching. That is the whole reason migrating is its own path rather than advice to
+run the installer again.
 """
 
 import argparse
@@ -29,10 +42,12 @@ except ImportError:
 import helper.apply_icc
 import helper.patch_configurations
 import helper.screen_configuration
+import helper.symbols
 from helper.utils import (
     install_credentials,
     install_file,
     install_folder,
+    merge_overrides,
     read_setup,
 )
 
@@ -248,10 +263,13 @@ def install_wallpapers(bundle_path: str) -> dict[str, str]:
 def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict[str, Any]:
     """Build ``~/.config/config.json`` from the bundle plus what this machine reports.
 
-    Only ``name`` survives from the bundle's own manifest. Monitors come from the detected
-    hardware, the palette from the installed ``palette.pkl``, and the wallpaper paths from
-    wherever the installer just put them -- which is why a bundle's copy of any of these
-    can rot without anything failing. See docs/architecture.md for the contract.
+    ``name`` survives from the bundle's own manifest, and so do its ``symbols`` and
+    ``strings`` -- but as overrides rather than as values: they are merged over the ASCII
+    vocabulary in ``helper/symbols.py``, so a bundle carrying neither still produces a
+    desktop that renders without a Nerd Font. Monitors come from the detected hardware, the
+    palette from the installed ``palette.pkl``, and the wallpaper paths from wherever the
+    installer just put them -- which is why a bundle's copy of any of *those* can rot without
+    anything failing. See docs/architecture.md for the contract.
     """
     with open(os.path.join(bundle_path, "config.json"), encoding="utf-8") as handle:
         configuration = json.load(handle)
@@ -269,7 +287,75 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
         "size": SETUP["desktop"]["font_size"],
     }
     configuration["state"] = dict(SETUP["state"])
+    configuration.update(theme_vocabulary(configuration))
     return configuration
+
+
+#: What ``~/.config/config.json`` holds that this machine decided rather than the repository:
+#: the runtime state qtile writes back to, the detected hardware, and the wallpaper paths the
+#: installer resolved. A migration keeps these and re-derives everything else, which is the
+#: whole difference between migrating and reinstalling -- a reinstall resets ``state``, so a
+#: pinned theme quietly reverts to automatic switching.
+MACHINE_OWNED = ("state", "monitors", "wallpapers")
+
+
+def theme_vocabulary(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """The symbol and string vocabulary: ASCII defaults with the bundle's overrides on top.
+
+    One definition, called from both paths below, because an install and a migration have to
+    produce the same thing -- a machine where the two disagreed would look different before
+    and after an update with nothing to say why.
+    """
+    return {
+        "symbols": merge_overrides(helper.symbols.SYMBOLS, bundle.get("symbols") or {}),
+        "strings": merge_overrides(helper.symbols.STRINGS, bundle.get("strings") or {}),
+    }
+
+
+def migrate_configuration(
+    bundle_path: str, existing: dict[str, Any]
+) -> tuple[dict[str, Any], list[str]]:
+    """Bring an existing ``~/.config/config.json`` up to what the repository now expects.
+
+    An installed configuration is written once and then lived in. When the repository gains a
+    field -- the symbol vocabulary is the newest -- every machine already installed keeps a
+    file that predates it, and the consumers fall back rather than fail, so nothing announces
+    that half the desktop is running on defaults. This re-derives what the repository owns,
+    keeps what the machine owns, and reports both.
+
+    Returns the configuration and a line per change, so an explicit command can say what it
+    did instead of rewriting the file silently.
+    """
+    with open(os.path.join(bundle_path, "config.json"), encoding="utf-8") as handle:
+        bundle = json.load(handle)
+
+    migrated = {key: existing[key] for key in MACHINE_OWNED if key in existing}
+    changes = []
+
+    # Re-derived: the bundle names it, setup.toml sizes it, palette.pkl colours it. Each is a
+    # copy taken at install time, and each goes stale when the repository moves under it.
+    migrated["name"] = bundle.get("name", existing.get("name"))
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
+    ) as handle:
+        migrated["palette"] = pickle.load(handle)
+    migrated["font"] = {
+        "family": SETUP["desktop"]["font_family"],
+        "size": SETUP["desktop"]["font_size"],
+    }
+    migrated.update(theme_vocabulary(bundle))
+
+    for field in ("name", "palette", "font", "symbols", "strings"):
+        if existing.get(field) != migrated[field]:
+            was = "added" if field not in existing else "refreshed"
+            changes.append(f"{was} {field}")
+    for field in sorted(set(existing) - set(migrated)):
+        changes.append(f"dropped {field}, which the schema no longer has")
+    for field in MACHINE_OWNED:
+        if field in migrated:
+            changes.append(f"kept {field}")
+
+    return migrated, changes
 
 
 def write_configuration(configuration: dict[str, Any]) -> None:
@@ -311,7 +397,54 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Install this theme by name, overriding setup.toml's [desktop] theme.",
     )
+    parser.add_argument(
+        "--migrate",
+        action="store_true",
+        help="Refresh an existing ~/.config/config.json against the current repository and "
+             "re-run the patchers, keeping this machine's state. Symlinks nothing and "
+             "prompts for nothing. Use after pulling an update; use a plain install for a "
+             "new machine.",
+    )
     return parser.parse_args(argv)
+
+
+def run_migration(assets_folder_path: str, theme: str | None) -> int:
+    """Refresh this machine's configuration without reinstalling it.
+
+    Deliberately explicit and deliberately narrow. It does not symlink, prompt, or detect
+    hardware: those are install-time decisions, and a migration that quietly redid them would
+    be a reinstall wearing a different name. The theme it migrates to is the one already
+    installed unless ``--theme`` names another, because on a machine that has been running a
+    while the installed theme and setup.toml's need not agree.
+    """
+    path = os.path.expanduser(os.path.join("~", ".config", "config.json"))
+    if not os.path.exists(path):
+        logger.info(f"No configuration at {path}; run the installer instead of migrating.")
+        return 1
+    with open(path, encoding="utf-8") as handle:
+        existing = json.load(handle)
+
+    try:
+        theme_paths = discover_themes(assets_folder_path)
+    except InconsistentBundle as error:
+        logger.info(str(error))
+        return 1
+    selected = theme or existing.get("name")
+    if selected not in theme_paths:
+        logger.info(
+            f"{selected!r} is not a bundle under {assets_folder_path}; "
+            f"this repository ships {sorted(theme_paths)}."
+        )
+        return 1
+
+    configuration, changes = migrate_configuration(theme_paths[selected], existing)
+    logger.info(f"Migrating {path} against the {selected} bundle:")
+    for change in changes:
+        logger.info(f"  {change}")
+    write_configuration(configuration)
+    generate_application_configuration(configuration)
+    logger.info("Migrated. Reload qtile to pick up the refreshed configuration.")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -326,6 +459,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")
+
+    if arguments.migrate:
+        return run_migration(assets_folder_path, arguments.theme)
 
     try:
         theme_paths = discover_themes(assets_folder_path)

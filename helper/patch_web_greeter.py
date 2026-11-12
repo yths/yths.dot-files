@@ -27,11 +27,13 @@ import tempfile
 from typing import Any
 
 try:
+    from helper import symbols
     from helper.utils import logger, root_prefix
 except ImportError:
     # Reached when this file runs as a script: sys.path[0] is then helper/, not the
     # repository root, so the package-qualified form cannot resolve. Both branches land on
     # the same loguru-or-stdlib fallback defined once in helper/utils.py.
+    import symbols
     from utils import logger, root_prefix
 
 #: Where web-greeter looks for themes. Root-owned, which is why installing is its own stage.
@@ -78,6 +80,31 @@ def render_theme_css(variables: dict[str, str]) -> str:
     return f":root {{\n{body}}}\n"
 
 
+def theme_vocabulary(configuration: dict[str, Any]) -> dict[str, dict[str, str]]:
+    """The desktop's symbols and strings, under the names a greeter theme uses.
+
+    The vocabulary namespaces the login screen's entries ``greeter.*`` so they cannot collide
+    with the bar's; the greeter knows them without that prefix, because its own ``theme.json``
+    has always spelled them that way. Written beside the theme as ``vocabulary.json`` and
+    merged *under* ``theme.json`` by ``_shared/logic.js`` -- so a login theme keeps the last
+    word, and stops having to restate every icon the rest of the desktop already names.
+    """
+    glyphs, strings = symbols.resolve(configuration)
+    prefix = "greeter."
+    return {
+        "symbols": {
+            key.removeprefix(prefix): value
+            for key, value in glyphs.items()
+            if key.startswith(prefix)
+        },
+        "strings": {
+            key.removeprefix(prefix): value
+            for key, value in strings.items()
+            if key.startswith(prefix)
+        },
+    }
+
+
 def patch_web_greeter(configuration: dict[str, Any]) -> None:
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     themes_dir = os.path.join(repo, "configuration", "web-greeter", "themes")
@@ -103,6 +130,9 @@ def patch_web_greeter(configuration: dict[str, Any]) -> None:
         variables = theme_variables(configuration, tj, os.path.basename(link))
         with open(os.path.join(theme_dir, "theme.css"), "w") as fh:
             fh.write(render_theme_css(variables))
+
+        with open(os.path.join(theme_dir, "vocabulary.json"), "w") as fh:
+            json.dump(theme_vocabulary(configuration), fh, indent=4)
 
         shared_dst = os.path.join(theme_dir, "_shared")
         if os.path.lexists(shared_dst):

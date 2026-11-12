@@ -1,11 +1,13 @@
 """The README's generated summary and the preview rendered from the theme."""
 
 import ast
+import json
 import pathlib
 import pickle
 
 import list_configured
 import render_preview
+import symbols
 import utils
 
 REPO = pathlib.Path(utils.REPOSITORY_ROOT)
@@ -45,14 +47,23 @@ def test_the_renderer_reads_only_the_theme_bundle() -> None:
         and node.func.id == "open" and node.args
     ]
     assert opened, "expected the renderer to read the palette"
-    assert all("palette.pkl" in path or "DIGEST" in path for path in opened), opened
+    # The bundle's own manifest joined the palette when the bar's glyphs became the theme's.
+    # It is still `assets/<name>/`, which is the whole point -- what must stay out is the
+    # *session's* config.json under ~, and `expanduser` below is what keeps it out.
+    assert all(
+        "palette.pkl" in path or "config.json" in path or "DIGEST" in path
+        for path in opened
+    ), opened
+    assert all("bundle" in path or "DIGEST" in path for path in opened), (
+        "every read must be rooted at the bundle directory"
+    )
 
 
 def test_the_renderer_touches_no_session_source() -> None:
     source = (REPO / "helper" / "render_preview.py").read_text()
     body = source.split('"""', 2)[2]        # skip the module docstring, which discusses them
     for forbidden in ("subprocess", "socket", "getuser", "gethostname", "environ",
-                      "expanduser", "config.json"):
+                      "expanduser"):
         assert forbidden not in body, f"the renderer reaches for {forbidden}"
 
 
@@ -68,9 +79,13 @@ def test_the_digest_covers_both_the_palette_and_the_font() -> None:
 def test_the_committed_preview_matches_the_committed_palette() -> None:
     # The images are tracked, which is only defensible while they cannot fall behind.
     setup = utils.read_setup()
-    with (REPO / "assets" / setup["desktop"]["theme"] / "palette.pkl").open("rb") as handle:
+    bundle = REPO / "assets" / setup["desktop"]["theme"]
+    with (bundle / "palette.pkl").open("rb") as handle:
         palette = pickle.load(handle)
-    expected = render_preview.palette_digest(palette, setup["desktop"]["font_family"])
+    glyphs, _ = symbols.resolve(json.loads((bundle / "config.json").read_text()))
+    expected = render_preview.palette_digest(
+        palette, setup["desktop"]["font_family"], glyphs
+    )
     recorded = (REPO / "docs" / "preview" / "rendered-from.txt").read_text().strip()
     assert recorded == expected, "run `python helper/render_preview.py`"
 

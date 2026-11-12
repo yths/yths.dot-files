@@ -12,6 +12,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **list_dependencies** — Map every third-party Python import in this repo to the Arch package providing it.
 - **list_keybindings** — List every keyboard binding configured across the tools in this repo.
 - **list_palette** — Summarise what a theme sets and where every one of those values is used.
+- **list_symbols** — List the symbol and string vocabulary, what falls back to what, and who reads each entry.
 - **list_themes** — List every theme bundle under ``assets/``.
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
@@ -28,6 +29,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **preview_audio** — Preview the qtile audio meter in a terminal and pick a capture device.
 - **render_preview** — Render a preview of the configured desktop from the palette, not from a screen.
 - **screen_configuration** — Detect connected monitors via ``screeninfo``.
+- **symbols** — The symbols and strings every surface draws, in ASCII, for a theme to override.
 - **utils** — Common helpers shared by ``install.py`` and the patchers.
 <!-- END: HELPERS -->
 

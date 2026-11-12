@@ -19,7 +19,8 @@ layout is the contract `install.py` reads:
 
 ```text
 assets/<name>/
-  config.json                       # name, font, wallpapers, state
+  config.json                       # name, font, wallpapers, state,
+                                    # and optionally symbols and strings
   palette.pkl                       # {mode: {token: hex}} — the colours everything downstream reads
   wallpapers/
     wallpaper-light.png
@@ -27,9 +28,13 @@ assets/<name>/
     wallpaper-dark.png
     wallpaper-dark-highlight.png
   wallpapers.json                   # optional: which renderer drew them, and at what size
-  plymouth/                         # optional: .plymouth INI + tarball for plymouth-set-default-theme
-  web-greeter-handoff.json          # optional: hints for the future web-greeter generator
 ```
+
+The boot splash and the login screen are not part of a bundle. `helper/patch_plymouth.py`
+renders the splash from the palette at bootstrap, from `configuration/plymouth/themes/<name>/`,
+and `helper/patch_web_greeter.py` fills each login theme's variables from its own role map on
+every theme switch — so neither needs anything from the generator beyond the palette, and the
+`plymouth/` directory and `web-greeter-handoff.json` the contract used to list had no reader.
 
 Any change to this schema needs to land in both repositories at once.
 
@@ -40,9 +45,16 @@ unreadable here. The token vocabulary is in
 [palette-semantics.md](palette-semantics.md); `yths.themes` holds the same list as an enum and
 has a contract test asserting the two agree against this repository's tracked bundle.
 
-Of the manifest, `install.py` consumes only `name`. It detects `monitors` from the hardware,
+Of the manifest, `install.py` consumes `name` and — since the symbol vocabulary — the
+optional `symbols` and `strings` blocks, which it merges over the ASCII defaults in
+[`helper/symbols.py`](../helper/symbols.py) rather than reading as values. Those two are the
+only load-bearing keys besides `name`, and both are optional: a bundle that omits them gets a
+desktop that renders without a Nerd Font, which is the point of shipping ASCII as the default
+rather than as a fallback somebody has to select. See [symbols.md](symbols.md).
+
+Everything else it derives. It detects `monitors` from the hardware,
 loads `palette` from `palette.pkl`, links `wallpapers` from the bundle's own `wallpapers/`
-directory, and takes `font` and `state` from [setup.toml](../setup.toml), so the remaining
+directory, and takes `font` and `state` from [setup.toml](../setup.toml), so those remaining
 keys are descriptive rather than load-bearing —
 they record what the bundle was generated for. Keep them consistent with
 [config-schema.md](config-schema.md) regardless: a manifest that disagreed with the schema is
