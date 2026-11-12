@@ -1,8 +1,8 @@
 # Shared Qtile Modules
 
-Code used by more than one bar cell. These are not widgets and do not appear in the bar;
-they sit beside [`widgets/`](../widgets/README.md) rather than inside it, so that directory
-can hold widgets and nothing else.
+Code the qtile configuration needs that is not a bar cell. Nothing here appears in the
+bar; these modules sit beside [`widgets/`](../widgets/README.md) rather than inside it, so
+that directory can hold widgets and nothing else.
 
 `shared` is importable from a widget as `import shared.stream` because qtile puts its
 configuration directory — the parent of both `shared/` and `widgets/` — on `sys.path`.
@@ -25,6 +25,12 @@ Neither directory needs an `__init__.py`.
   `config.py` calls it when a display is plugged in or unplugged, and
   `helper/screen_configuration.py` calls it at install time, so the geometry every scaled
   size derives from has one definition.
+- **`hover_bar.py`** — `HoverBar`, the bar the screens are built with. `libqtile.bar.Bar`
+  loses hover events: its hit test leaves a strip along the bottom edge of the bar that
+  belongs to a widget visually but answers "no widget", and its dispatch stays silent unless
+  a widget is on *both* sides of the move. One crossing of that strip left a cell expanded
+  with the pointer elsewhere. `HoverBar` bounds the hit test to where widgets are actually
+  drawn and dispatches on every change, including to and from nothing.
 - **`spectrum.py`** — the FFT-to-block-glyph maths behind the audio level meter. Pure: it
   takes samples and returns numbers or a string, with no reference to PortAudio, qtile or
   the bar. `widgets/audio.py` renders through it, and so does
@@ -33,9 +39,15 @@ Neither directory needs an `__init__.py`.
 
 ## What Belongs Here
 
-Code that two or more widgets need, or that a widget shares with a tool outside the bar.
-A module used by exactly one widget belongs in that widget.
+Code that two or more widgets need, that a widget shares with a tool outside the bar, or
+that the configuration itself needs and no single widget owns. A module used by exactly one
+widget belongs in that widget.
 
-Nothing here may import `libqtile` — that is the line between this directory and
-`widgets/`, and `helper/gendocs.py` reads it literally when it checks that `widgets/`
-contains only widgets.
+The line between this directory and `widgets/` is whether the module *is* a bar cell — a
+`libqtile.widget.base` subclass. `helper/gendocs.py` reads that literally, and the commit
+gate refuses a module in `widgets/` that is not one.
+
+Prefer not importing `libqtile` here: `stream`, `state`, `monitors` and `spectrum` are all
+pure, which is why they can be tested, and reused by `helper/`, without a running window
+manager. `hover_bar` is the exception and has to be, since it subclasses a qtile class — its
+tests build the bar geometry by hand rather than starting qtile.

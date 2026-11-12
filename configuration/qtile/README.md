@@ -11,7 +11,7 @@ desktop at the next restart.
 |---|---|
 | `config.py` | keybindings, groups, layouts, screens, and the bar's widget list |
 | [`widgets/`](widgets/README.md) | one module per bar cell |
-| [`shared/`](shared/README.md) | code more than one cell needs |
+| [`shared/`](shared/README.md) | code the configuration needs that is not a bar cell |
 
 `config.py` reads `~/.config/config.json` at startup for the palette, font and monitor
 geometry, and opens one Redis connection pool that it passes to every cell. Cells never open

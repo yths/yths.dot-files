@@ -64,6 +64,7 @@ except ImportError:
 except redis.exceptions.ConnectionError:
     r = None
 
+import shared.hover_bar
 import shared.monitors
 import widgets.audio
 import widgets.bluetooth
@@ -533,7 +534,7 @@ if FOCUS_BORDER_WIDTH:
 
 screens = [
     Screen(
-        top=bar.Bar(
+        top=shared.hover_bar.HoverBar(
             [
                 widget.TextBox(
                     f"{icons['monitor']}{subscript_characters[m]}",
