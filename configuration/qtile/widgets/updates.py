@@ -6,22 +6,22 @@ and immediately after every pacman transaction (via the post-transaction hook).
 ``BackgroundPoll`` based.
 """
 
-import json
+from typing import Any
 
-import libqtile.log_utils
 import libqtile.widget.base
-import redis.exceptions
+import redis
+import widgets._stream
 
 
 class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
     def __init__(
         self,
-        r,
-        notification_color="#00ff00",
-        warning_color="#ff0000",
-        threshold=32,
-        **config,
-    ):
+        r: redis.Redis | None,
+        notification_color: str = "#00ff00",
+        warning_color: str = "#ff0000",
+        threshold: int = 32,
+        **config: Any,
+    ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
@@ -29,24 +29,16 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
         self.notification_color = notification_color
         self.threshold = threshold
 
-    def poll(self):
-        if self.r is None:
-            return ""
-        try:
-            data = self.r.xrevrange("updates", count=1)
-            eid, payload = data[-1]
-            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
-        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError, redis.exceptions.RedisError):
+    def poll(self) -> str:
+        measurement = widgets._stream.read_measurement(self.r, "updates")
+        if measurement is None:
             return ""
         outstanding_updates = measurement.get("outstanding_updates", 0)
+        if not isinstance(outstanding_updates, int):
+            return ""
 
         if outstanding_updates > self.threshold:
-            output = (
-                f"<span color='{self.warning_color}'>󰚰 {outstanding_updates}</span>"
-            )
-        elif outstanding_updates > 0:
-            output = f"<span color='{self.notification_color}'>󰚰 {outstanding_updates}</span>"
-        else:
-            output = "󰚰 0"
-
-        return f"{output}"
+            return f"<span color='{self.warning_color}'>󰚰 {outstanding_updates}</span>"
+        if outstanding_updates > 0:
+            return f"<span color='{self.notification_color}'>󰚰 {outstanding_updates}</span>"
+        return "󰚰 0"

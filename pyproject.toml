@@ -1,0 +1,46 @@
+# Tool configuration only. This repository is a dotfiles tree, not a distributable
+# package, so there is deliberately no [project] and no [build-system] table.
+# See docs/dependencies.md for why requirements*.txt were removed.
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+extend-exclude = [
+    # Vendor-generated; `c = c` and `# noqa: F821` are qutebrowser idioms.
+    "configuration/qutebrowser/config.py",
+    # Symlinks into helper/; the real files there are checked instead.
+    "configuration/qtile/widgets/patch_configurations.py",
+    "configuration/qtile/widgets/patch_vsc.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "F",    # pyflakes
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "BLE",  # blind except
+    "SIM",  # simplify
+    "C4",   # comprehensions
+    "RUF",  # ruff-specific
+    "DTZ",  # naive datetimes
+    "PL",   # pylint
+    "S",    # bandit
+    "RET",  # return statements
+    "PIE",  # misc lints
+    "LOG",  # logging defects
+    "G",    # logging format
+    "ANN",  # type annotations
+]
+ignore = [
+    "PLR2004",  # thresholds such as `>= 90` read better inline than as constants
+    "G004",     # f-strings in logging are the repo-wide idiom
+    "S301",     # palette.pkl is a trusted local artifact
+    "S607",     # notify-send/python are invoked by name, not absolute path
+    "RUF001",   # the bar deliberately uses nerd-font and block-element glyphs
+    "RUF002",
+    "RUF003",
+    "ANN401",   # `Any` is honest at the qtile and JSON boundaries
+]

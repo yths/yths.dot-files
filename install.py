@@ -21,14 +21,12 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 import helper.screen_configuration
-
 from helper.utils import (
-    install_file,
-    install_folder,
-    install_files,
     install_credentials,
+    install_file,
+    install_files,
+    install_folder,
 )
-
 
 if __name__ == "__main__":
     repository_folder_path = os.environ.get(
@@ -145,7 +143,10 @@ if __name__ == "__main__":
         if theme.startswith("theme-"):
             theme_path = os.path.join(assets_folder_path, theme)
             if os.path.isdir(theme_path):
-                configuration = json.load(open(os.path.join(theme_path, "config.json")))
+                with open(
+                    os.path.join(theme_path, "config.json"), encoding="utf-8"
+                ) as handle:
+                    configuration = json.load(handle)
                 print(f"[{theme_id}] {configuration['name']}")
                 theme_list[theme_id] = theme_path
                 theme_id += 1
@@ -153,10 +154,7 @@ if __name__ == "__main__":
     selected_theme_id = None
     while selected_theme_id is None:
         user_input = input("Select a theme by entering its number (default = 0): ")
-        if user_input.isdigit():
-            selected_theme_id = int(user_input)
-        else:
-            selected_theme_id = 0
+        selected_theme_id = int(user_input) if user_input.isdigit() else 0
 
     print(f"Selected theme: {theme_list[selected_theme_id]}")
 
@@ -169,20 +167,22 @@ if __name__ == "__main__":
     )
     install_file(source_file_path, destination_file_path, "palette")
 
-    configuration = json.load(
-        open(os.path.join(assets_folder_path, "config.json"), "r")
-    )
+    with open(
+        os.path.join(assets_folder_path, "config.json"), encoding="utf-8"
+    ) as handle:
+        configuration = json.load(handle)
     configuration.pop("colors", None)
 
     monitors = helper.screen_configuration.get()
     configuration["monitors"] = monitors
 
-    palette = pickle.load(
-        open(os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb")
-    )
+    with open(
+        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
+    ) as handle:
+        palette = pickle.load(handle)
     configuration["palette"] = palette
 
-    configuration["wallpapers"] = dict()
+    configuration["wallpapers"] = {}
     configuration["wallpapers"]["dark"] = "~/.config/qtile/wallpaper-dark.png"
     configuration["wallpapers"]["light"] = "~/.config/qtile/wallpaper-light.png"
     configuration["wallpapers"]["dark-highlight"] = (
@@ -217,11 +217,11 @@ if __name__ == "__main__":
         "wallpaper light highlight",
     )
 
-    configuration["font"] = dict()
+    configuration["font"] = {}
     configuration["font"]["size"] = 14
     configuration["font"]["family"] = "Iosevka NF"
 
-    configuration["state"] = dict()
+    configuration["state"] = {}
     configuration["state"]["theme"] = "light"
     configuration["state"]["condition"] = "normal"
     configuration["state"]["mode"] = "automatic"
@@ -243,9 +243,6 @@ if __name__ == "__main__":
         logger.info(
             f"Backed up existing global configuration to {global_configuration_path}.{timestamp}.bak."
         )
-    json.dump(
-        configuration,
-        open(global_configuration_path, "w"),
-        indent=4,
-    )
+    with open(global_configuration_path, "w", encoding="utf-8") as handle:
+        json.dump(configuration, handle, indent=4)
     logger.info(f"Installed global configuration to {global_configuration_path}.")

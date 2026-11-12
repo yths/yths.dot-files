@@ -16,7 +16,6 @@ The script is idempotent: running it twice in a row produces no diff.
 import argparse
 import ast
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -188,9 +187,8 @@ def main() -> int:
         if args.check:
             if not check(path, key, generated):
                 stale.append((key, relpath))
-        else:
-            if rewrite(path, key, generated):
-                changed.append((key, relpath))
+        elif rewrite(path, key, generated):
+            changed.append((key, relpath))
 
     if args.check:
         if stale:

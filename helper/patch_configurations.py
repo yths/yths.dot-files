@@ -5,12 +5,11 @@ calls the per-target patchers (plymouth, web-greeter, vscode) in order so every 
 up the current palette. Invoked when the theme is switched or the palette is regenerated.
 """
 
+import configparser
 import json
 import os
 import subprocess
-import configparser
 import sys
-import time
 
 # Run from any cwd: as a script via `python helper/patch_configurations.py`
 # (sys.path[0] = helper/) or imported as `helper.patch_configurations` from
@@ -20,31 +19,31 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-import toml
+import toml  # noqa: E402 - imported after the sys.path bootstrap above
 
-from helper.patch_web_greeter import patch_web_greeter
+from helper.patch_web_greeter import patch_web_greeter  # noqa: E402
 
 
-def patch_rofi(configuration):
+def patch_rofi(configuration: dict) -> None:
     theme = configuration["state"]["theme"]
 
-    widths = list()
-    scaling_factors = list()
+    widths = []
+    scaling_factors = []
     for monitor in configuration["monitors"]:
         widths.append(configuration["monitors"][monitor]["width"])
         scaling_factors.append(configuration["monitors"][monitor]["scaling_factor"])
-    average_width = int(round(sum(widths) / len(widths)))
+    average_width = round(sum(widths) / len(widths))
     average_scaling_factor = sum(scaling_factors) / len(scaling_factors)
 
     patched_configuration = {
-        "FONT": f'"{configuration["font"]["family"]} {int(round(configuration["font"]["size"] * 1.214))}"',
+        "FONT": f'"{configuration["font"]["family"]} {round(configuration["font"]["size"] * 1.214)}"',
         "COLOR0": f"{configuration['palette'][theme]['background']}",
         "COLOR1": f"{configuration['palette'][theme]['neutral']}",
         "COLOR2": f"{configuration['palette'][theme]['failure']}",
         "COLOR3": f"{configuration['palette'][theme]['foreground']}",
         "COLOR4": f"{configuration['palette'][theme]['highlight']}",
         "WIDTH": f"{average_width}px",
-        "YOFFSET": f"{int(round(configuration['font']['size'] * average_scaling_factor * 2.75))}px",
+        "YOFFSET": f"{round(configuration['font']['size'] * average_scaling_factor * 2.75)}px",
     }
     with open(
         os.path.expanduser("~/.config/rofi/theme_config.rasi"), "w"
@@ -56,22 +55,22 @@ def patch_rofi(configuration):
     print("Patched rofi configuration ...")
 
 
-def patch_xorg(configuration):
+def patch_xorg(configuration: dict) -> None:
     dpis = []
     with open(os.path.expanduser("~/.Xresources"), "w") as output_handle:
         for monitor in configuration["monitors"]:
             dpis.append(configuration["monitors"][monitor]["diagonal_dpi"])
-        average_dpi = int(round(sum(dpis) / len(dpis)))
+        average_dpi = round(sum(dpis) / len(dpis))
         output_handle.write(f"Xft.dpi: {average_dpi}\n")
     print(f"Patched .Xresources with average DPI: {average_dpi}.")
 
 
-def patch_kitty(configuration):
+def patch_kitty(configuration: dict) -> None:
     theme = configuration["state"]["theme"]
     patched_configuration = {
         "allow_remote_control": "yes",
         "enable_audio_bell": "no",
-        "font_size": int(round(configuration["font"]["size"] * 0.714)),
+        "font_size": round(configuration["font"]["size"] * 0.714),
         #"include": "current-theme.conf",
     }
     with open(os.path.expanduser("~/.config/kitty/kitty.conf"), "w") as output_handle:
@@ -121,12 +120,12 @@ def patch_kitty(configuration):
     print("Patched kitty configuration ...")
 
 
-def patch_tmux(configuration):
+def patch_tmux(configuration: dict) -> None:
     configuration_path = os.path.expanduser("~/.config/tmux/tmux.conf")
 
     theme = configuration["state"]["theme"]
-    output = list()
-    with open(configuration_path, "r") as input_handle:
+    output = []
+    with open(configuration_path) as input_handle:
         for line in input_handle:
             if line.startswith("color"):
                 continue
@@ -147,11 +146,11 @@ def patch_tmux(configuration):
     print("Patched tmux configuration ...")
 
 
-def patch_starship(configuration):
+def patch_starship(configuration: dict) -> None:
     configuration_path = os.path.expanduser("~/.config/starship.toml")
 
     theme = configuration["state"]["theme"]
-    with open(configuration_path, "r") as input_handle:
+    with open(configuration_path) as input_handle:
         starship_configuration = toml.load(input_handle)
 
     starship_configuration["palettes"]["theme"]["color0"] = configuration["palette"][theme]["foreground"]
@@ -165,40 +164,70 @@ def patch_starship(configuration):
     print("Patched starship configuration ...")
 
 
-def patch_dunst(configuration):
+def patch_dunst(configuration: dict) -> None:
     configuration_path = os.path.expanduser("~/.config/dunst/dunstrc")
 
     theme = configuration["state"]["theme"]
-    with open(configuration_path, "r") as input_handle:
+    with open(configuration_path) as input_handle:
         dunst_configuration = configparser.ConfigParser(interpolation=None)
         dunst_configuration.read_file(input_handle)
 
     dunst_configuration["global"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["global"]["background"] = f'"{configuration["palette"][theme]["background"]}"'
     dunst_configuration["global"]["separator_color"] = f'"{configuration["palette"][theme]["background"]}"'
-    dunst_configuration["global"]["font"] = f'"{configuration["font"]["family"]} {int(round(configuration["font"]["size"] * 0.714))}"'
+    dunst_font_size = round(configuration["font"]["size"] * 0.714)
+    dunst_configuration["global"]["font"] = (
+        f'"{configuration["font"]["family"]} {dunst_font_size}"'
+    )
 
-    scaling_factors = list()
+    scaling_factors = []
     for monitor in configuration["monitors"]:
         scaling_factors.append(configuration["monitors"][monitor]["scaling_factor"])
     average_scaling_factor = sum(scaling_factors) / len(scaling_factors)
-    dunst_configuration["global"]["offset"] = f'0x{int(round(configuration["font"]["size"] * average_scaling_factor * 3))}'
+    dunst_configuration["global"]["offset"] = f'0x{round(configuration["font"]["size"] * average_scaling_factor * 3)}'
 
     dunst_configuration["urgency_normal"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
-    dunst_configuration["urgency_normal"]["format"] = f"\" <span foreground='{configuration["palette"][theme]["notification"]}'>%s</span>\\n  %b\""
+    dunst_configuration["urgency_normal"]["format"] = (
+        f"\" <span foreground='{configuration["palette"][theme]["notification"]}'>%s</span>\\n  %b\""
+    )
 
     dunst_configuration["urgency_critical"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
-    dunst_configuration["urgency_critical"]["format"] = f"\" <span foreground='{configuration["palette"][theme]["warning"]}'>%s</span>\\n  %b\""
+    dunst_configuration["urgency_critical"]["format"] = (
+        f"\" <span foreground='{configuration["palette"][theme]["warning"]}'>%s</span>\\n  %b\""
+    )
 
     dunst_configuration["urgency_low"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
-    dunst_configuration["urgency_low"]["format"] = f"\" <span foreground='{configuration["palette"][theme]["neutral"]}'>%s</span>\\n  %b\""
+    dunst_configuration["urgency_low"]["format"] = (
+        f"\" <span foreground='{configuration["palette"][theme]["neutral"]}'>%s</span>\\n  %b\""
+    )
 
     with open(configuration_path, "w") as output_handle:
         dunst_configuration.write(output_handle)
     print("Patched dunst configuration ...")
 
 
-def patch_all(configuration):
+def reload_qutebrowser() -> None:
+    """Send SIGHUP to every running qutebrowser so it picks up the new palette.
+
+    This used to be ``subprocess.call(["kill", "-1", "`pgrep qutebrowser`"])``. With a list
+    argument there is no shell, so the backticks were passed to ``kill`` literally rather
+    than being command-substituted; the call failed every time and its non-zero exit was
+    discarded, so qutebrowser was never actually reloaded on a theme change.
+    """
+    try:
+        result = subprocess.run(
+            ["pgrep", "qutebrowser"], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        print("pgrep is unavailable; qutebrowser was not reloaded ...")
+        return
+    pids = [pid for pid in result.stdout.split() if pid.isdigit()]
+    if not pids:
+        return
+    subprocess.call(args=["kill", "-1", *pids])
+
+
+def patch_all(configuration: dict) -> None:
     patch_rofi(configuration)
     patch_xorg(configuration)
     patch_kitty(configuration)
@@ -208,7 +237,7 @@ def patch_all(configuration):
     patch_web_greeter(configuration)
 
 
-with open(os.path.expanduser("~/.config/config.json"), "r") as input_handle:
+with open(os.path.expanduser("~/.config/config.json")) as input_handle:
     configuration = json.load(input_handle)
 patch_all(configuration)
 
@@ -220,8 +249,21 @@ subprocess.call(
         os.path.expanduser(os.path.join("~", ".config", "tmux", "tmux.conf")),
     ]
 )
-subprocess.call(args=["kitty", "+kitten", "themes", "--reload-in=all", configuration['name']])
-subprocess.call(args=["kill", "-1", "`pgrep qutebrowser`"])
-subprocess.call(args=["python", os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets", "patch_vsc.py")), "--mode", configuration["state"]["theme"], "--input-path", os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets"))])
+subprocess.call(
+    args=["kitty", "+kitten", "themes", "--reload-in=all", configuration["name"]]
+)
+reload_qutebrowser()
+subprocess.call(
+    args=[
+        "python",
+        os.path.expanduser(
+            os.path.join("~", ".config", "qtile", "widgets", "patch_vsc.py")
+        ),
+        "--mode",
+        configuration["state"]["theme"],
+        "--input-path",
+        os.path.expanduser(os.path.join("~", ".config", "qtile", "widgets")),
+    ]
+)
 subprocess.call(args=["qtile", "cmd-obj", "-o", "cmd", "-f", "restart"])
 subprocess.call(args=["notify-send", "-u", "normal", "Patching", "All configurations reloaded ..."])

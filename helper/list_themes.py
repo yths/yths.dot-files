@@ -22,7 +22,9 @@ if __name__ == "__main__":
             theme_path = os.path.join(assets_folder_path, theme)
             if os.path.isdir(theme_path):
                 print(theme_path)
-                configuration = json.load(open(os.path.join(theme_path, "config.json")))
+                with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
+                    configuration = json.load(handle)
                 print(json.dumps(configuration, indent=4))
-                palette = pickle.load(open(os.path.join(theme_path, "palette.pkl"), "rb"))
+                with open(os.path.join(theme_path, "palette.pkl"), "rb") as handle:
+                    palette = pickle.load(handle)
                 print(json.dumps(palette, indent=4))

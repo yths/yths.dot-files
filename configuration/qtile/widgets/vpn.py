@@ -5,34 +5,37 @@ and surfaces an indicator plus a short location label when a tunnel is up.
 ``BackgroundPoll`` based.
 """
 
-import json
+from typing import Any
 
 import libqtile.widget.base
-import redis.exceptions
+import redis
+import widgets._stream
 
 
 class WidgetVPN(libqtile.widget.base.BackgroundPoll):
-    def __init__(self, r, warning_color="#ff0000", **config):
+    def __init__(
+        self,
+        r: redis.Redis | None,
+        warning_color: str = "#ff0000",
+        **config: Any,
+    ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
         self.warning_color = warning_color
 
-    def poll(self):
-        if self.r is None:
+    def poll(self) -> str:
+        measurement = widgets._stream.read_measurement(self.r, "vpn")
+        if measurement is None:
             return ""
-        try:
-            data = self.r.xrevrange("vpn", count=1)
-            eid, payload = data[-1]
-            measurement = json.loads(payload[b"measurement"].decode("utf-8"))
 
-            output = []
-            if measurement["connected"]:
-                output.append(f"<span color='{self.warning_color}'>󰛳</span>")
-                output.append(measurement["country"])
-                output.append(f"({measurement['city']})")
-            else:
-                output.append("󰲝")
-            return f"{' '.join(output)}"
-        except (IndexError, KeyError, AttributeError, TypeError, json.JSONDecodeError, redis.exceptions.RedisError):
-            return ""
+        if not measurement.get("connected"):
+            return "󰲝"
+        output = [f"<span color='{self.warning_color}'>󰛳</span>"]
+        country = measurement.get("country")
+        city = measurement.get("city")
+        if country:
+            output.append(str(country))
+        if city:
+            output.append(f"({city})")
+        return " ".join(output)

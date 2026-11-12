@@ -84,3 +84,28 @@ grep -rhE '^import |^from .* import' install.py helper/ configuration/ | grep -v
 ```
 
 reveal every import; the diff against this page is the audit result.
+
+## Development Tooling
+
+The tables above track *runtime imports*. Linting is a different category — nothing in the
+repo imports it — so it gets its own row here rather than being squeezed into a table whose
+column headings do not fit.
+
+| Tool | Arch package | Used for |
+|---|---|---|
+| `ruff` | `ruff` | lint and type-annotation enforcement across all hand-written Python |
+
+```bash
+yay -S ruff
+ruff check .          # must exit 0
+ruff check . --fix    # apply the safe fixes
+```
+
+Configuration lives in `pyproject.toml` at the repo root — `[tool.ruff]` only, with no
+`[project]` or `[build-system]` table, so it stays tool configuration rather than the
+packaging metadata this repo deliberately removed.
+
+The rule selection is pinned explicitly rather than left to ruff's defaults. Those defaults
+move between releases: ruff 0.16 began emitting `B` (bugbear) and `I` (import sorting) with
+no configuration at all, which would silently change what "passes" means on the next
+`yay -Syu`.

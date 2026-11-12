@@ -9,7 +9,6 @@ import json
 import os
 import time
 
-
 try:
     import loguru
     logger = loguru.logger
@@ -18,19 +17,19 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 
-def install_folders(folders_paths, name=None):
+def install_folders(folders_paths: dict[str, str], name: str | None = None) -> None:
     logger.info(f"Installing {name if name is not None else 'folders'}...")
-    for source_folder_path in folders_paths:
-        install_folder(source_folder_path, folders_paths[source_folder_path], name)
+    for source_folder_path, destination_folder_path in folders_paths.items():
+        install_folder(source_folder_path, destination_folder_path, name)
 
 
-def install_files(files_paths, name=None):
+def install_files(files_paths: dict[str, str], name: str | None = None) -> None:
     logger.info(f"Installing {name if name is not None else 'files'}...")
-    for source_file_path in files_paths:
-        install_file(source_file_path, files_paths[source_file_path], name) 
+    for source_file_path, destination_file_path in files_paths.items():
+        install_file(source_file_path, destination_file_path, name)
 
 
-def install_file(source_path, destination_path, name=None):
+def install_file(source_path: str, destination_path: str, name: str | None = None) -> None:
     source_path = os.path.expanduser(source_path)
     destination_path = os.path.expanduser(destination_path)
     # check if file exists
@@ -65,7 +64,7 @@ def install_file(source_path, destination_path, name=None):
         logger.info(f"Installed {name} configuration.")
 
 
-def install_folder(source_path, destination_path, name=None):
+def install_folder(source_path: str, destination_path: str, name: str | None = None) -> None:
     source_path = os.path.expanduser(source_path)
     destination_path = os.path.expanduser(destination_path)
     # check if folder exists
@@ -100,7 +99,12 @@ def install_folder(source_path, destination_path, name=None):
         logger.info(f"Installed {name} configuration.")
 
 
-def install_credentials(credentials, destination_path=os.path.join("~", ".config", "credentials.json")):
+def install_credentials(
+    credentials: dict[str, str],
+    destination_path: str | None = None,
+) -> None:
+    if destination_path is None:
+        destination_path = os.path.join("~", ".config", "credentials.json")
     secrets = {}
     logger.info("Installing credentials...")
     for credential in credentials:
@@ -119,14 +123,12 @@ def install_credentials(credentials, destination_path=os.path.join("~", ".config
         logger.info(
             f"Backed up existing credentials file to {destination_path}.{timestamp}.bak."
         )
-    json.dump(
-        secrets,
-        open(destination_path, "w"),
-        indent=4,
-    )
+    # Create with 0600 already set rather than chmod'ing afterwards: the previous order
+    # left the API token on disk world-readable for the window between write and chmod.
+    descriptor = os.open(destination_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        json.dump(secrets, handle, indent=4)
     logger.info(f"Installed credentials to {destination_path}.")
-    # change file permissions to read only for the user
-    os.chmod(destination_path, 0o600)
 
 
 if __name__ == "__main__":

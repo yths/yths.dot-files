@@ -59,7 +59,6 @@ _Hex values reflect the active theme bundle and differ per install._
 | `layout.Columns` | `border_focus_stack` | `foreground` |
 | `layout.Max` | `border_normal` | `neutral` |
 | `layout.Max` | `border_focus` | `foreground` |
-| `widget_defaults (dict)` | `foreground` | `foreground` |
 | `widgets.stream_state.WidgetStreamState` | `notification_color` | `notification` |
 | `widgets.stream_state.WidgetStreamState` | `warning_color` | `warning` |
 | `widget.GroupBox` | `active` | `foreground` |

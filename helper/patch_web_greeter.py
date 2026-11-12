@@ -11,7 +11,7 @@ import os
 import shutil
 
 
-def patch_web_greeter(configuration):
+def patch_web_greeter(configuration: dict) -> None:
     theme_state = configuration["state"]["theme"]
     palette = configuration["palette"][theme_state]
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
