@@ -61,16 +61,19 @@ Both `light` and `dark` keys must be present with the same token set. The active
 
 ## Where Tokens Are Consumed
 
-- **qtile widgets** — `configuration["palette"][theme][<token>]`. The six minimum-required tokens above.
-- **`helper/patch_web_greeter.py`** — each web-greeter theme's `theme.json#role_map` maps web-greeter role names to palette tokens; the patcher writes CSS variables (`--<role>: <hex>`).
-- **`helper/patch_vsc.py`** — perceptual nearest-colour matching from VSCode's editor/token vocabulary into the palette.
-- **`helper/patch_plymouth.py`** — renders the boot background using selected palette tokens.
-
-For an authoritative usage map, grep:
+Derived rather than listed here: [palette-reference.md](palette-reference.md) carries the full
+map, generated from the patcher sources, and a hand-written summary beside it would be a second
+copy to keep true. To ask about one token without reading the whole document:
 
 ```bash
-git grep -nE 'palette\[[^]]+\]\[[^]]+\]' configuration/ helper/
+python helper/list_palette.py --value highlight   # every field that carries it
+python helper/list_palette.py --app dunst         # everything one application reads
+python helper/list_palette.py --file ~/.config/tmux/tmux.conf
 ```
+
+Two consumers do not follow the active theme, which is worth knowing before a bundle is blamed
+for either: the login screen pins its font size in `theme.json#font_overrides`, and the boot
+splash always renders the dark variant, because it is drawn before anyone has logged in.
 
 ## Adding a New Required Token
 
