@@ -1,6 +1,6 @@
 # Building the Base System
 
-> Last verified 2026-05-16 on Arch ISO 2026.04.01.
+> Last verified 2026-10-30 on an Arch ISO built 2026-10-30.
 
 Getting from a blank disk to a bootable, encrypted Arch Linux system. This is background,
 not a prerequisite for reading anything else: if the machine already runs Arch, skip it

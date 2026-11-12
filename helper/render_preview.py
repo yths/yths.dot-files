@@ -263,9 +263,10 @@ def main() -> int:
     with open(os.path.join(bundle, "palette.pkl"), "rb") as handle:
         palette: dict[str, Any] = pickle.load(handle)
     with open(os.path.join(bundle, "config.json")) as handle:
-        glyphs, _ = symbols.resolve(json.load(handle))
+        manifest = json.load(handle)
+    glyphs, _ = symbols.resolve(manifest)
 
-    font = setup["desktop"]["font_family"]
+    font = manifest["font"]["family"]
     os.makedirs(OUTPUT_ROOT, exist_ok=True)
     modes = [arguments.mode] if arguments.mode else ["light", "dark"]
     for mode in modes:

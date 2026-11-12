@@ -1,7 +1,8 @@
 # Dependencies
 
 What this desktop needs installed, and which Arch package provides it. The only blessed
-install path is `yay -S`; [install.md](install.md) carries the full commands in order.
+install path is `yay -S`, from the `[packages]` groups in [../setup.toml](../setup.toml);
+[install.md](install.md) carries the command and the order of the steps around it.
 
 ## Python Imports
 
@@ -38,7 +39,7 @@ install path that does not exist. `pyproject.toml` holds tool configuration only
 
 ## System Packages
 
-Not derivable — these are services and runtimes, not imports. The list `./bootstrap.sh`
+Not derivable — these are services, runtimes and fonts, not imports. The list `./bootstrap.sh`
 installs is in [../setup.toml](../setup.toml) under `[packages]`, grouped by what stops
 working without them; this table says what each group's less obvious members are for.
 
@@ -47,8 +48,9 @@ working without them; this table says what each group's less obvious members are
 | `valkey` | Redis-compatible server; the backend service publishes to it and the bar reads from it |
 | `xorg-server`, `xorg-xinit` | X11 |
 | `qtile` | window manager (also provides `libqtile`) |
-| `ttc-iosevka` | the font named in `~/.config/config.json` |
-| `lightdm`, `nody-greeter` | login screen and its web-greeter runtime |
+| `ttf-iosevka-nerd` | `Iosevka NF`, the fallback font `[desktop] fallback_font_package` names in `setup.toml`. The theme's own font is installed from the bundle's `font.family` through `FONT_PACKAGES` in [../helper/fonts.py](../helper/fonts.py), and is not in `[packages]` at all |
+| `lightdm` | login screen |
+| `nody-greeter` | the web-greeter runtime LightDM renders the login screen with. Not a `[packages]` entry: `./bootstrap.sh` builds it from the patched PKGBUILD in [../configuration/web-greeter/nody-greeter/](../configuration/web-greeter/nody-greeter/), since the AUR package no longer builds |
 | `plymouth` | boot splash |
 | `pacman-contrib`, `yay` | required by the backend service's pacman post-transaction hook |
 | `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated and nothing fails |
@@ -56,5 +58,5 @@ working without them; this table says what each group's less obvious members are
 ## Removing a Dependency
 
 Delete the import, delete its `ARCH_PACKAGES` entry, run `python helper/gendocs.py`, and
-prune the package from the `yay -S` command in [install.md](install.md). The check will tell
+prune the package from `[packages]` in [../setup.toml](../setup.toml). The check will tell
 you if you do only some of those.

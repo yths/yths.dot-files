@@ -9,6 +9,7 @@ module prints the same body to stdout.
 """
 
 import ast
+import json
 import pathlib
 import sys
 
@@ -66,7 +67,8 @@ def generate_markdown() -> str:
     """The README's summary of what ships and what it takes over."""
     setup = read_setup()
     theme = setup["desktop"]["theme"]
-    font = setup["desktop"]["font_family"]
+    manifest = json.loads((REPO_ROOT / "assets" / theme / "config.json").read_text())
+    font = manifest["font"]["family"]
 
     lines = [
         f"The bar, the terminal, the launcher and the notifications above are drawn from the "

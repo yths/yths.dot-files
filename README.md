@@ -70,8 +70,8 @@ cd yths.dot-files
 That installs the packages, the configuration and a theme. `./bootstrap.sh --dry-run` prints
 what it would do and stops; `--dev` adds the linter and test runner.
 
-Everything you would change first is in [setup.toml](setup.toml) — the theme, the font, the
-package list, which credentials to collect. Edit it before running, and nothing else needs
+Everything you would change first is in [setup.toml](setup.toml) — the theme, the fallback
+font, the package list, which credentials to collect. Edit it before running, and nothing else needs
 touching.
 
 Two steps stay manual because each needs root and a decision:
