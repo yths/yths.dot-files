@@ -56,7 +56,15 @@ ignore = [
 max-returns = 12
 
 [tool.ruff.lint.per-file-ignores]
-# A long-running preview server has to answer the next request even when one route raised.
-# Each handler reports the failure (500 response, stderr, or a returned error string)
-# rather than swallowing it, which is the substance BLE001 is protecting.
+# Two places must survive a failure they cannot enumerate, and in both the breadth is the
+# design rather than a lapse. Neither swallows anything: the failure is logged with its
+# traceback and surfaced to the caller, which is the substance BLE001 protects.
+#
+# A long-running preview server has to answer the next request even when one route raised;
+# each handler reports the failure as a 500, on stderr, or in a returned error string.
 "configuration/web-greeter/preview/server.py" = ["BLE001"]
+# patch_all's contract, stated in helper/README.md, is that one broken app must not block
+# the others. A patcher can fail on anything its target app does -- a malformed INI, a
+# missing font, a read-only config -- so narrowing the catch would reinstate the cascade
+# the isolation exists to prevent. Failures are logged and returned as a list of names.
+"helper/patch_configurations.py" = ["BLE001"]

@@ -1,8 +1,13 @@
-"""Common installer helpers used by ``install.py`` (file/folder copy, credentials prompt).
+"""Common installer helpers used by ``install.py`` (file/folder symlinking, credentials prompt).
 
 Exports ``install_file``, ``install_folder``, ``install_files``, ``install_folders``, and
 ``install_credentials``. Each logs a one-line status via loguru (or stdlib logging if
 loguru is unavailable).
+
+Nothing here copies. Every install path ends in ``os.symlink``, so an installed file *is*
+the repository file -- which is what lets a theme switch and a hand edit under
+``~/.config`` both land in the tree, and why anything written into an installed path
+lands on a tracked file.
 """
 
 import json
@@ -100,7 +105,7 @@ def install_folder(source_path: str, destination_path: str, name: str | None = N
 
 
 def install_credentials(
-    credentials: dict[str, str],
+    credentials: list[str],
     destination_path: str | None = None,
 ) -> None:
     if destination_path is None:

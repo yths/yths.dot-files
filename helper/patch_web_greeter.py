@@ -9,9 +9,10 @@ treated as shared assets and skipped.
 import json
 import os
 import shutil
+from typing import Any
 
 
-def patch_web_greeter(configuration: dict) -> None:
+def patch_web_greeter(configuration: dict[str, Any]) -> None:
     theme_state = configuration["state"]["theme"]
     palette = configuration["palette"][theme_state]
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

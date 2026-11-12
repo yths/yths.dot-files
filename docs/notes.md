@@ -38,7 +38,7 @@ is what made the "copy a bundle's `config.json` into place" recipe silently unus
 
 ## qtile Widgets
 
-The widgets under `configuration/qtile/widgets/` each subscribe to one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service) and render a small status segment. Most inherit from `libqtile.widget.base.BackgroundPoll` so the poll runs off the qtile event loop; a few (e.g. `audio`) use `InLoopPollText` because they need to integrate with a callback running on its own thread.
+The widgets under `configuration/qtile/widgets/` each render a small status segment. Eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service); `service_state.py` reports whether that service is running and so polls `systemctl` directly, since it cannot ask the service it monitors whether it is alive. Most inherit from `libqtile.widget.base.BackgroundPoll` so the poll runs off the qtile event loop; a few (e.g. `audio`) use `InLoopPollText` because they need to integrate with a callback running on its own thread.
 
 Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB` environment variables — the same ones the backend service reads. If Redis is unreachable at qtile startup, the widgets silently fall back to empty values.
 

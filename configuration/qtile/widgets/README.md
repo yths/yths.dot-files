@@ -1,6 +1,6 @@
 # Qtile Widgets
 
-The custom widgets that live in the qtile bar. Each one subscribes to a Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service) and renders a small status segment. System-wide context is in [../../../docs/architecture.md](../../../docs/architecture.md); this file documents the widget-development pattern.
+The custom widgets that live in the qtile bar. Each renders a small status segment, and eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service). `service_state.py` is the deliberate exception — see [The one that reads no stream](#the-one-that-reads-no-stream). System-wide context is in [../../../docs/architecture.md](../../../docs/architecture.md); this file documents the widget-development pattern.
 
 Every `.py` file in this directory is a widget. Code shared between widgets lives one level up in [../shared/](../shared/README.md); standalone tools live in [../../../helper/](../../../helper/README.md).
 
@@ -15,7 +15,7 @@ Prefer `BackgroundPoll`. Only reach for `InLoopPollText` when the widget needs t
 
 ## Anatomy of a Widget
 
-`service_state.py` is the canonical minimal example: it inherits from `BackgroundPoll`, implements `poll()`, and returns a string. Use it as the structural template for a new widget. The pattern, abstracted:
+`vpn.py` is the canonical minimal example: 46 lines that inherit from `BackgroundPoll`, read one stream, and return a string. Every convention below is visible in it. Use it as the structural template for a new widget. The pattern, abstracted:
 
 ```python
 """Qtile widget: <one-line description>."""
@@ -50,6 +50,19 @@ Conventions:
 - Type-annotate new code; `ruff check .` enforces it via the `ANN` rules.
 - Use `pangocstr` markup (`<span color="#hex">...</span>`) to colour the rendered glyph; pull colours from the active palette in `~/.config/config.json` rather than hardcoding hex.
 - Glyphs come from Iosevka Nerd Font; pick semantically meaningful icons — `power_supply.py` walks the Material battery ramp from `U+F0079`, `claude_usage.py` uses `U+F06A9` (robot) and `U+F16A1` (robot-dead). Name them as class constants with the codepoint in a trailing comment, the way `location.py` does. They are invisible in editors, diffs and terminals without the font, so an inlined glyph is silently dropped by anything that rewrites the line — which is how the two examples that used to sit in this sentence were lost.
+
+## The One That Reads No Stream
+
+`service_state.py` polls `systemctl --user is-active` directly rather than reading a stream.
+That is deliberate, not an oversight to correct: its job is to report whether
+`backend.service` — the process that publishes every other widget's stream — is running. An
+indicator that took its answer from a stream published by the thing it monitors could not
+tell *the service is down* from *the stream is stale*, and would go blind at exactly the
+moment it matters. It is also why the bar still says something true when Redis itself is
+unreachable.
+
+So follow `vpn.py` for anything the backend already collects. Reach for a direct poll only
+when the thing being reported is the backend, or Redis.
 
 ## Available Widgets
 

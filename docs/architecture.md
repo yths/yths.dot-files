@@ -50,7 +50,7 @@ Each preset's color palette is described in [color-semantics.md](color-semantics
 
 `install.py` runs the desktop install in two phases:
 
-1. **Static configuration**: every per-app config tree under `configuration/` is copied into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc. This is purely a file copy — no palette involvement.
+1. **Static configuration**: every per-app config tree under `configuration/` is *symlinked* into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc., with anything already there renamed to `*.<timestamp>.bak` first. No palette is involved, and nothing is copied. That last part is worth stating plainly, because everything downstream depends on it: the installed configuration **is** this repository. Editing `~/.config/qtile/config.py` edits tracked source, and anything written into an installed path lands on a tracked file — which is why the theme wallpapers are gitignored rather than committed.
 2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Only `name` is carried over from the bundle's own manifest; see the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes).
 
 Re-running the installer picks a (possibly different) theme without disturbing the static configuration; the existing `~/.config/config.json` is renamed to `…json.<timestamp>.bak` before being replaced. It also resets `state` to its defaults, so a manually pinned theme reverts to automatic switching.
@@ -75,7 +75,7 @@ The full helper inventory is in [../helper/README.md](../helper/README.md); addi
 
 ## Backend Service Contract
 
-The widgets are decoupled from system-state polling: a separate process — the [yths.backend-service](https://github.com/yths/yths.backend-service) — collects metrics and publishes them to Redis streams. The widgets only subscribe; they have no side effects on the system.
+Most system-state polling is decoupled from the bar: a separate process — the [yths.backend-service](https://github.com/yths/yths.backend-service) — collects metrics and publishes them to Redis streams, and eight of the nine widgets only read. Two qualifications matter. `service_state.py` polls `systemctl` directly, because it reports whether the backend service itself is running and cannot ask that service whether it is alive. And three widgets do write: `location.py`, `stream_state.py` and `audio.py` persist their own state into `~/.config/config.json`, and `location.py` additionally spawns `helper/patch_configurations.py` at the day/night transition — which re-themes every application and restarts qtile.
 
 Stream names and schemas are documented in the backend service's [docs/notes.md](https://github.com/yths/yths.backend-service/blob/main/docs/notes.md). Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB`; the same variables apply to both the backend service and the qtile widgets. If Redis is unreachable at qtile startup the widgets fall back to empty values rather than failing the bar.
 
