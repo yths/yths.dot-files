@@ -204,3 +204,66 @@ def test_a_label_that_vanished_into_its_selection_is_made_legible() -> None:
     assert fixed["list.inactiveSelectionForeground"] == "#000000"
     assert fixed["list.inactiveSelectionBackground"] == "#717171", "only the text moves"
     assert fixed["editorOverviewRuler.foreground"] == "#71717166", "translucent is left alone"
+
+
+# ------------------------------------------------------------------------- the keyring
+#
+# Without a Secret Service VSCode keeps its tokens under a key built into Electron. argv.json
+# also carries a per-install crash-reporter id and VSCode's own comments, so it is edited in
+# place rather than owned.
+
+ARGV = """// VSCode's own header.
+{
+\t// "password-store": "commented-out example",
+\t"enable-crash-reporter": true,
+\t"crash-reporter-id": "keep-me",
+\t"password-store": "basic"
+}"""
+
+
+@pytest.fixture
+def daemon(tmp_path: pathlib.Path) -> str:
+    path = tmp_path / "gnome-keyring-daemon"
+    path.write_text("")
+    return str(path)
+
+
+def test_the_basic_store_is_replaced_and_everything_else_kept(
+    tmp_path: pathlib.Path, daemon: str
+) -> None:
+    argv = tmp_path / "argv.json"
+    argv.write_text(ARGV)
+    assert patch_vsc.use_keyring(str(argv), daemon)
+    text = argv.read_text()
+    assert '\t"password-store": "gnome-libsecret"' in text
+    assert '"password-store": "basic"' not in text
+    assert '"crash-reporter-id": "keep-me"' in text
+    assert "// VSCode's own header." in text
+    assert '// "password-store": "commented-out example"' in text, "a comment is not the key"
+
+
+def test_a_missing_key_is_added_as_valid_jsonc(tmp_path: pathlib.Path, daemon: str) -> None:
+    argv = tmp_path / "argv.json"
+    argv.write_text('{\n\t// "password-store": "x",\n\t"enable-crash-reporter": true\n}')
+    assert patch_vsc.use_keyring(str(argv), daemon)
+    without_comments = "\n".join(
+        line for line in argv.read_text().splitlines() if not line.strip().startswith("//")
+    )
+    assert json.loads(without_comments)["password-store"] == "gnome-libsecret"
+    once = argv.read_text()
+    patch_vsc.use_keyring(str(argv), daemon)
+    assert argv.read_text() == once, "running it again changes nothing"
+
+
+def test_a_new_install_gets_a_file(tmp_path: pathlib.Path, daemon: str) -> None:
+    argv = tmp_path / ".vscode" / "argv.json"
+    assert patch_vsc.use_keyring(str(argv), daemon)
+    assert json.loads(argv.read_text()) == {"password-store": "gnome-libsecret"}
+
+
+# Pointing VSCode at a keyring that is not installed leaves it nowhere to keep a sign-in.
+def test_without_the_keyring_nothing_changes(tmp_path: pathlib.Path) -> None:
+    argv = tmp_path / "argv.json"
+    argv.write_text(ARGV)
+    assert not patch_vsc.use_keyring(str(argv), str(tmp_path / "absent"))
+    assert argv.read_text() == ARGV
