@@ -8,25 +8,26 @@ configuration beside it, which *is* meant to be portable.
 ## `icc/`
 
 Display calibration profiles, one per panel, generated with `displaycal`. `install.py`
-symlinks this directory to `~/.config/icc/`, from where `dispwin` loads the active profile —
-see the display calibration section of [../../docs/install.md](../../docs/install.md).
+symlinks this directory to `~/.config/icc/`, and `~/.xinitrc` runs
+[`helper/apply_icc.py`](../../helper/apply_icc.py) at session start to load them.
+
+Files are named `<panel>.icc` — lowercase, hyphen-separated, no version suffix. The name is
+stable so that recalibrating a panel overwrites the same path and git carries the history;
+a directory of `_v2`/`_v3` files cannot say which is current, which is what it used to be.
+
+`displays.json` maps hostname to `{display: profile}`. A key is an xrandr output name
+(preferred, survives a reordering) or a dispwin display index. Nothing here is required:
+a machine with no entry runs uncalibrated.
+
+```bash
+python helper/apply_icc.py --list          # what is connected, and what would apply
+python helper/apply_icc.py                 # apply now (also run from ~/.xinitrc)
+python helper/apply_icc.py --import-profile <file>.icc --display HDMI-1
+touch ~/.config/icc/disabled               # run uncalibrated
+```
 
 Replace these with your own profiles, or ignore them: an uncalibrated display changes
 nothing except how faithfully the palettes render.
-
-The `_v2`/`_v3` suffixes are recalibrations of the same panel over time, not variants — a
-display drifts, so it gets measured again. Dates come from each file's own ICC header:
-
-| Panel | Current | Superseded |
-|---|---|---|
-| S27B550 | `S27B550_v3.icc` (2025-08-22) | `S27B550_v2.icc` (2025-06-08), `S27B550.icc` (2024-12-19) |
-| U28D590 | `U28D590_v3.icc` (2025-08-22) | `U28D590_v2.icc` (2025-06-08), `U28D590.icc` (2024-12-19) |
-| HP | `HP.icc` (2024-12-20) | — |
-| Lenovo | `lenovo.icc` (2025-08-22) | — |
-
-The superseded profiles are kept only because nothing recorded which was current. Now that
-something does, they can be deleted — an out-of-date profile describes the display less
-accurately than no profile at all.
 
 ## `edid/`
 
