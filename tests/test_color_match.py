@@ -160,3 +160,40 @@ def test_a_nine_letter_colour_name_is_not_mistaken_for_alpha(
     replaced = color_match.replace(name, palette_map["dark"])
     assert len(replaced) == 7, f"{name} became {replaced!r}"
     assert replaced in {entry["hex"] for entry in palette_map["dark"]}
+
+
+# ------------------------------------------------------------------------- legibility
+#
+# Measured on the light palette (background #e3e3e3, neutral #717171, foreground #000000):
+# the explorer's grey label #616161 and its pale inactive selection #e4e6f1 both matched
+# #717171, so a selected file name was drawn in the colour of its own selection.
+
+LIGHT = color_match.build_palette_map({"light": {
+    "background": "#e3e3e3", "neutral": "#717171", "foreground": "#000000",
+    "foreground_variant": "#0f0f0f", "blue_variant": "#013d4d",
+}})["light"]
+
+
+def test_contrast_is_the_wcag_ratio() -> None:
+    assert color_match.contrast("#000000", "#ffffff") == pytest.approx(21.0)
+    assert color_match.contrast("#717171", "#717171") == pytest.approx(1.0)
+    assert color_match.contrast("not a colour", "#ffffff") is None
+
+
+# On a mid-grey surface no grey reaches 4.5 -- black manages 4.3 -- so the fallback takes the
+# most contrasting text token rather than leaving the label in the surface's own colour.
+def test_text_on_its_own_colour_is_re_picked_to_the_most_readable_grey() -> None:
+    picked = color_match.legible("#616161", "#717171", LIGHT)
+    assert picked == "#000000"
+    assert color_match.contrast(picked, "#717171") > 4
+
+
+# The nearest readable token to a mid-grey label on the light surface is a dark teal; a grey
+# label must stay grey.
+def test_a_chromatic_token_is_never_picked_for_text() -> None:
+    assert color_match.legible("#616161", "#e3e3e3", LIGHT) in {"#000000", "#0f0f0f"}
+
+
+def test_when_nothing_reaches_the_threshold_the_most_contrasting_wins() -> None:
+    greys = color_match.build_palette_map({"m": {"neutral": "#777777", "foreground": "#888888"}})["m"]
+    assert color_match.legible("#808080", "#7a7a7a", greys) == "#888888"

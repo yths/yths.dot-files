@@ -153,3 +153,48 @@ def replace(value: str, candidates: list, lookup: list | None = None) -> str:
     alpha = value[7:9] if hexed and len(value) == 9 else ""
     found = nearest(value, candidates, lookup)
     return value if found is None else found.hex + alpha
+
+
+#: WCAG 2's minimum contrast ratio for body text.
+MIN_TEXT_CONTRAST = 4.5
+
+#: The palette tokens text may be re-picked from: the greys, per docs/palette-semantics.md.
+#: A chromatic token reads, but a side bar of teal file names is not what a grey label meant.
+TEXT_LABELS = frozenset({"foreground", "foreground_variant", "neutral", "background"})
+
+
+def _luminance(rgb: tuple[float, float, float]) -> float:
+    """WCAG relative luminance of an sRGB colour with channels in 0..1."""
+    linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast(first: str, second: str) -> float | None:
+    """The WCAG contrast ratio between two colours, or ``None`` if either is not one."""
+    rgbs = [to_rgb(value) for value in (first, second)]
+    if None in rgbs:
+        return None
+    lighter, darker = sorted((_luminance(rgb) for rgb in rgbs), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def legible(value: str, background: str, candidates: list) -> str | None:
+    """The candidate nearest ``value`` that reads as text on ``background``.
+
+    Matching every colour on its own can land a text colour and the surface under it on one
+    token -- a palette with few greys has nowhere else to put a mid-grey label and a tinted
+    selection. This is the second look at the pair: among the candidates that reach
+    ``MIN_TEXT_CONTRAST`` against the background, the one nearest the colour the text was
+    meant to be; failing that, whichever contrasts most. ``None`` if ``value`` is not a colour.
+    """
+    candidates = [candidate for candidate in candidates if candidate["label"] in TEXT_LABELS]
+    if to_rgb(value) is None or to_rgb(background) is None or not candidates:
+        return None
+    readable = [
+        candidate for candidate in candidates
+        if (contrast(candidate["hex"], background) or 0) >= MIN_TEXT_CONTRAST
+    ]
+    if readable:
+        found = nearest(value, readable)
+        return found.hex if found else None
+    return max(candidates, key=lambda candidate: contrast(candidate["hex"], background) or 0)["hex"]
