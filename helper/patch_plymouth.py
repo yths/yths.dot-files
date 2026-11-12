@@ -37,9 +37,9 @@ import PIL.Image
 
 # Resolves whether this runs as ``helper.patch_plymouth`` or as a script; see helper/README.md.
 try:
-    from helper.utils import logger
+    from helper.utils import logger, root_prefix
 except ImportError:
-    from utils import logger
+    from utils import logger, root_prefix
 
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
 SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"
@@ -93,29 +93,6 @@ def stage_theme(source: str) -> str:
     # the system copy has to hold the image, not a link into a home directory root cannot read.
     shutil.copytree(source, staged, symlinks=False, dirs_exist_ok=True)
     return staged
-
-
-def root_prefix(*, prompt: bool) -> list[str] | None:
-    """An argv prefix that runs a command as root here, or ``None`` if nothing can.
-
-    An empty list means the caller is already root. ``sudo -n`` is tried first because it
-    either works silently — a live timestamp, or a NOPASSWD rule — or fails immediately;
-    it is the only form the unattended theme switch is allowed to use. When prompting is
-    permitted, pkexec puts the dialog on the desktop and sudo on the terminal.
-    """
-    if os.geteuid() == 0:
-        return []
-    if shutil.which("sudo") and subprocess.run(
-        ["sudo", "-n", "true"], capture_output=True, check=False
-    ).returncode == 0:
-        return ["sudo", "-n"]
-    if not prompt:
-        return None
-    if os.environ.get("DISPLAY") and shutil.which("pkexec"):
-        return ["pkexec"]
-    if sys.stdin.isatty() and shutil.which("sudo"):
-        return ["sudo"]
-    return None
 
 
 def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool = False) -> bool:

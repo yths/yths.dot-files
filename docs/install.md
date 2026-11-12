@@ -1,6 +1,7 @@
 # Installation
 
-> One command does all of this: `./bootstrap.sh` from a clone. This page is the long form —
+> One command does all of this, including the boot splash and login screen: `./bootstrap.sh`
+> from a clone, or `--skip-system` to leave those two. This page is the long form —
 > what each step changes, and what to do when one of them does not apply to your machine.
 > Edit [../setup.toml](../setup.toml) first if you want a different theme, font or package
 > set; every command below reads it.

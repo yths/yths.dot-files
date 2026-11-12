@@ -23,10 +23,21 @@ python helper/patch_web_greeter.py
 
 This is also invoked by `helper/patch_configurations.py:patch_all`.
 
-## Deploy
+## Installing
+
+Themes are authored here and read from `/usr/share/web-greeter/themes/`, which is
+root-owned, so patching and installing are separate stages. `./bootstrap.sh` does both;
+by hand it is:
 
 ```bash
-sudo cp -RL configuration/web-greeter/themes/<theme-name> /usr/share/web-greeter/themes/<theme-name>
+python helper/patch_web_greeter.py --install --activate
 ```
 
-Then set the active theme in `/etc/lightdm/web-greeter.yml`.
+`--install` copies the patched theme into place, dereferencing the wallpaper symlink because
+the greeter runs before login and cannot read out of a home directory. `--activate` points
+LightDM at it by rewriting the value on the `theme:` line of `/etc/lightdm/web-greeter.yml`
+and nothing else in that file — it is LightDM's, and carries settings this repository has no
+opinion about. Without `--activate` the theme is installed and whatever is already active
+stays active.
+
+`--theme <name>` installs one other than `standard`.
