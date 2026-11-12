@@ -41,7 +41,7 @@ ARCH_PACKAGES: dict[str, tuple[str, str]] = {
     "loguru": ("python-loguru", "optional; `helper/utils.py` falls back to stdlib `logging`"),
     "numpy": ("python-numpy", "level-meter maths"),
     "redis": ("python-redis", "optional at run time; cells render empty if Redis is unreachable"),
-    "screeninfo": ("python-screeninfo", "detects monitor geometry at install time"),
+    "screeninfo": ("python-screeninfo", "detects monitor geometry, at install and on hotplug"),
     "sounddevice": ("python-sounddevice", "live audio sampling"),
     "toml": ("python-toml", "reads and rewrites `~/.config/starship.toml`"),
     "websockets": ("python-websockets", "live theme editing and reload broadcast"),

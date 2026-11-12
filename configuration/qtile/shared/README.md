@@ -20,6 +20,11 @@ Neither directory needs an `__init__.py`.
   Writes go to a sibling temporary file and land via `os.replace()`, so the patchers and
   `install.py` — separate processes that read the same file — can never observe a
   half-written one.
+- **`monitors.py`** — `detect()` reads the connected displays and their physical size;
+  `refresh()` records them in `~/.config/config.json` and says whether anything changed.
+  `config.py` calls it when a display is plugged in or unplugged, and
+  `helper/screen_configuration.py` calls it at install time, so the geometry every scaled
+  size derives from has one definition.
 - **`spectrum.py`** — the FFT-to-block-glyph maths behind the audio level meter. Pure: it
   takes samples and returns numbers or a string, with no reference to PortAudio, qtile or
   the bar. `widgets/audio.py` renders through it, and so does

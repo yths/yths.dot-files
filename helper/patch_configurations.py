@@ -7,6 +7,7 @@ reloads the running programs. Invoked when the theme is switched or the palette 
 regenerated.
 """
 
+import argparse
 import json
 import os
 import subprocess
@@ -147,13 +148,26 @@ def report(failed: list[str]) -> None:
         )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Apply the active theme now: patch every app, reload them, report."""
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--no-reload",
+        action="store_true",
+        help=(
+            "rewrite the configurations without reloading the running programs. Used by the "
+            "monitor hotplug hook, which reloads qtile itself: reloading from here would "
+            "restart qtile, which is what the hook is already doing."
+        ),
+    )
+    arguments = parser.parse_args(argv)
+
     with open(os.path.expanduser("~/.config/config.json")) as input_handle:
         configuration = json.load(input_handle)
     failed = patch_all(configuration)
-    reload_applications(configuration)
-    report(failed)
+    if not arguments.no_reload:
+        reload_applications(configuration)
+        report(failed)
     return 1 if failed else 0
 
 
