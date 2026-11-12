@@ -25,11 +25,13 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     # forces every space character to a full cell, so the shortfall is made up with a
     # fractionally sized second space — a percentage, so it tracks fontsize per monitor.
     ICON_GAP = ' <span size="34%"> </span>'
-    # qtile sizes each cell from the text's *advance* width and clips the blit to it
-    # (`drawer.draw(width=self.width)`). Because the glyph's ink runs 0.418em past its
-    # advance, rendering it with nothing after it cuts the right side off — so the
-    # icon-only states carry a trailing space to cover the overhang.
-    ICON_ONLY = ICON + " "
+    #: Shown instead of ICON when the backend cannot authenticate at all. The producer
+    #: reads ~/.claude/.credentials.json and deliberately never refreshes it, so an
+    #: expired token is a normal steady state, not a blip -- worth its own glyph.
+    ICON_DEAD = "󱚡"  # U+F16A1 md-robot_dead
+    #: ``reason`` values that mean "re-authenticate". Everything else (network_error,
+    #: bad_response, a non-auth http_*) is transient and keeps the live glyph, dimmed.
+    AUTH_FAILURES = frozenset({"no_credentials", "token_expired", "http_401", "http_403"})
     LEVELS = ("▁", "▂", "▃", "▄", "▅", "▆", "▇", "█")
     DIM_ALPHA = 24576
 
@@ -55,6 +57,15 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         self.expanded = False
 
         self.add_callbacks({"Button3": self.notify})
+
+    def _icon_only(self, icon: str) -> str:
+        """An icon with nothing after it.
+
+        qtile sizes each cell from the text's *advance* width and clips the blit to it
+        (``drawer.draw(width=self.width)``). Both robot glyphs paint 0.418em past their
+        advance, so without the trailing space the right edge is cut off.
+        """
+        return icon + " "
 
     def _dict(self, value: Any) -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
@@ -161,9 +172,16 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return ""
 
         if not measurement.get("available"):
-            body = self.ICON_ONLY
+            reason = measurement.get("reason") or "unavailable"
+            if reason in self.AUTH_FAILURES:
+                # Full opacity, unlike the transient states below: this one needs acting
+                # on, and the dim "no data right now" treatment would bury it.
+                if self.expanded:
+                    return f"{self.ICON_DEAD}{self.ICON_GAP}{reason}"
+                return self._icon_only(self.ICON_DEAD)
+            body = self._icon_only(self.ICON)
             if self.expanded:
-                body = f"{self.ICON}{self.ICON_GAP}{measurement.get('reason') or 'unavailable'}"
+                body = f"{self.ICON}{self.ICON_GAP}{reason}"
             return f"<span alpha='{self.DIM_ALPHA}'>{body}</span>"
 
         readings = [
@@ -172,7 +190,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         ]
         readings = [reading for reading in readings if reading is not None]
         if not readings:
-            return f"<span alpha='{self.DIM_ALPHA}'>{self.ICON_ONLY}</span>"
+            return f"<span alpha='{self.DIM_ALPHA}'>{self._icon_only(self.ICON)}</span>"
 
         if self.expanded:
             parts = [self._detail(reading) for reading in readings]
@@ -251,15 +269,45 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
 
     def mouse_enter(self, x: int, y: int) -> None:
         self.expanded = True
-        self.update(self._render())
+        self._refresh()
 
     def mouse_leave(self, x: int, y: int) -> None:
         self.expanded = False
-        self.update(self._render())
+        self._refresh()
+
+    def _refresh(self) -> None:
+        """Re-render from the current state. Always called on the event loop."""
+        libqtile.widget.base.BackgroundPoll.update(self, self._render())
+
+    def update(self, text: str) -> None:
+        """Apply the *current* state, not the text handed in.
+
+        Two separate problems make the argument untrustworthy, and both showed up as
+        hover misbehaving:
+
+        ``poll()`` runs on a worker thread, so the string it produced can predate a
+        pointer that entered or left while the Redis read was still in flight. Applying
+        that stale snapshot made hover sometimes fail to expand, and sometimes fail to
+        contract on leave.
+
+        Separately, ``Bar.process_pointer_motion`` clears its ``_has_cursor`` *without*
+        calling ``mouse_leave`` when the pointer lands somewhere no widget occupies -- a
+        gap between cells, or the bar's own border. The cell is then never told it lost
+        the pointer and stays expanded indefinitely. Reconciling against what the bar
+        believes heals that within one poll.
+
+        Only the poll path may reconcile: ``process_pointer_enter`` calls
+        ``mouse_enter`` *before* it assigns ``_has_cursor``, so doing this on the hover
+        path would cancel every expansion the moment it started. The hover handlers call
+        ``_refresh`` directly for that reason.
+        """
+        bar = getattr(self, "bar", None)
+        if self.expanded and bar is not None and getattr(bar, "_has_cursor", self) is not self:
+            self.expanded = False
+        self._refresh()
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "claude_usage")
-        if measurement is None:
-            return ""
-        self.measurement = measurement
+        # Assigned unconditionally: a failed read clears the cache so the cell blanks,
+        # which is what every sibling widget does when Redis is unreachable.
+        self.measurement = widgets._stream.read_measurement(self.r, "claude_usage")
         return self._render()
