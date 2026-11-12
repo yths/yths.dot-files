@@ -50,9 +50,35 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 THEME_SOURCE_ROOT = os.path.join(_REPOSITORY_ROOT, "configuration", "web-greeter", "themes")
 
 
+def theme_variables(
+    configuration: dict[str, Any], theme_json: dict[str, Any], wallpaper_name: str
+) -> dict[str, str]:
+    """The custom properties one theme's ``:root`` block holds.
+
+    Separated from the writing so it can be exercised without a repository to write into:
+    ``patch_web_greeter`` generates *into* ``configuration/web-greeter/themes/``, so a test
+    that called it would leave the installed login screen showing the test's palette.
+
+    Each theme names its own roles in ``theme.json#role_map`` and maps them onto palette
+    tokens, which is what lets a second theme use the same palette differently without this
+    file knowing anything about it.
+    """
+    palette = configuration["palette"][configuration["state"]["theme"]]
+    variables = {f"--{role}": palette[key] for role, key in theme_json["role_map"].items()}
+    font = {**configuration["font"], **theme_json.get("font_overrides", {})}
+    variables["--font-family"] = f'"{font["family"]}"'
+    variables["--font-size"] = f'{font["size"]}px'
+    variables["--wallpaper-url"] = f'url("{wallpaper_name}")'
+    return variables
+
+
+def render_theme_css(variables: dict[str, str]) -> str:
+    """The whole of a theme's generated stylesheet."""
+    body = "".join(f"    {name}: {value};\n" for name, value in variables.items())
+    return f":root {{\n{body}}}\n"
+
+
 def patch_web_greeter(configuration: dict[str, Any]) -> None:
-    theme_state = configuration["state"]["theme"]
-    palette = configuration["palette"][theme_state]
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     themes_dir = os.path.join(repo, "configuration", "web-greeter", "themes")
     shared_src = os.path.join(themes_dir, "_shared")
@@ -67,24 +93,16 @@ def patch_web_greeter(configuration: dict[str, Any]) -> None:
         with open(theme_json_path) as fh:
             tj = json.load(fh)
 
-        vars_ = {f"--{role}": palette[key] for role, key in tj["role_map"].items()}
-        font = {**configuration["font"], **tj.get("font_overrides", {})}
-        vars_["--font-family"] = f'"{font["family"]}"'
-        vars_["--font-size"] = f'{font["size"]}px'
-
         wp_path = os.path.expanduser(configuration["wallpapers"][tj["wallpaper_key"]])
         ext = os.path.splitext(wp_path)[1] or ".png"
         link = os.path.join(theme_dir, f"wallpaper{ext}")
         if os.path.lexists(link):
             os.unlink(link)
         os.symlink(wp_path, link)
-        vars_["--wallpaper-url"] = f'url("{os.path.basename(link)}")'
 
+        variables = theme_variables(configuration, tj, os.path.basename(link))
         with open(os.path.join(theme_dir, "theme.css"), "w") as fh:
-            fh.write(":root {\n")
-            for k, v in vars_.items():
-                fh.write(f"    {k}: {v};\n")
-            fh.write("}\n")
+            fh.write(render_theme_css(variables))
 
         shared_dst = os.path.join(theme_dir, "_shared")
         if os.path.lexists(shared_dst):
