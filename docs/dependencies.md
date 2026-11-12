@@ -15,6 +15,17 @@ Arch ships most Python packages as `python-<name>`. Exceptions worth memorising:
 
 Other AUR-only packages are marked **(AUR)** in the tables below; the rest are in the main repos.
 
+Every module named in the tables carries its full path from the repository root, as in
+`helper/patch_vsc.py`. Neither a bare module name nor a bare filename is enough. The column
+used to mix both of those with paths rooted at three different directories, and none of them
+could be pasted into a shell or clicked in a viewer.
+
+`helper/gendocs.py` enforces this: it fails on a `.py` path in this file that does not
+resolve, and on a bare word that happens to be one of this repository's module names. The
+rule therefore holds without anyone remembering it — which is also what unblocks the import
+scanner in [issues.md](issues.md), since a scanner has to resolve these names to diff them
+against the real imports.
+
 ## `install.py` (Core Installer)
 
 | Python import | Arch package | Required? |
@@ -26,20 +37,20 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 
 | Python import | Arch package | Used by | Notes |
 |---|---|---|---|
-| `loguru` | `python-loguru` | every patcher, via `helper/utils.py` | optional; the fallback to stdlib `logging` is defined once, in `utils.py`, and the patchers import `logger` from there |
-| `PIL` | `python-pillow` | `patch_plymouth` | renders boot background |
-| `cairo` | `python-pycairo` | `patch_plymouth` | renders boot background |
-| `colour` | `python-colour-science` **(AUR)** | `patch_vsc`, `list_palette` | perceptual nearest-color matching (`list_palette` reuses it for the drift report) |
-| `toml` | `python-toml` | `patch_starship` | reads and rewrites `~/.config/starship.toml` |
+| `loguru` | `python-loguru` | every patcher, via `helper/utils.py` | optional; the fallback to stdlib `logging` is defined once, in `helper/utils.py`, and the patchers import `logger` from there |
+| `PIL` | `python-pillow` | `helper/patch_plymouth.py` | renders boot background |
+| `cairo` | `python-pycairo` | `helper/patch_plymouth.py` | renders boot background |
+| `colour` | `python-colour-science` **(AUR)** | `helper/patch_vsc.py`, `helper/list_palette.py` | perceptual nearest-color matching (`helper/list_palette.py` reuses it for the drift report) |
+| `toml` | `python-toml` | `helper/patch_starship.py` | reads and rewrites `~/.config/starship.toml` |
 
 ## qtile and Widgets (`configuration/qtile/`)
 
 | Python import | Arch package | Required by | Notes |
 |---|---|---|---|
 | `libqtile` | `qtile` | window manager + all widgets | the window manager package brings the library |
-| `redis` | `python-redis` | `config.py`, eight of the nine widgets | optional at import — widgets degrade if Redis is unreachable; `service_state.py` uses no Redis |
-| `numpy` | `python-numpy` | `shared/spectrum.py`, `widgets/audio.py`, `helper/preview_audio.py` | level-meter math |
-| `sounddevice` | `python-sounddevice` **(AUR)** | `widgets/audio.py`, `helper/preview_audio.py` | live audio sampling |
+| `redis` | `python-redis` | `configuration/qtile/config.py`, eight of the nine widgets | optional at import — widgets degrade if Redis is unreachable; `configuration/qtile/widgets/service_state.py` uses no Redis |
+| `numpy` | `python-numpy` | `configuration/qtile/shared/spectrum.py`, `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | level-meter math |
+| `sounddevice` | `python-sounddevice` **(AUR)** | `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | live audio sampling |
 
 `python-dbus-fast` is a runtime dependency of qtile itself (not an import in this repo). Install it alongside `qtile` per [install.md](install.md).
 
@@ -78,7 +89,7 @@ Listed here for completeness; the canonical install command is in [install.md](i
 
 ## Auditing the Table
 
-There is no automated import scanner yet; the [issues.md](issues.md) tracker carries a ticket to extend `helper/gendocs.py` with one. Until that lands, occasional manual audits via:
+Half of this is automated. `helper/gendocs.py` checks that every module this page names resolves, so a row can no longer point at nothing — but nothing yet checks the other direction, that every import in the code has a row. The [issues.md](issues.md) tracker carries the ticket for that scanner. Until it lands, occasional manual audits via:
 
 ```bash
 grep -rhE '^import |^from .* import' install.py helper/ configuration/ | grep -vE 'helper\.|widgets\.|libqtile\.' | sort -u

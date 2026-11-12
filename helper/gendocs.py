@@ -64,6 +64,71 @@ def stray_widget_modules() -> list[Path]:
     return [path for path in sorted(WIDGETS_DIR.glob("*.py")) if not is_qtile_widget(path)]
 
 
+#: Paths in this file must be repo-rooted and real: its whole job is telling a reader which
+#: entry point pulls in which dependency, and a name that cannot be pasted into a shell
+#: fails at that. See its "Naming Convention" section.
+DEPENDENCIES_DOC = REPO_ROOT / "docs" / "dependencies.md"
+
+#: A backticked token naming a Python file, or a bare identifier that happens to be one of
+#: this repository's module names. Both forms were used in the tables, along with paths
+#: rooted at three different directories; none of them resolved.
+MODULE_PATH_REFERENCE = re.compile(r"`([\w./-]+\.py)`")
+BARE_NAME_REFERENCE = re.compile(r"`([a-z_][a-z0-9_]*)`")
+
+
+def module_stems() -> set[str]:
+    """Every module name in the repository, without directory or extension."""
+    return {path.stem for path in REPO_ROOT.rglob("*.py") if ".git" not in path.parts}
+
+
+def unresolvable_module_references() -> list[str]:
+    """Names in docs/dependencies.md that do not say, resolvably, which module they mean.
+
+    Two ways to fail. A path that does not exist from the repository root -- ``config.py``
+    and ``widgets/audio.py`` both named something real without saying where. And a bare
+    module name like ``patch_vsc``, which reads as prose but is a module: it has to be given
+    as a path or an import scanner cannot resolve it, which is why that open ticket could
+    not be written while this column looked the way it did.
+    """
+    if not DEPENDENCIES_DOC.is_file():
+        return []
+    text = DEPENDENCIES_DOC.read_text()
+    stems = module_stems()
+    unresolved = {
+        reference
+        for reference in MODULE_PATH_REFERENCE.findall(text)
+        if not (REPO_ROOT / reference).is_file()
+    }
+    unresolved |= {
+        f"{name} (a module; give its path)"
+        for name in BARE_NAME_REFERENCE.findall(text)
+        if name in stems
+    }
+    return sorted(unresolved)
+
+
+def invariants() -> list[tuple[str, list[str], str]]:
+    """Every structural rule this script refuses to generate documentation around.
+
+    Each is (what is wrong, what is wrong with it, what to do). Kept together because they
+    are checked and reported the same way; the alternative was near-identical blocks in
+    ``main``.
+    """
+    return [
+        (
+            "Names in docs/dependencies.md that do not resolve to a module:",
+            unresolvable_module_references(),
+            "Name modules by their path from the repository root, e.g. helper/patch_vsc.py.",
+        ),
+        (
+            "Not widgets, but sitting in configuration/qtile/widgets/:",
+            [str(path.relative_to(REPO_ROOT)) for path in stray_widget_modules()],
+            "Code shared between widgets belongs in configuration/qtile/shared/; "
+            "standalone tools belong in helper/.",
+        ),
+    ]
+
+
 def generate_widgets() -> str:
     """Every module under widgets/ is a widget, so every module is listed."""
     lines = []
@@ -195,6 +260,37 @@ def check(path: Path, key: str, generated: str) -> bool:
     return True
 
 
+def report_violation() -> bool:
+    """Print the first violated invariant. True means the caller should stop."""
+    for title, offenders, hint in invariants():
+        if not offenders:
+            continue
+        print(title, file=sys.stderr)
+        for offender in offenders:
+            print(f"  {offender}", file=sys.stderr)
+        print(hint, file=sys.stderr)
+        return True
+    return False
+
+
+def stale_blocks() -> list[tuple[str, str]]:
+    """Marker blocks whose content on disk differs from what the generators produce."""
+    return [
+        (key, relpath)
+        for key, (relpath, gen) in GENERATORS.items()
+        if not check(REPO_ROOT / relpath, key, gen())
+    ]
+
+
+def rewrite_blocks() -> list[tuple[str, str]]:
+    """Regenerate every marker block; returns the ones that actually changed."""
+    return [
+        (key, relpath)
+        for key, (relpath, gen) in GENERATORS.items()
+        if rewrite(REPO_ROOT / relpath, key, gen())
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -204,30 +300,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    strays = stray_widget_modules()
-    if strays:
-        print("Not widgets, but sitting in configuration/qtile/widgets/:", file=sys.stderr)
-        for path in strays:
-            print(f"  {path.relative_to(REPO_ROOT)}", file=sys.stderr)
-        print(
-            "Code shared between widgets belongs in configuration/qtile/shared/; "
-            "standalone tools belong in helper/.",
-            file=sys.stderr,
-        )
+    if report_violation():
         return 1
 
-    stale = []
-    changed = []
-    for key, (relpath, gen) in GENERATORS.items():
-        path = REPO_ROOT / relpath
-        generated = gen()
-        if args.check:
-            if not check(path, key, generated):
-                stale.append((key, relpath))
-        elif rewrite(path, key, generated):
-            changed.append((key, relpath))
-
     if args.check:
+        stale = stale_blocks()
         if stale:
             print("Stale blocks:", file=sys.stderr)
             for key, relpath in stale:
@@ -236,6 +313,7 @@ def main() -> int:
         print("All blocks up to date.")
         return 0
 
+    changed = rewrite_blocks()
     if changed:
         print("Updated blocks:")
         for key, relpath in changed:
