@@ -267,3 +267,16 @@ def test_without_the_keyring_nothing_changes(tmp_path: pathlib.Path) -> None:
     argv.write_text(ARGV)
     assert not patch_vsc.use_keyring(str(argv), str(tmp_path / "absent"))
     assert argv.read_text() == ARGV
+
+
+# The template's semantic rules were recoloured with everything else and then not written, so
+# enum members, constants and built-ins kept the base theme's colours.
+def test_the_semantic_token_rules_are_written(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "settings.json.template").write_text("{}")
+    monkeypatch.setattr(patch_vsc, "template_path", lambda _app, name: str(tmp_path / name))
+    rules = {"enumMember": {"foreground": "#ff0000"}}
+    patch_vsc.apply_to_user_settings({"colors": {}, "semanticTokenColors": rules})
+    written = json.loads((tmp_path / "settings.json").read_text())
+    assert written["editor.semanticTokenColorCustomizations"] == {"enabled": True, "rules": rules}

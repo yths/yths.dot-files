@@ -259,6 +259,14 @@ def apply_to_user_settings(theme: dict, base_theme_id: str | None = None) -> boo
     user_settings["editor.tokenColorCustomizations"] = {
         "textMateRules": theme.get("tokenColors", [])
     }
+    # Semantic highlighting colours the tokens a language server classifies -- enum members,
+    # constants, built-ins -- over the TextMate grammar. The template's rules were recoloured
+    # with everything else and then dropped here, so those tokens kept the base theme's
+    # colours.
+    user_settings["editor.semanticTokenColorCustomizations"] = {
+        "enabled": theme.get("semanticHighlighting", True),
+        "rules": theme.get("semanticTokenColors", {}),
+    }
     user_settings["workbench.colorCustomizations"] = theme.get("colors", {})
     if base_theme_id is not None:
         user_settings["workbench.colorTheme"] = base_theme_id
