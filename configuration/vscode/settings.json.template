@@ -4,5 +4,6 @@
     "workbench.startupEditor": "none",
     "python.analysis.typeCheckingMode": "strict",
     "claudeCode.preferredLocation": "panel",
-    "claudeCode.hideOnboarding": true
+    "claudeCode.hideOnboarding": true,
+    "window.titleBarStyle": "native"
 }
