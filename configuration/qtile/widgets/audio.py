@@ -45,7 +45,7 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self,
         r: redis.Redis | None,
         num_bars: int = 16,
-        device_id: int = 31,
+        device_id: int | None = None,
         notification_color: str = "#ff0000",
         configuration_file_path: str | None = None,
         symbols: dict[str, Any] | None = None,
@@ -61,24 +61,20 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
             else shared.state.CONFIGURATION_FILE_PATH
         )
 
-        self.device_id = 0
+        #: The capture device, or ``None`` until one is chosen. No stream is opened here: this
+        #: runs whenever config.py is evaluated, and a stream opened then was opened on the old
+        #: default of device 31 -- a JACK input -- only to be closed a moment later when
+        #: automatic mode moved to ``default``. Two of those per config load, one per screen,
+        #: and closing a PortAudio JACK stream mid-callback under PipeWire is a use-after-free:
+        #: it took qtile, and with it the session, down on a config reload. The stream opens on
+        #: the first poll instead, once the widget is in a bar, on the device it will keep.
+        self.device_id = max(device_id, 0) if device_id is not None else None
+        self.device_properties = None
+        self.stream = None
 
         self.MAX_DECAY = 32
 
         self.NUM_BARS = num_bars
-        try:
-            self.device_id = max(device_id, 0)
-            sounddevice.default.device = self.device_id
-            self.device_properties = sounddevice.query_devices(self.device_id)
-            self.stream = sounddevice.InputStream(
-                channels=2,
-                samplerate=self.device_properties['default_samplerate'],
-                callback=self.callback_spectrum,
-            )
-            self.stream.start()
-        except AUDIO_ERRORS:
-            self.device_properties = None
-            self.stream = None
         self.visualization = shared.spectrum.SILENCE * self.NUM_BARS
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws a meter.
@@ -163,14 +159,13 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
     def device_up(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
-        if self.device_id is not None:
-            available_devices = len(sounddevice.query_devices())
-            self.update_device((self.device_id + 1) % available_devices)
+        available_devices = len(sounddevice.query_devices())
+        self.update_device(((self.device_id or 0) + 1) % available_devices)
 
     def device_down(self) -> None:
         self.decay = self.MAX_DECAY
         self._set_mode("manual")
-        if self.device_id is not None and self.device_id > 0:
+        if self.device_id:
             available_devices = len(sounddevice.query_devices())
             self.update_device((self.device_id - 1) % available_devices)
 
@@ -191,9 +186,8 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         finally:
             self.stream = None
 
-    def update_device(self, device_id: int) -> None:
-        self.device_id = device_id
-        self._close_stream()
+    def _open_stream(self) -> None:
+        """Open and start the capture stream on ``self.device_id``; ``None`` if it fails."""
         try:
             sounddevice.default.device = self.device_id
             self.device_properties = sounddevice.query_devices(self.device_id)
@@ -206,6 +200,11 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         except AUDIO_ERRORS:
             self.device_properties = None
             self.stream = None
+
+    def update_device(self, device_id: int) -> None:
+        self.device_id = device_id
+        self._close_stream()
+        self._open_stream()
 
     def callback_spectrum(
         self, in_data: numpy.ndarray, frame_count: int, time_info: Any, status: Any
@@ -223,20 +222,21 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
         self.past_values = SMOOTHING * self.past_values + (1 - SMOOTHING) * current
         self.visualization = shared.spectrum.render(self.past_values, self.symbols["meter.ramp"])
 
+    def _follow_default(self) -> None:
+        """In automatic mode, move to ``default`` before -- not after -- opening anything."""
+        target = self._auto_device_index()
+        if target is None:
+            self._reenumerate_devices()
+            target = self._auto_device_index()
+        if target is not None and target != self.device_id:
+            self.update_device(target)
+
     def poll(self) -> str:
-        if self.stream is None:
-            try:
-                sounddevice.default.device = self.device_id
-                self.device_properties = sounddevice.query_devices(self.device_id)
-                self.stream = sounddevice.InputStream(
-                channels=2,
-                samplerate=self.device_properties['default_samplerate'],
-                callback=self.callback_spectrum,
-            )
-                self.stream.start()
-            except AUDIO_ERRORS:
-                self.device_properties = None
-                self.stream = None
+        if sounddevice is not None:
+            if self.mode == "automatic" or self.device_id is None:
+                self._follow_default()
+            if self.stream is None and self.device_id is not None:
+                self._open_stream()
 
         measurement = shared.stream.read_measurement(self.r, "audio")
         if measurement is None:
@@ -244,12 +244,6 @@ class WidgetAudio(libqtile.widget.base.InLoopPollText):
 
         if self.mode == "automatic":
             self.last_active_sink = measurement.get("active_sink")
-            target = self._auto_device_index()
-            if target is None:
-                self._reenumerate_devices()
-                target = self._auto_device_index()
-            if target is not None and target != self.device_id:
-                self.update_device(target)
 
         output = f"<span letter_spacing='1024'>|{self.visualization}|</span>"
 
