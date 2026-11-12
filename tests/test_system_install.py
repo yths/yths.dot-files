@@ -124,3 +124,16 @@ def test_a_failed_migration_installs_nothing_system_wide(
 def test_without_system_no_root_is_asked_for(steps: list[str]) -> None:
     assert install.main(["--migrate"]) == 0
     assert steps == ["migrate"]
+
+
+def test_credentials_can_be_collected_on_their_own(
+    steps: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Declined at install, collected later -- without the full install, which would reset the
+    # machine's state, and without touching anything else.
+    monkeypatch.setattr(
+        install, "install_credentials", lambda wanted: steps.append(f"credentials {wanted}")
+    )
+    monkeypatch.setitem(install.SETUP, "credentials", {"prompt": ["TOKEN"]})
+    assert install.main(["--credentials"]) == 0
+    assert steps == ["credentials ['TOKEN']"]

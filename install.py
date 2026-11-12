@@ -419,6 +419,12 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
              "prompts for nothing unless --system. Use after pulling an update; use a plain install for a "
              "new machine.",
     )
+    parser.add_argument(
+        "--credentials",
+        action="store_true",
+        help="only collect the credentials setup.toml lists into ~/.config/credentials.json, "
+             "for a machine that declined them at install; nothing else is touched",
+    )
     return parser.parse_args(argv)
 
 
@@ -523,6 +529,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")
+
+    if arguments.credentials:
+        wanted = SETUP["credentials"]["prompt"]
+        if not wanted:
+            logger.info("setup.toml lists no credentials to collect.")
+            return 0
+        install_credentials(wanted)
+        return 0
 
     if arguments.migrate:
         result = run_migration(

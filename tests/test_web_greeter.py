@@ -184,6 +184,35 @@ def test_the_login_screen_installs_under_the_theme_name_and_replaces_earlier_one
     assert sorted(path.name for path in root.iterdir()) == ["simple"]
 
 
+def test_lightdm_is_pointed_at_the_greeter_and_enabled_but_not_started(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dropin = tmp_path / "lightdm.conf.d" / "50-nody-greeter.conf"
+    commands: list[list[str]] = []
+
+    def run(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        commands.append(argv)
+        if argv[0] == "install":
+            dropin.parent.mkdir(parents=True, exist_ok=True)
+            dropin.write_text(pathlib.Path(argv[-2]).read_text())
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(patch_web_greeter, "LIGHTDM_DROPIN", str(dropin))
+    monkeypatch.setattr(patch_web_greeter.subprocess, "run", run)
+    monkeypatch.setattr(patch_web_greeter.shutil, "which", lambda name: f"/usr/bin/{name}")
+
+    assert patch_web_greeter.configure_lightdm([])
+    assert dropin.read_text() == "[Seat:*]\ngreeter-session=nody-greeter\n"
+    enable = [argv for argv in commands if argv[0] == "systemctl"]
+    assert enable == [["systemctl", "enable", "lightdm.service"]]
+    assert "--now" not in enable[0], "started from the console it takes the console over"
+
+    # A second run finds the drop-in already right and writes nothing.
+    commands.clear()
+    assert patch_web_greeter.configure_lightdm([])
+    assert [argv[0] for argv in commands] == ["systemctl"]
+
+
 def test_the_installed_name_is_the_theme_name_made_safe() -> None:
     assert utils.installed_theme_name({"name": "Autumn Default"}) == "autumn-default"
     assert utils.installed_theme_name({"name": "../etc"}) == "etc"

@@ -63,6 +63,11 @@ except ImportError:
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
 SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"
 
+#: Where the initramfs hooks are listed. The splash only draws if ``plymouth`` is among them,
+#: and that edit -- with ``splash`` on the kernel command line -- is left to the reader: both
+#: files decide whether the machine boots, so the installer reports rather than rewrites.
+MKINITCPIO_CONFIG = "/etc/mkinitcpio.conf"
+
 #: The boot splash is always rendered dark, whatever the desktop's current theme. It is drawn
 #: before anyone logs in, so there is no user whose preference could apply; ``state.theme``
 #: describes a session that does not exist yet. Dark also matches ``background-tile.png``,
@@ -125,6 +130,17 @@ def stage_theme(source: str) -> str:
     return staged
 
 
+def hook_is_configured(path: str = MKINITCPIO_CONFIG) -> bool | None:
+    """Whether ``plymouth`` is in mkinitcpio's ``HOOKS``; ``None`` when the file cannot be read."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError:
+        return None
+    hooks = [line for line in lines if line.strip().startswith("HOOKS=")]
+    return any("plymouth" in line.split("=", 1)[1].split() for line in hooks)
+
+
 def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool = False) -> bool:
     """Install the staged theme as ``name`` and make it plymouth's. Returns whether it did.
 
@@ -164,6 +180,13 @@ def install_theme(staged: str, name: str, *, prompt: bool = False, rebuild: bool
         return False
     for previous in remove_previous_installs(SYSTEM_THEME_ROOT, name, prefix):
         logger.info(f"Removed the previous boot splash {previous}.")
+    if hook_is_configured() is False:
+        logger.warning(
+            f"The splash is installed but will not draw: `plymouth` is not in HOOKS in "
+            f"{MKINITCPIO_CONFIG}. Add it after `systemd`, put `splash` on the kernel command "
+            "line, and run `python helper/patch_plymouth.py --install --rebuild`. docs/install.md "
+            "has the step; the desktop does not depend on it."
+        )
     if rebuild:
         logger.info(f"Rebuilt the initramfs; {name} is the default boot splash.")
     else:

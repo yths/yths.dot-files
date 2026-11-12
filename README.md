@@ -67,16 +67,20 @@ cd yths.dot-files
 ./bootstrap.sh
 ```
 
-That installs the packages, the configuration and a theme. `./bootstrap.sh --dry-run` prints
-what it would do and stops; `--dev` adds the linter and test runner.
+That is the whole install: packages, the greeter, the services, the configuration, the login
+screen. It asks for the sudo password and once whether to collect credentials; then reboot.
+`./bootstrap.sh --dry-run` prints what it would do and stops; `--dev` adds the linter and
+test runner.
 
 Everything you would change first is in [setup.toml](setup.toml) — the theme, the fallback
-font, the package list, which credentials to collect. Edit it before running, and nothing else needs
-touching.
+font, the package list, which credentials to collect. Edit it before running, and nothing
+else needs touching.
 
-Two steps stay manual because each needs root and a decision:
-[the boot splash](configuration/plymouth/README.md) and
-[the login screen](configuration/web-greeter/README.md).
+One thing stays for later, from the desktop: [the boot splash](configuration/plymouth/README.md)
+is installed but only draws once `plymouth` is in the initramfs hooks and `splash` on the
+kernel command line — two edits to files that decide whether the machine boots, which the
+script will not make for you. [docs/install.md](docs/install.md) has that step and what
+else is optional.
 
 Starting from a bare disk instead: [docs/os-build.md](docs/os-build.md).
 
