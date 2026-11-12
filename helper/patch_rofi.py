@@ -65,6 +65,9 @@ def patch_rofi(configuration: dict[str, Any]) -> None:
         "COLOR2": f"{configuration['palette'][theme]['failure']}",
         "COLOR3": f"{configuration['palette'][theme]['foreground']}",
         "COLOR4": f"{configuration['palette'][theme]['highlight']}",
+        # The matched part of an entry. Style and colour travel as one value because rofi
+        # will not parse a style followed by a reference (`bold @COLOR3`) in the theme.
+        "MATCH": f"bold {configuration['palette'][theme]['foreground']}",
         "WIDTH": f"{round(average_width)}px",
         "YOFFSET": f"{round(configuration['font']['size'] * average_scaling_factor * 2.75)}px",
     }

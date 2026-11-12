@@ -102,7 +102,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:209` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `two-step.TitleFont` | × 1.25, always dark | `helper/patch_plymouth.py:208` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | × 1.214 | `helper/patch_rofi.py:62` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `YOFFSET` | × average_scaling_factor, × 2.75, embedded | `helper/patch_rofi.py:69` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `YOFFSET` | × average_scaling_factor, × 2.75, embedded | `helper/patch_rofi.py:72` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--font-size` | pinned to 20 | `configuration/web-greeter/themes/standard/theme.json#font_overrides` |
 
 #### `palette.background`
@@ -211,6 +211,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:725` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(active=)` | direct | `configuration/qtile/config.py:682` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR3` | direct | `helper/patch_rofi.py:66` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `MATCH` | embedded | `helper/patch_rofi.py:70` |
 | starship | `~/.config/starship.toml` | `palettes.theme.color0` | direct | `helper/patch_starship.py:30` |
 | tmux | `~/.config/tmux/tmux.conf` | `color3` | direct | `helper/patch_tmux.py:41` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--foreground` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
@@ -569,6 +570,7 @@ The same records, keyed by the file each value lands in.
 | `COLOR4` | `palette.highlight` | direct |
 | `FONT` | `font.family` | direct |
 | `FONT` | `font.size` | × 1.214 |
+| `MATCH` | `palette.foreground` | embedded |
 | `YOFFSET` | `font.size` | × average_scaling_factor, × 2.75, embedded |
 
 #### `~/.config/starship.toml` (starship)

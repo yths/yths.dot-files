@@ -43,8 +43,12 @@ element selected {
   background-color: @COLOR4;
   text-color: @COLOR0;
 }
+/* The matched part of an entry. Not @COLOR4: that is the selected entry's background, so a
+   match read as "selected" in every other entry and vanished inside the selected one. @MATCH
+   is bold foreground, which stands apart from both the neutral entries and the
+   dark-on-highlight selection. */
 element-text {
   background-color: transparent;
   text-color: inherit;
-  highlight: @COLOR4;
+  highlight: @MATCH;
 }

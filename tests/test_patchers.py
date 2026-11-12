@@ -94,6 +94,10 @@ def test_rofi_writes_the_palette_and_the_scaled_width(
     written = (home / ".config" / "rofi" / "theme_config.rasi").read_text()
     assert f"COLOR0: {PALETTE['background']};" in written
     assert f"COLOR4: {PALETTE['highlight']};" in written
+    # A match must not share the selection's colour, or it reads as selected and vanishes
+    # inside the entry that is.
+    assert f"MATCH: bold {PALETTE['foreground']};" in written
+    assert PALETTE["foreground"] != PALETTE["highlight"]
     assert "WIDTH: 3200px;" in written          # the mean of 3840 and 2560
     assert '"Iosevka NF 17"' in written         # 14 * 1.214, rounded
 
