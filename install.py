@@ -6,9 +6,11 @@ Discovers theme bundles under ``assets/theme-*/``, prompts for one, writes the c
 into ``~/.config/``. See docs/architecture.md for the full theme-bundle lifecycle.
 """
 
+import argparse
 import json
 import os
 import pickle
+import sys
 import time
 
 try:
@@ -29,6 +31,17 @@ from helper.utils import (
 )
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Install the yths dot files and one of the bundled themes."
+    )
+    parser.add_argument(
+        "--theme",
+        type=str,
+        default=None,
+        help="Install this theme by name, without prompting (e.g. --theme yths).",
+    )
+    arguments = parser.parse_args()
+
     repository_folder_path = os.environ.get(
         "DOTFILES_REPOSITORY_PATH",
         os.path.join("~", "repositories", "yths.dot-files"),
@@ -36,6 +49,54 @@ if __name__ == "__main__":
     repository_folder_path = os.path.expanduser(repository_folder_path)
     configuration_folder_path = os.path.join(repository_folder_path, "configuration")
     assets_folder_path = os.path.join(repository_folder_path, "assets")
+
+    # Resolved before anything is installed, so `--theme <unknown>` fails without
+    # having already replaced half the configuration.
+    # Discover the theme bundles. Sorted by name so the numbering is the same on every
+    # machine -- os.listdir order is not.
+    theme_paths = {}
+    for entry in sorted(os.listdir(assets_folder_path)):
+        theme_path = os.path.join(assets_folder_path, entry)
+        if not entry.startswith("theme-") or not os.path.isdir(theme_path):
+            continue
+        with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
+            theme_paths[json.load(handle)["name"]] = theme_path
+
+    if not theme_paths:
+        sys.exit(f"No theme bundles found under {assets_folder_path}.")
+
+    theme_names = sorted(theme_paths)
+    if arguments.theme is not None:
+        if arguments.theme not in theme_paths:
+            sys.exit(
+                f"Unknown theme {arguments.theme!r}. "
+                f"Available: {', '.join(theme_names)}."
+            )
+        selected_theme = arguments.theme
+    else:
+        for index, name in enumerate(theme_names):
+            print(f"[{index}] {name}")
+        selected_theme = None
+        while selected_theme is None:
+            user_input = input(
+                f"Select a theme by number or name (default = {theme_names[0]}): "
+            ).strip()
+            if not user_input:
+                selected_theme = theme_names[0]
+            elif user_input.isdigit() and int(user_input) < len(theme_names):
+                selected_theme = theme_names[int(user_input)]
+            elif user_input in theme_paths:
+                selected_theme = user_input
+            else:
+                print(
+                    f"  Not a valid choice. Enter 0-{len(theme_names) - 1}, "
+                    f"or one of: {', '.join(theme_names)}."
+                )
+
+    print(f"Selected theme: {selected_theme}")
+
+    assets_folder_path = theme_paths[selected_theme]
+
     # install bash configuration
     source_file_path = os.path.join(configuration_folder_path, "bash", ".bashrc")
     destination_file_path = os.path.join(os.path.expanduser("~"), ".bashrc")
@@ -135,30 +196,6 @@ if __name__ == "__main__":
         install_credentials(credentials)
 
     # configure theme
-    # list available themes
-
-    theme_list = {}
-    theme_id = 0
-    for theme in os.listdir(assets_folder_path):
-        if theme.startswith("theme-"):
-            theme_path = os.path.join(assets_folder_path, theme)
-            if os.path.isdir(theme_path):
-                with open(
-                    os.path.join(theme_path, "config.json"), encoding="utf-8"
-                ) as handle:
-                    configuration = json.load(handle)
-                print(f"[{theme_id}] {configuration['name']}")
-                theme_list[theme_id] = theme_path
-                theme_id += 1
-
-    selected_theme_id = None
-    while selected_theme_id is None:
-        user_input = input("Select a theme by entering its number (default = 0): ")
-        selected_theme_id = int(user_input) if user_input.isdigit() else 0
-
-    print(f"Selected theme: {theme_list[selected_theme_id]}")
-
-    assets_folder_path = theme_list[selected_theme_id]
 
     # install configuration
     source_file_path = os.path.join(assets_folder_path, "palette.pkl")

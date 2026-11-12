@@ -2,17 +2,27 @@
 
 ## Switch the Active Theme
 
-`install.py` is idempotent — re-run it to pick a different preset without touching anything outside the wallpaper and color paths. The current `~/.config/config.json` is preserved as `~/.config/config.json.<timestamp>.bak` so the previous selection can be recovered.
+Re-run `install.py` to pick a different preset. The current `~/.config/config.json` is preserved as `~/.config/config.json.<timestamp>.bak` first, so the previous selection can be recovered.
+
+Re-running also rewrites `state` to its defaults — `theme: light`, `condition: normal`, `mode: automatic` — so a manually pinned dark theme reverts to automatic switching. Restore it by editing `~/.config/config.json`, or with the location widget's middle- and right-click bindings.
 
 ```bash
 python install.py
 ```
 
-For non-interactive use (e.g. provisioning), copy the desired bundle's `config.json` directly:
+For non-interactive use (e.g. provisioning), name the theme instead of answering the prompt:
 
 ```bash
-cp assets/theme-<uuid>/config.json ~/.config/config.json
+python install.py --theme yths
 ```
+
+An unknown name exits non-zero and lists the bundles it found, before anything is installed.
+
+Copying a bundle's `config.json` into place does not work, and never did: the installer
+assembles `~/.config/config.json` from several sources — the palette comes from
+`palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from
+where it installed them -- and a bundle manifest carries none of that. Only `name` is
+taken from it.
 
 ## List Available Themes
 
