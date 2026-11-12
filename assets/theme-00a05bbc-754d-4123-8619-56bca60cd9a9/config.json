@@ -13,6 +13,6 @@
     "state": {
         "theme": "light",
         "condition": "normal",
-        "mode": "automatic"
+        "theme_mode": "automatic"
     }
 }

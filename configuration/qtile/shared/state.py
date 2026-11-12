@@ -1,7 +1,8 @@
 """Atomic access to ``~/.config/config.json`` for the qtile bar cells.
 
 Three cells persist state into the shared configuration file: the day/night theme, the
-urgent-wallpaper condition, and the audio device mode. They run on qtile's event loop, so
+urgent-wallpaper condition, and the audio device mode. It also normalises the one state
+key and one value that predate the current vocabulary; see ``normalise_state``. They run on qtile's event loop, so
 they cannot interleave with each other — but the patchers under ``helper/`` and
 ``install.py`` are separate processes that read the same file. A plain ``open(path, "w")``
 truncates before it refills, so a reader landing in that window sees a partial file. Writing
@@ -17,6 +18,37 @@ from typing import Any
 
 CONFIGURATION_FILE_PATH = os.path.expanduser(os.path.join("~", ".config", "config.json"))
 
+#: State keys written before the current vocabulary, mapped onto it. ``mode`` became
+#: ``theme_mode`` once ``audio_mode`` existed and the unprefixed name no longer said which
+#: mode it meant.
+LEGACY_STATE_KEYS = {"mode": "theme_mode"}
+
+#: The two keys that answer "does this follow the system, or did the user pin it".
+MODE_KEYS = ("theme_mode", "audio_mode")
+
+#: ``audio_mode`` spelled ``"auto"`` what ``mode`` spelled ``"automatic"``. One spelling now.
+LEGACY_MODE_VALUES = {"auto": "automatic"}
+
+
+def normalise_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Return ``state`` in the current vocabulary, translating anything written before it.
+
+    Applied on every read so a configuration file predating the rename keeps working.
+    Without it the automatic theme switch would simply stop on any machine that had not been
+    reinstalled -- ``state.get("theme_mode")`` would be ``None``, which reads as "the user
+    pinned this", and nothing would say so. The first write after a read persists the
+    translation, so a file migrates itself at the next theme flip.
+    """
+    normalised = dict(state)
+    for legacy, current in LEGACY_STATE_KEYS.items():
+        if legacy in normalised:
+            normalised.setdefault(current, normalised[legacy])
+            del normalised[legacy]
+    for key in MODE_KEYS:
+        if normalised.get(key) in LEGACY_MODE_VALUES:
+            normalised[key] = LEGACY_MODE_VALUES[normalised[key]]
+    return normalised
+
 
 def read_state(configuration_file_path: str = CONFIGURATION_FILE_PATH) -> dict[str, Any]:
     """Return the parsed configuration, or an empty dict if it is missing or malformed."""
@@ -25,7 +57,12 @@ def read_state(configuration_file_path: str = CONFIGURATION_FILE_PATH) -> dict[s
             configuration = json.load(handle)
     except (OSError, ValueError):
         return {}
-    return configuration if isinstance(configuration, dict) else {}
+    if not isinstance(configuration, dict):
+        return {}
+    state = configuration.get("state")
+    if isinstance(state, dict):
+        configuration["state"] = normalise_state(state)
+    return configuration
 
 
 def write_state(

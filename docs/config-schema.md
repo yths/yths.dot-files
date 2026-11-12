@@ -33,7 +33,8 @@ The single configuration file that every downstream consumer (qtile, the patcher
   "state": {
     "theme": "light",
     "condition": "normal",
-    "mode": "automatic"
+    "theme_mode": "automatic",
+    "audio_mode": "automatic"
   }
 }
 ```
@@ -59,12 +60,16 @@ The single configuration file that every downstream consumer (qtile, the patcher
 |---|---|---|
 | `theme` | `"light"` \| `"dark"` | which palette variant is currently active |
 | `condition` | `"normal"` \| `"urgent"` | secondary state used to pick highlight wallpapers and emphasis colours |
-| `mode` | `"automatic"` \| `"manual"` | whether `theme` is allowed to flip on its own (driven by the `location` stream's sunrise/sunset) |
-| `audio_mode` | `"auto"` \| `"manual"` | whether the audio widget tracks the system's active capture device automatically or stays on the device the user picked; defaults to `"auto"` if absent |
+| `theme_mode` | `"automatic"` \| `"manual"` | whether `theme` is allowed to flip on its own (driven by the `location` stream's sunrise/sunset) |
+| `audio_mode` | `"automatic"` \| `"manual"` | whether the audio widget tracks the system's active capture device or stays on the device the user picked; defaults to `"automatic"` if absent |
 
-When `mode` is `"automatic"`, qtile flips `theme` between `"light"` and `"dark"` on sunrise/sunset transitions. When `"manual"`, the user owns `theme` directly.
+The two `*_mode` keys answer the same question for different things — does this follow the system, or did the user pin it — so they share one name shape and one pair of values.
 
-When `audio_mode` is `"auto"`, the audio widget snaps to the ALSA `default` capture device (the alsa-pulse bridge that follows whichever sink PipeWire/Pulse currently routes) — flipped on by middle-click. Scrolling the widget cycles devices manually and persists the choice as `"manual"`.
+When `theme_mode` is `"automatic"`, qtile flips `theme` between `"light"` and `"dark"` on sunrise/sunset transitions. When `"manual"`, the user owns `theme` directly.
+
+When `audio_mode` is `"automatic"`, the audio widget snaps to the ALSA `default` capture device (the alsa-pulse bridge that follows whichever sink PipeWire/Pulse currently routes) — flipped on by middle-click. Scrolling the widget cycles devices manually and persists the choice as `"manual"`.
+
+> A configuration written before this rename used `mode` for `theme_mode`, and spelled `audio_mode`'s automatic value `"auto"`. `configuration/qtile/shared/state.py` translates both on read and persists the current form on the next write, so an existing file keeps working and migrates itself. Delete that translation once no machine is running an older file — it is tracked in [issues.md](issues.md).
 
 ## `monitors` Subfields
 
