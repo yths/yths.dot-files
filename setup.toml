@@ -74,9 +74,9 @@ core = [
     "maim", "xclip", "playerctl", "brightnessctl", "libnotify",
 ]
 
-# The login screen and the boot splash. The greeter itself, nody-greeter, is not here: the
-# AUR package no longer builds, so ./bootstrap.sh makes it from the patched PKGBUILD in
-# configuration/web-greeter/nody-greeter/ once these are in place.
+# The login screen and the boot splash. The greeter itself, nody-greeter, is not here: its
+# AUR package no longer builds, so ./bootstrap.sh makes it from packages/nody-greeter/ once
+# these are in place. Anything under packages/ is installed that way and belongs in no group.
 boot = ["lightdm", "plymouth"]
 
 # The metrics service the bar reads from, and its pacman hook.
@@ -84,10 +84,11 @@ backend = ["valkey", "python-redis", "pacman-contrib"]
 
 # Imported by the helper scripts. helper/list_dependencies.py checks this list against what
 # the code actually imports, and the pre-commit gate fails if they disagree.
+# python-colour-science is under packages/, not here: see there.
 python = [
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
     "python-pillow", "python-pycairo", "python-websockets",
-    "python-colour-science", "python-sounddevice",
+    "python-sounddevice",
 ]
 
 # Everything still works without these; each one buys a specific thing.

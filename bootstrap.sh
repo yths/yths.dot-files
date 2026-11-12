@@ -7,7 +7,8 @@
 #     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
 # From a console on a machine that has nothing yet, it is the whole install: packages, the
-# greeter, the services, the configuration, the login screen. Reboot when it is done. It asks
+# ones under packages/ that the AUR cannot build, the services, the configuration, the login
+# screen. Reboot when it is done. It asks
 # for the sudo password, and install.py asks once whether to collect credentials; that is all
 # the typing. The boot splash wants two edits to files that decide whether the machine boots,
 # so that one is left for later and said so at the end.
@@ -31,7 +32,7 @@ for argument in "$@"; do
         --dry-run) dry_run=true ;;
         --dev) development=true ;;
         --skip-system) system=false ;;
-        -h|--help) sed -n '2,18p' "$0" | sed 's/^# \?//'; exit 0 ;;
+        -h|--help) sed -n '2,19p' "$0" | sed 's/^# \?//'; exit 0 ;;
         *) printf 'unknown option: %s\n' "$argument" >&2; exit 2 ;;
     esac
 done
@@ -95,6 +96,26 @@ say "Installing $(printf '%s' "$packages" | wc -w) packages"
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
 
+# --- the packages this repository builds itself ---------------------------------------------
+# packages/<pkgname>/PKGBUILD, one directory per package whose AUR build is broken: nody-greeter
+# (the electron rebuild step and npm's script allow-list) and python-colour-science (a test that
+# fails against current openimageio, and openimageio itself left out of depends). Each is the
+# AUR PKGBUILD with the fix applied; the header of each says what. Built in a scratch directory
+# so makepkg's src/ and pkg/ never land in the clone, with -s for the make dependencies, and
+# skipped once installed -- nody-greeter is minutes of npm. Before the import check below,
+# because python-colour-science is one of the imports it checks.
+for package_directory in "$REPOSITORY_PATH"/packages/*/; do
+    package_name="$(basename "$package_directory")"
+    if pacman -Q "$package_name" >/dev/null 2>&1; then
+        continue
+    fi
+    say "Building $package_name from packages/$package_name"
+    build_directory="$(mktemp -d)"
+    run cp -R "$package_directory." "$build_directory"
+    if ! $dry_run; then (cd "$build_directory" && makepkg -si --needed --noconfirm); fi
+    run rm -rf "$build_directory"
+done
+
 # --- is this python the one those packages landed in? -------------------------------------
 # install.py imports cairo, PIL, numpy and the rest through the helpers, and a missing one
 # surfaced as an ImportError from inside the orchestrator with the real cause two tracebacks
@@ -117,20 +138,6 @@ if [ -n "$theme_font" ]; then
     say "Installing the theme's font: $theme_font"
     run yay -S --needed --noconfirm "$theme_font" \
         || printf 'Could not install %s; the desktop falls back to the font in setup.toml.\n' "$theme_font" >&2
-fi
-
-# --- the greeter, from this repository's PKGBUILD rather than the AUR ----------------------
-# configuration/web-greeter/nody-greeter/ is the AUR package with package.patch applied: the
-# upstream electron rebuild step and npm's script allow-list stop the native module building
-# otherwise. lightdm, which it depends on, is in the boot group above; makepkg -s fetches the
-# make dependencies. Built in a scratch directory so makepkg's src/ and pkg/ never land in the
-# clone, and skipped once installed, since the build is minutes of npm.
-if ! pacman -Q nody-greeter >/dev/null 2>&1; then
-    say "Building nody-greeter from configuration/web-greeter/nody-greeter"
-    build_directory="$(mktemp -d)"
-    run cp -R "$REPOSITORY_PATH/configuration/web-greeter/nody-greeter/." "$build_directory"
-    if ! $dry_run; then (cd "$build_directory" && makepkg -si --needed --noconfirm); fi
-    run rm -rf "$build_directory"
 fi
 
 # --- the services the bar reads from -------------------------------------------------------

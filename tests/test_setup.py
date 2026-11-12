@@ -1,6 +1,7 @@
 """``setup.toml``: the one file a reader edits, and everything that reads it."""
 
 import json
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -131,3 +132,33 @@ def test_a_missing_dependency_is_not_reported_as_a_missing_patcher() -> None:
         [sys.executable, "-c", probe], capture_output=True, text=True, check=False,
     )
     assert result.stdout.strip() == "cairo", result.stderr
+
+
+# packages/<pkgname>/PKGBUILD: the directory name is the contract bootstrap.sh relies on.
+def test_each_repository_package_is_named_for_what_it_builds() -> None:
+    directories = list_dependencies.repository_packages()
+    assert directories, "packages/ holds nothing; the bootstrap loop would be dead code"
+    if shutil.which("bash") is None:
+        pytest.skip("bash is needed to evaluate a PKGBUILD")
+    for name in directories:
+        pkgbuild = Path(utils.REPOSITORY_ROOT) / "packages" / name / "PKGBUILD"
+        declared = subprocess.run(
+            ["bash", "-c", 'source "$1" && printf %s "$pkgname"', "_", str(pkgbuild)],
+            capture_output=True, text=True, check=True,
+        ).stdout
+        assert declared == name, f"packages/{name}/ builds {declared!r}"
+
+
+def test_a_repository_package_is_in_no_setup_group(setup: dict) -> None:
+    # Listed in both, yay would try the broken AUR build first and fail the bootstrap there.
+    listed = {name for group in setup["packages"].values() for name in group}
+    assert not (listed & list_dependencies.repository_packages())
+
+
+def test_the_colour_package_carries_its_hidden_dependency() -> None:
+    pkgbuild = (
+        Path(utils.REPOSITORY_ROOT) / "packages" / "python-colour-science" / "PKGBUILD"
+    ).read_text()
+    depends = next(line for line in pkgbuild.splitlines() if line.startswith("depends="))
+    assert "openimageio" in depends
+    assert "not test_write_spectral_image_Fichet2021" in pkgbuild
