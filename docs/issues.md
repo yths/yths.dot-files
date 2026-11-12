@@ -21,7 +21,8 @@
 - [x] Standardize documentation style under `docs/style.md`
     - (2026-05-16) all docs now follow the codified path/code-block/list-marker rules
 - [x] Document the `yths` color scheme palette in `docs/notes.md`
-    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; concrete palette table for `yths` still to be authored
+    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`
+    - (2026-08-29) the `yths` palette table is at `docs/palettes/yths/README.md`, generated from the bundle's own `palette.pkl`
 - [ ] Move `configuration/qtile/widgets/test_audio.py` out of the widget directory. It is a standalone harness, not a widget — `helper/gendocs.py` skips it because it does not import `libqtile.widget.base`, and `configuration/qtile/widgets/README.md` says such files do not belong here.
     - (2026-08-29) the symlink half is done: `patch_configurations.py`, `patch_vsc.py` and the two `vsc_default_*.json` links are removed. `location.py` and `patch_configurations.py` derive the repository root from `os.path.realpath(__file__)` and call `helper/` and `configuration/vscode/` directly, so nothing needs a copy parked under `~/.config/qtile/widgets/` any more. Only the harness is left, and it has a hardcoded PortAudio device index that works on one machine — moving it to `helper/` would list it in the generated helper inventory, so it needs a home decision rather than a move.
 - [x] Drop legacy `colors` block from `~/.config/config.json`
@@ -29,6 +30,8 @@
 - [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
     - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`)
     - (2026-05-16) yths.themes domain `ColorToken` enum extended to 30 tokens with the same three additions; auto-seeding aliases them onto their semantic partners; tests, schema version, and downstream writer tests updated. **Partial only**: yths.themes' palette.pkl pipeline currently writes the raw chromalytica `_LibPalette` object rather than the `{mode: {token: hex}}` dict yths.dot-files consumes — so regenerated bundles still won't produce a working palette.pkl until that pipeline is completed
+- [ ] Stop `yths.themes` emitting `monitors` in the bundle manifest
+    - (2026-08-29) dropped from both checked-in bundles: it recorded the geometry of the machine that generated the theme, which `install.py` replaces with detected hardware at install time, and no reader ever consulted the bundle's copy. `docs/notes.md` and `docs/architecture.md` no longer list it. The generator side still needs to follow, or the next export reintroduces it — the contract note says schema changes land in both repos at once.
 - [ ] Extend `helper/gendocs.py` with an import scanner that diffs the actual imports against `docs/dependencies.md`
 - [x] Replace misleading `requirements*.txt` files with `docs/dependencies.md`
     - (2026-05-16) removed both `requirements.txt` and `requirements-dev.txt`; dependency surface now lives in `docs/dependencies.md` mapping each Python import to its Arch package
