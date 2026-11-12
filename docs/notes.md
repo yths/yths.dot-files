@@ -1,12 +1,12 @@
 # Notes
 
-Long-lived concepts. For the whole-system picture, start with [architecture.md](architecture.md). For semantic token meanings, see [color-semantics.md](color-semantics.md). For the `~/.config/config.json` shape, see [config-schema.md](config-schema.md).
+Long-lived concepts. For the whole-system picture, start with [architecture.md](architecture.md). For semantic token meanings, see [palette-semantics.md](palette-semantics.md). For the `~/.config/config.json` shape, see [config-schema.md](config-schema.md).
 
 ## Theme System
 
 A theme is a bundle under `assets/theme-<uuid>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.pkl`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
 
-Presets share the semantic token names (see [color-semantics.md](color-semantics.md)); only the concrete colors differ between them.
+Presets share the semantic token names (see [palette-semantics.md](palette-semantics.md)); only the concrete colors differ between them.
 
 ## Theme-Bundle Contract with yths.themes
 
@@ -60,7 +60,7 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 - **vpn** — Qtile widget: VPN connection state with country/city.
 <!-- END: WIDGETS -->
 
-## Color Scheme: nuunamnir
+## Palette Design: nuunamnir
 
 The `nuunamnir` palette is designed to exploit the correlation between lightness and colorfulness with perceptual saliency, so the hue carries semantic meaning rather than arbitrary preference. Background and foreground tokens stay desaturated; cues that need attention escalate toward the saturated and colorful end of the gamut.
 
@@ -68,6 +68,6 @@ The dark variant is the photonegative reflection of the light variant: correspon
 
 The detailed palette table (visual swatches plus sRGB values for every token in both modes) is co-located with the swatch PNGs at [palettes/nuunamnir/README.md](palettes/nuunamnir/README.md). The full philosophical derivation is at [nuunamnir.color-scheme](https://www.github.com/nuunamnir/nuunamnir.color-scheme).
 
-## Color Scheme: yths
+## Palette Design: yths
 
-The `yths` palette uses the same semantic token names as `nuunamnir` (see [color-semantics.md](color-semantics.md)) so widgets and configuration files can switch between presets without code changes. The concrete colors are tuned differently. The visual reference, with swatches and sRGB values for every token in both modes, is at [palettes/yths/README.md](palettes/yths/README.md).
+The `yths` palette uses the same semantic token names as `nuunamnir` (see [palette-semantics.md](palette-semantics.md)) so widgets and configuration files can switch between presets without code changes. The concrete colors are tuned differently. The visual reference, with swatches and sRGB values for every token in both modes, is at [palettes/yths/README.md](palettes/yths/README.md).

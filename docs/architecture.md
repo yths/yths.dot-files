@@ -44,7 +44,7 @@ The user-visible artefact of every install is `~/.config/config.json` — the si
 - **yths** — `assets/theme-c767bc2b-384f-428d-b4fe-1761d6b6e4a6`
 <!-- END: PRESETS -->
 
-Each preset's color palette is described in [color-semantics.md](color-semantics.md); the visual references are at [docs/palettes/](palettes/), one directory per preset.
+Each preset's color palette is described in [palette-semantics.md](palette-semantics.md); the visual references are at [docs/palettes/](palettes/), one directory per preset.
 
 ## Installer Flow (`install.py`)
 

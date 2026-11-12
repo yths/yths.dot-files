@@ -10,8 +10,8 @@ the same file qtile and the patchers read, so the table cannot drift from what t
 actually renders without the bundle itself changing.
 
 For the palette contract that all presets must honour (the minimum required tokens and how
-consumers read them), see [../../color-semantics.md](../../color-semantics.md). For how
-this preset relates to `nuunamnir`, see [../../notes.md](../../notes.md#color-scheme-yths).
+consumers read them), see [../../palette-semantics.md](../../palette-semantics.md). For how
+this preset relates to `nuunamnir`, see [../../notes.md](../../notes.md#palette-design-yths).
 
 | Name | light sRGB String | light sRGB Numeric | light Patch | dark Patch | dark sRGB Numeric | dark sRGB String |
 | --------------- | -------------------- | --------------------- | -------------- | ------------- | -------------------- | -------------------- |

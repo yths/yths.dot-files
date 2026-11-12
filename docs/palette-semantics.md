@@ -1,6 +1,8 @@
-# Color Semantics
+# Palette Semantics
 
-A reference for theme authors: what the active palette is, which tokens consumers in this repo expect, and how to add to it. Concrete colour values live in each preset's `palette.pkl`; this document is about contract, not hex codes.
+A reference for theme authors: what the palette is, which tokens consumers in this repo expect, and how to add to it. Concrete colour values live in each preset's `palette.pkl`; this document is about contract, not hex codes.
+
+> Three documents cover the palette, and they answer different questions. **What a token means** is this file. **What it looks like** in each preset is [palettes/](palettes/). **Where it is used** is [palette-reference.md](palette-reference.md).
 
 ## The Palette
 

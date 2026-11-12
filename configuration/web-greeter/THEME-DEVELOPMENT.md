@@ -59,7 +59,7 @@ The contract between the theme and `helper/patch_web_greeter.py`:
 | `symbols` | Glyph strings the theme injects via `[data-symbol="<key>"]` selectors. |
 | `strings` | Localised user-facing strings injected via `[data-string="<key>"]` selectors. |
 
-Add a role under `role_map` whenever the theme needs a new colour-bound CSS variable. Reach for semantic palette tokens (`positive`, `negative`, `neutral`, `effect_*`) from [../../docs/color-semantics.md](../../docs/color-semantics.md), not raw hue names — themes that hardcode `red` or `blue` will not survive a palette redesign.
+Add a role under `role_map` whenever the theme needs a new colour-bound CSS variable. Reach for semantic palette tokens (`positive`, `negative`, `neutral`, `effect_*`) from [../../docs/palette-semantics.md](../../docs/palette-semantics.md), not raw hue names — themes that hardcode `red` or `blue` will not survive a palette redesign.
 
 ## CSS Variables Contract
 

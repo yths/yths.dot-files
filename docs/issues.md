@@ -11,7 +11,7 @@
 - [x] Reference VM with dot files
     - (2026-05-16) `docs/os-build.md` carries the QEMU walkthrough under "Setting Up the Virtual Machine"
 - [x] Change color names to something meaningful, also show dark theme colors
-    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`; both `light` and `dark` modes covered
+    - (2026-05-16) semantic tokens documented in `docs/palette-semantics.md`; both `light` and `dark` modes covered
 
 ## Documentation
 
@@ -22,13 +22,13 @@
 - [x] Standardize documentation style under `docs/style.md`
     - (2026-05-16) all docs now follow the codified path/code-block/list-marker rules
 - [x] Document the `yths` color scheme palette in `docs/notes.md`
-    - (2026-05-16) semantic tokens documented in `docs/color-semantics.md`
+    - (2026-05-16) semantic tokens documented in `docs/palette-semantics.md`
     - (2026-08-29) the `yths` palette table is at `docs/palettes/yths/README.md`, generated from the bundle's own `palette.pkl`
 - [x] Move `configuration/qtile/widgets/test_audio.py` out of the widget directory
     - (2026-08-29) the symlink half went first: `patch_configurations.py`, `patch_vsc.py` and the two `vsc_default_*.json` links are gone. `location.py` and `patch_configurations.py` derive the repository root from `os.path.realpath(__file__)` and call `helper/` and `configuration/vscode/` directly, so nothing needs a copy parked under `~/.config/qtile/widgets/`.
     - (2026-08-29) the rest followed, and the ticket widened to every non-widget in the directory. `_stream.py` and `_state.py` moved to `configuration/qtile/shared/` as `stream.py` and `state.py`; the harness became `helper/preview_audio.py`, with `--list` and `--device` in place of the hardcoded PortAudio index. The spectrum maths it duplicated — and had already drifted from, still offsetting the block ladder from `U+2581` — moved to `shared/spectrum.py`, which `widgets/audio.py` now renders through, so the tool previews the real meter. `helper/gendocs.py` fails on any non-widget under `widgets/` rather than silently skipping it, and the pre-commit hook runs it.
 - [x] Drop legacy `colors` block from `~/.config/config.json`
-    - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/color-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
+    - (2026-05-16) `install.py` now strips it before writing; docs/config-schema.md, docs/palette-semantics.md, docs/notes.md, helper/README.md updated to describe `palette` as the sole colour vocabulary
 - [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
     - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`)
     - (2026-05-16) yths.themes domain `ColorToken` enum extended to 30 tokens with the same three additions; auto-seeding aliases them onto their semantic partners; tests, schema version, and downstream writer tests updated. **Partial only**: yths.themes' palette.pkl pipeline currently writes the raw chromalytica `_LibPalette` object rather than the `{mode: {token: hex}}` dict yths.dot-files consumes — so regenerated bundles still won't produce a working palette.pkl until that pipeline is completed

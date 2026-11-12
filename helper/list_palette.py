@@ -1,4 +1,4 @@
-"""Summarise how colors are logically mapped across the configurations in this repo.
+"""Summarise how palette tokens are mapped across the configurations in this repo.
 
 Three views, emitted as markdown:
 
@@ -11,7 +11,8 @@ Three views, emitted as markdown:
    starship, dunst, rofi); each color is reverse-mapped to its nearest palette token via
    the perceptual ``closest_color`` machinery reused from ``patch_vsc.py``.
 
-``generate_markdown`` returns the body that ``gendocs.py`` injects into ``docs/colors.md``;
+``generate_markdown`` returns the body that ``gendocs.py`` injects into
+``docs/palette-reference.md``;
 running the module prints the same body to stdout. The role maps are repo-derived and
 stable; the hex values and ΔE distances reflect the active install and vary per theme.
 """
@@ -326,7 +327,7 @@ def _drift_section(config: dict) -> str:
 
 
 def generate_markdown() -> str:
-    """Return the markdown body for the COLORS block in ``docs/colors.md``."""
+    """Return the markdown body for the PALETTE block in ``docs/palette-reference.md``."""
     config = _load_active_config()
     sections = [
         _palette_section(config),
