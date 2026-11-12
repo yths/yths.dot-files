@@ -95,6 +95,18 @@ say "Installing $(printf '%s' "$packages" | wc -w) packages"
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
 
+# --- is this python the one those packages landed in? -------------------------------------
+# install.py imports cairo, PIL, numpy and the rest through the helpers, and a missing one
+# surfaced as an ImportError from inside the orchestrator with the real cause two tracebacks
+# up. A virtualenv or pyenv shim on PATH, or a yay run that was interrupted, are the ways the
+# packages above end up somewhere other than where `python` looks.
+say "Checking that $(command -v python) can import what was just installed"
+if ! run python "$REPOSITORY_PATH/helper/list_dependencies.py" --missing; then
+    printf '\n%s\n' "The packages are installed, but not for this python. Make sure \`python\` is" >&2
+    printf '%s\n' "/usr/bin/python (deactivate any virtualenv), or install the ones named above." >&2
+    exit 1
+fi
+
 # --- the theme's font, which the theme decides and this machine may not be able to get -----
 # helper/fonts.py reads the configured theme's bundle and says which package provides its
 # family; nothing when setup.toml leaves the theme to the prompt, or the family is one it has
