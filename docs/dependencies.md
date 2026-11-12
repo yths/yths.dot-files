@@ -104,16 +104,36 @@ ruff check . --fix    # apply the safe fixes
 
 ## The Pre-Commit Gate
 
-`helper/hooks/pre-commit` runs both checks and refuses the commit if either fails. Git does
-not track hook configuration, so enable it once per clone:
+`helper/hooks/pre-commit` runs both checks and refuses the commit if either fails.
+
+Git will not let a repository configure its own hooks. `core.hooksPath` is local
+configuration, deliberately outside version control, so that cloning a repository can never
+run code its author chose. The cost of that safety is that every fresh clone starts with the
+gate off and nothing says so — the checks are simply never run. Arming it is one idempotent
+command:
 
 ```bash
-git config core.hooksPath helper/hooks
+helper/hooks/enable
 ```
 
-It runs `ruff check .` and `python helper/gendocs.py --check` against the working tree —
-not the staged snapshot — because the qtile configuration is loaded live from this tree, so
-a clean tree is the property worth defending. `git commit --no-verify` bypasses it.
+`install.py` runs it, so a normal install already arms the gate. Run it again whenever you
+like; it also repairs a clone whose hooks point somewhere else. To confirm:
+
+```bash
+git config --get core.hooksPath    # helper/hooks
+```
+
+The gate runs `ruff check .` and `python helper/gendocs.py --check` against the working tree
+— not the staged snapshot — because the qtile configuration is loaded live from this tree,
+so a clean tree is the property worth defending. It fires from any subdirectory: a relative
+`core.hooksPath` is resolved against the top of the working tree, not the current directory.
+`git commit --no-verify` bypasses it for one commit.
+
+The gate is a git hook and not a CI workflow by choice. This repository is a single-author
+dotfiles tree whose working copy *is* the running desktop — qtile loads its configuration
+live from here — so the moment worth catching a broken tree is before the commit, on the
+machine, not minutes later in a hosted runner. A hook also keeps the checks runnable with
+nothing but a clone and `ruff` installed.
 
 Configuration lives in `pyproject.toml` at the repo root — `[tool.ruff]` only, with no
 `[project]` or `[build-system]` table, so it stays tool configuration rather than the
