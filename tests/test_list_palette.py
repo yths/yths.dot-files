@@ -262,7 +262,10 @@ def test_plymouth_is_reported_as_always_dark(
 
     source = list_palette.REPO_ROOT / "configuration/plymouth/themes/default"
     staged = tmp_path / "staged"
-    shutil.copytree(source, staged)
+    # `background-tile.png` in that directory is a tracked symlink to a wallpaper the
+    # installer materialises, and wallpapers are gitignored -- so in a fresh clone it dangles
+    # and a plain copytree raises. The INI is all render_configuration reads.
+    shutil.copytree(source, staged, ignore_dangling_symlinks=True)
     light = dict(configuration, state={"theme": "light"})
     light["palette"] = {"dark": PALETTE, "light": dict.fromkeys(PALETTE, "#ffffff")}
     patch_plymouth.render_configuration(light, str(staged), patch_plymouth.PALETTE_VARIANT, "d")
