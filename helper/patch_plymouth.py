@@ -60,8 +60,8 @@ THEME_SOURCE_ROOT = os.path.join(_REPOSITORY_ROOT, "configuration", "plymouth", 
 def theme_source(configuration: dict[str, Any]) -> str | None:
     """Source directory of the boot splash for the active preset, or ``None`` if it has none.
 
-    Only some presets ship one — ``nuunamnir`` does not, which is an open ticket — so a
-    missing directory is an ordinary outcome rather than a failure.
+    A preset need not ship one, so a missing directory is an ordinary outcome rather than a
+    failure. The directory is named for the preset, because that is how it is found.
     """
     name = configuration.get("name")
     if not name:

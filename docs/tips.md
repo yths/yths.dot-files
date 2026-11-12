@@ -13,7 +13,7 @@ python install.py
 For non-interactive use (e.g. provisioning), name the theme instead of answering the prompt:
 
 ```bash
-python install.py --theme yths
+python install.py --theme default
 ```
 
 An unknown name exits non-zero and lists the bundles it found, before anything is installed.

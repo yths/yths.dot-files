@@ -23,7 +23,7 @@ def test_the_configured_theme_is_one_that_ships(setup: dict) -> None:
     configured = setup["desktop"]["theme"]
     if not configured:
         return
-    bundles = (Path(utils.REPOSITORY_ROOT) / "assets").glob("theme-*/config.json")
+    bundles = (Path(utils.REPOSITORY_ROOT) / "assets").glob("*/config.json")
     names = {json.loads(path.read_text())["name"] for path in bundles}
     assert configured in names, f"setup.toml names {configured!r}; bundles are {sorted(names)}"
 

@@ -158,11 +158,9 @@ def generate_helpers() -> str:
 def generate_presets() -> str:
     lines = []
     assets_dir = REPO_ROOT / "assets"
-    for path in sorted(assets_dir.glob("theme-*")):
-        if not path.is_dir():
-            continue
+    for path in sorted(assets_dir.iterdir()):
         config_path = path / "config.json"
-        if not config_path.is_file():
+        if not path.is_dir() or not config_path.is_file():
             continue
         try:
             name = json.loads(config_path.read_text()).get("name", "(unnamed)")

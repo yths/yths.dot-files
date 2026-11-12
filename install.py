@@ -1,6 +1,6 @@
 """Install the dot files.
 
-Discovers theme bundles under ``assets/theme-*/``, prompts for one, writes the chosen bundle's
+Discovers theme bundles under ``assets/``, picks the one setup.toml names, writes its
 ``config.json`` (merged with detected monitor geometry, font, and the unpickled palette) to
 ``~/.config/config.json``, and symlinks each per-app configuration tree from
 ``configuration/`` into ``~/.config/``. Nothing is copied, so the installed configuration is
@@ -152,11 +152,11 @@ def discover_themes(assets_folder_path: str) -> dict[str, str]:
     """
     theme_paths = {}
     for entry in sorted(os.listdir(assets_folder_path)):
-        theme_path = os.path.join(assets_folder_path, entry)
-        if not entry.startswith("theme-") or not os.path.isdir(theme_path):
+        manifest = os.path.join(assets_folder_path, entry, "config.json")
+        if not os.path.isfile(manifest):
             continue
-        with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
-            theme_paths[json.load(handle)["name"]] = theme_path
+        with open(manifest, encoding="utf-8") as handle:
+            theme_paths[json.load(handle)["name"]] = os.path.dirname(manifest)
     return theme_paths
 
 
@@ -272,7 +272,7 @@ def generate_application_configuration(configuration: dict[str, Any]) -> None:
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Install the yths dot files and one of the bundled themes."
+        description="Install these dot files and one of the bundled themes."
     )
     parser.add_argument(
         "--theme",

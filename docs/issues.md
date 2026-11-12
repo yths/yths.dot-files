@@ -32,6 +32,9 @@
 - [x] `nuunamnir` palette is missing tokens required by qtile (`highlight`, `notification`, `warning`); qtile will `KeyError` if the preset is selected
     - (2026-05-16) added the three keys to the nuunamnir `palette.pkl` as aliases (`highlight` → `effect_complement_dark`, `notification` → `negative`, `warning` → `yellow`)
     - (2026-05-16) yths.themes domain `ColorToken` enum extended to 30 tokens with the same three additions; auto-seeding aliases them onto their semantic partners; tests, schema version, and downstream writer tests updated. **Partial only**: yths.themes' palette.pkl pipeline currently writes the raw chromalytica `_LibPalette` object rather than the `{mode: {token: hex}}` dict yths.dot-files consumes — so regenerated bundles still won't produce a working palette.pkl until that pipeline is completed
+- [ ] Have `yths.themes` export to `assets/<name>/` rather than `assets/theme-<uuid>/`
+    - (2026-08-30) done on this side: the repository tracks one bundle, `assets/default/`, and discovery no longer filters on a `theme-` prefix — a bundle is any directory under `assets/` holding a `config.json`, so an export under either layout is found. The generator still emits the UUID directory, which would appear beside the tracked one rather than replacing it.
+    - (2026-08-30) the previous audit declined this, on the grounds that the generator owned the layout. Overridden: a directory name that requires parsing the JSON inside it to identify is worse than a contract change, and the readers that filtered on the prefix no longer do.
 - [ ] Rename the `stream` Redis stream to `broadcast` in `yths.backend-service`
     - (2026-08-30) done on the reading side: the widget is `broadcast.py` / `WidgetBroadcast` and asks for a `broadcast` stream. Every other widget's module name is its stream name, and this one could not be, because `stream` already means the transport — `shared.stream.read_measurement(self.r, "stream")` said two different things in one line. Until the backend publishes under the new name, `LEGACY_STREAM_NAMES` in `configuration/qtile/shared/stream.py` retries the old one; delete that entry once no machine runs an older backend.
 - [ ] Stop `yths.themes` emitting `monitors` and the stale `state` vocabulary in the bundle manifest
@@ -44,7 +47,6 @@
 
 ## Themes
 
-- [ ] Add a `nuunamnir` plymouth theme directory (currently only `yths` ships under `configuration/plymouth/themes/`)
 
 ## Configurations
 

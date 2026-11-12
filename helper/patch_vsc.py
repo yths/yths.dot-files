@@ -161,7 +161,8 @@ def load_default_themes(input_path: str | None) -> dict[str, dict]:
 
 
 def build_themes(
-    defaults: dict[str, dict], palette_map: dict[str, list], method: str
+    defaults: dict[str, dict], palette_map: dict[str, list], method: str,
+    name: str = "dot files",
 ) -> dict[str, dict]:
     """Recolour both default themes with the active palette.
 
@@ -172,7 +173,7 @@ def build_themes(
     themes = {}
     for mode in MODES:
         theme = defaults[mode].copy()
-        theme["name"] = f"nuunamnir ({mode})"
+        theme["name"] = f"{name} ({mode})"
         lookup = palette_map["dark"] if method == "reference" and mode == "light" else None
         themes[mode] = dict_replace_value(theme, palette_map[mode], lookup)
     return themes
@@ -244,6 +245,12 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--name",
+        type=str,
+        default="dot files",
+        help="Name recorded inside the generated themes (default: 'dot files').",
+    )
+    parser.add_argument(
         "--input-path",
         type=str,
         default=None,
@@ -263,7 +270,8 @@ def main(argv: list[str] | None = None) -> int:
 
     palette_map = build_palette_map(palette)
     themes = build_themes(
-        load_default_themes(arguments.input_path), palette_map, arguments.method
+        load_default_themes(arguments.input_path), palette_map, arguments.method,
+        arguments.name,
     )
 
     logger.info(f"Patching Visual Studio Code settings to {arguments.mode} theme...")

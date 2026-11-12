@@ -11,7 +11,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **list_dependencies** — Map every third-party Python import in this repo to the Arch package providing it.
 - **list_keybindings** — List every keyboard binding configured across the tools in this repo.
 - **list_palette** — Summarise how palette tokens are mapped across the configurations in this repo.
-- **list_themes** — List every theme bundle under ``assets/theme-*/``.
+- **list_themes** — List every theme bundle under ``assets/``.
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
 - **patch_kitty** — Patch kitty: the terminal's base settings and its 16-colour theme file.

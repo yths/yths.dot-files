@@ -126,7 +126,7 @@ cd yths.dot-files
 python install.py
 ```
 
-The installer prompts for a theme — choose between the bundled presets (e.g. `yths`, `nuunamnir`) discovered under `assets/`. The selected theme's `config.json` is written to `~/.config/config.json`, where qtile and the helper scripts read it from.
+The theme comes from `[desktop] theme` in [../setup.toml](../setup.toml); `--theme <name>` overrides it, and clearing it in setup.toml restores an interactive prompt. Bundles are discovered under `assets/`, one directory per preset, named for the preset. The selected one's `config.json` is assembled into `~/.config/config.json`, which qtile and every helper read.
 
 The installer also arms this clone's pre-commit gate, so `ruff` and `helper/gendocs.py` run on every commit — see [CONTRIBUTING.md](../CONTRIBUTING.md). It is reported, never prompted, and a failure to arm it does not stop the install.
 
