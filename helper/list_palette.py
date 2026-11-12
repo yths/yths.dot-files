@@ -39,13 +39,15 @@ import argparse
 import ast
 import json
 import os
+import pickle
 import re
 import sys
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from utils import read_setup
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = Path(os.path.expanduser("~/.config/config.json"))
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{6}")
 
@@ -63,9 +65,22 @@ def _escape(text: str) -> str:
 
 
 def _load_active_config() -> dict | None:
+    """The palette this document describes: the configured bundle's, not the active install's.
+
+    It used to read ``~/.config/config.json``, which made every hex value and every ΔE a fact
+    about whichever theme this machine happened to be running -- so switching themes left the
+    generated block stale and the pre-commit hook refusing the next commit until somebody
+    regenerated it with their own theme's colours. Reading the bundle ``setup.toml`` configures
+    makes the block the same on every clone, the way ``list_color_distance`` already does.
+
+    The shape is still a configuration dict, because everything below indexes it that way.
+    """
     try:
-        return json.loads(CONFIG_PATH.read_text())
-    except (OSError, json.JSONDecodeError):
+        setup = read_setup()
+        path = REPO_ROOT / "assets" / setup["desktop"]["theme"] / "palette.pkl"
+        with path.open("rb") as handle:
+            return {"palette": pickle.load(handle), "state": {"theme": "dark"}}
+    except (OSError, KeyError):
         return None
 
 
@@ -73,11 +88,11 @@ def _load_active_config() -> dict | None:
 
 
 def _palette_section(config: dict) -> str:
-    lines = ["### Palette (`~/.config/config.json`)", ""]
+    lines = ["### Palette (the bundle `setup.toml` configures)", ""]
     if not config or "palette" not in config:
         lines.append(
-            "_No active `~/.config/config.json` found — run the installer to materialise "
-            "a palette. The usage map below is parsed from the repo and is unaffected._"
+            "_No palette in the configured bundle. The usage map below is parsed from the "
+            "repo and is unaffected._"
         )
         return "\n".join(lines)
 
@@ -92,7 +107,10 @@ def _palette_section(config: dict) -> str:
             f"| `{_escape(dark.get(token, '—'))}` |"
         )
     lines.append("")
-    lines.append("_Hex values reflect the active theme bundle and differ per install._")
+    lines.append(
+        "_The bundle `setup.toml` names, so this is the same on every clone. A machine running "
+        "a different bundle draws different colours from the same tokens._"
+    )
     return "\n".join(lines)
 
 
