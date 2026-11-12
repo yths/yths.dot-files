@@ -23,7 +23,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_lock** — Patch the lock screen: its colours, font and what it is willing to display.
 - **patch_plymouth** — Patch plymouth: the boot splash's palette, fonts and rendered assets.
 - **patch_qutebrowser** — Patch qutebrowser: every colour the browser draws, mapped from its own stock defaults.
-- **patch_rofi** — Patch rofi: the launcher's theme colours, font, width and vertical offset.
+- **patch_rofi** — Patch rofi: the launcher's theme colours, font and mode prompts.
 - **patch_starship** — Patch starship: the prompt's named palette entries.
 - **patch_tmux** — Patch tmux: the four palette colours its status line reads.
 - **patch_vsc** — Patch the user's Visual Studio Code ``settings.json``.
