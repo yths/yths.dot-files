@@ -25,6 +25,11 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     # forces every space character to a full cell, so the shortfall is made up with a
     # fractionally sized second space — a percentage, so it tracks fontsize per monitor.
     ICON_GAP = ' <span size="34%"> </span>'
+    # qtile sizes each cell from the text's *advance* width and clips the blit to it
+    # (`drawer.draw(width=self.width)`). Because the glyph's ink runs 0.418em past its
+    # advance, rendering it with nothing after it cuts the right side off — so the
+    # icon-only states carry a trailing space to cover the overhang.
+    ICON_ONLY = ICON + " "
     LEVELS = ("▁", "▂", "▃", "▄", "▅", "▆", "▇", "█")
     DIM_ALPHA = 24576
 
@@ -156,7 +161,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
             return ""
 
         if not measurement.get("available"):
-            body = self.ICON
+            body = self.ICON_ONLY
             if self.expanded:
                 body = f"{self.ICON}{self.ICON_GAP}{measurement.get('reason') or 'unavailable'}"
             return f"<span alpha='{self.DIM_ALPHA}'>{body}</span>"
@@ -167,7 +172,7 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
         ]
         readings = [reading for reading in readings if reading is not None]
         if not readings:
-            return f"<span alpha='{self.DIM_ALPHA}'>{self.ICON}</span>"
+            return f"<span alpha='{self.DIM_ALPHA}'>{self.ICON_ONLY}</span>"
 
         if self.expanded:
             parts = [self._detail(reading) for reading in readings]

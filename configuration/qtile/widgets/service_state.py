@@ -13,6 +13,10 @@ import libqtile.widget.base
 
 
 class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
+    # Trailing space: qtile clips the cell to the text's advance width and this glyph's
+    # ink runs 0.418em past it, so a lone icon would be cut off on the right.
+    DOWN_ICON = "󰒲 "
+
     def __init__(
         self, service: str, warning_color: str = "#ff0000", **config: Any
     ) -> None:
@@ -34,12 +38,12 @@ class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
             )
         except OSError:
             libqtile.log_utils.logger.exception("could not run systemctl")
-            return f"<span color='{self.warning_color}'>󰒲</span>"
+            return f"<span color='{self.warning_color}'>{self.DOWN_ICON}</span>"
 
         if result.returncode == 0:
             output = "·" if self.tick_visible else " "
             self.tick_visible = not self.tick_visible
         else:
-            output = f"<span color='{self.warning_color}'>󰒲</span>"
+            output = f"<span color='{self.warning_color}'>{self.DOWN_ICON}</span>"
 
         return output
