@@ -9,6 +9,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 
 - **apply_icc** — Apply, inspect and import display colour profiles.
 - **color_match** — Match an arbitrary colour to the nearest palette token, perceptually.
+- **list_color_distance** — How far each recoloured value moved, for the two applications whose colours are resolved.
 - **list_configured** — List the applications this repository configures, and the theme it ships.
 - **list_dependencies** — Map every third-party Python import in this repo to the Arch package providing it.
 - **list_keybindings** — List every keyboard binding configured across the tools in this repo.
