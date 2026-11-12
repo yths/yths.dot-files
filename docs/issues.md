@@ -68,6 +68,9 @@
 
 ## Themes
 
+- [x] The bundle contract listed `plymouth/` and `web-greeter-handoff.json`, which nothing here reads
+    - (2026-09-13) `patch_plymouth.py` renders the splash from `configuration/plymouth/themes/<name>/` and `patch_web_greeter.py` fills the login theme's variables from its own role map, both from the palette alone. The two entries described output of the generator's plymouth and web-greeter steps, which had no reader on this side and are gone over there (its ADR-0004). `docs/notes.md` lists what a bundle is now: the manifest, `palette.pkl`, four wallpapers and, optionally, `wallpapers.json`.
+    - (2026-09-13) the generator's manifest also stops carrying a `schema_version` this repository never documented or read, and its `state` block gained `audio_mode` to match `config-schema.md`. `assets/default/` is unchanged: it already satisfied the contract as it now stands.
 
 ## Configurations
 
@@ -80,6 +83,12 @@
     - (2026-09-11) `gaps` and `startup_notification` were removed from dunst; `gap_size` is global-only and was repeated in all three urgency sections; `msg_urgency` is a filtering rule, which a special section refuses. dunst named every one of them on startup and then ignored them, so nothing broke and nothing said so either — found while investigating the lock screen, in the log of a dunst started for an unrelated test.
     - (2026-09-11) removed from the template. Rendering is unchanged, checked by sending one notification of each urgency and comparing the result: the per-urgency title colours survive, because `format` in an urgency section does work despite `dunst.5` listing only six attributes as modifiable there. Measured rather than believed.
     - (2026-09-11) `tests/test_patchers.py` now asks dunst itself whether it accepts the generated file, running it against an unreachable display so it reports on the configuration and aborts instead of starting a second daemon. Only dunst knows which settings it still has, and that is the check that would have caught this.
+
+- [x] The screen locked over a playing film, and `inhibit-bridge` alone could not stop it
+    - (2026-09-14) `inhibit-bridge` was started correctly all along — qtile's `startup_complete` hook, one instance, parented by qtile — and was bridging real Firefox inhibits into logind. It just could not prevent anything: `xss-lock` locks from the X screen saver, whose counter measures input, and its manual page says the session's idle state is "directly linked to user activity as reported by X". logind's inhibition logic is consulted only to hold off sleep. The claim in `9ecd059` that this was "the missing half of the lock" was wrong.
+    - (2026-09-14) worse here: `logind.conf` sets `IdleAction=ignore`, so a logind idle inhibitor on this machine holds back nothing whatever. Measured with two held: the X counter ran on to 237156 ms, then 240156 ms three seconds later.
+    - (2026-09-14) `configuration/qtile/shared/idle_guard.py` is the join. Once a minute it asks logind what is inhibiting and, if anything is, resets X's counter — which defers the lock and DPMS together, since both hang off it. Verified live: with an inhibitor held the counter sawtoothed 54s → 6s → 54s and never approached the 512s timeout; with none held it climbed straight through a tick.
+    - (2026-09-14) found while investigating: the X screen saver timeout was **0**, so this session had no automatic lock at all. Steam was running and is the usual cause. The guard re-arms it when it finds a zero and logs a warning, and leaves a deliberate non-zero timeout alone.
 
 - [ ] A wrong password on the lock screen shows no error (needs PAM, not this repository)
     - (2026-09-11) the dialog shows `Processing...` then resets to `Password:` with an empty field. What reads as "a grey box" is that field: `cursor` mode draws a long row of `_`, which on 4K — and doubly so on HDMI-0, downscaled 2:1 by `.xinitrc` — looks like a solid bar.

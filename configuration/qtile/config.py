@@ -65,6 +65,7 @@ except redis.exceptions.ConnectionError:
     r = None
 
 import shared.hover_bar
+import shared.idle_guard
 import shared.monitors
 import shared.session
 import widgets.audio
@@ -336,6 +337,46 @@ def start_session_programs() -> None:
     """Start the programs that could not start before qtile did; see ``shared.session``."""
     for name in shared.session.start_programs():
         logger.info(f"Started {name}.")
+
+
+class _IdleGuard:
+    """State for the idle guard, in a class for the reason ``_ScreenChange`` is.
+
+    ``timeout`` is read once, at startup, rather than written down again here: ~/.xinitrc
+    has already set it by then, so this is the value this machine was configured with and
+    there is no second copy of it to drift.
+    """
+
+    timeout: int | None = None
+    running = False
+
+
+@hook.subscribe.startup_complete
+def start_idle_guard() -> None:
+    """Begin watching the X idle counter; see ``shared.idle_guard`` for why it needs one."""
+    if _IdleGuard.running:
+        return
+    _IdleGuard.running = True
+    _IdleGuard.timeout = shared.idle_guard.screensaver_timeout()
+    if not _IdleGuard.timeout:
+        logger.warning(
+            "The X screen saver timeout is 0 at startup: this session will not lock itself. "
+            "Set it in ~/.xinitrc with `xset s <seconds>`."
+        )
+    qtile.call_later(shared.idle_guard.CHECK_SECONDS, run_idle_guard)
+
+
+def run_idle_guard() -> None:
+    """Reset the idle counter while anything is inhibiting, then look again later."""
+    restored, inhibitors = shared.idle_guard.guard(_IdleGuard.timeout)
+    if restored:
+        logger.warning(
+            f"The X screen saver timeout had been set to 0; restored it to "
+            f"{_IdleGuard.timeout}s. Something disabled this session's automatic lock."
+        )
+    if inhibitors:
+        logger.info(f"Holding the screen awake for: {', '.join(w for w, _ in inhibitors)}.")
+    qtile.call_later(shared.idle_guard.CHECK_SECONDS, run_idle_guard)
 
 
 @hook.subscribe.startup_complete
