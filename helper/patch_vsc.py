@@ -10,6 +10,7 @@ import collections
 import json
 import os
 import pickle
+import sys
 
 import colour
 
@@ -122,8 +123,94 @@ def list_replace_value(
     return replaced
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+#: The two variants a bundle carries, and the order they are built in.
+MODES = ("dark", "light")
+
+#: Where VSCode keeps the settings this patcher writes into.
+USER_SETTINGS_PATH = os.path.join("~", ".config", "Code", "User", "settings.json")
+
+
+def build_palette_map(palette: dict) -> dict[str, list]:
+    """Precompute each palette colour's CAM16-UCS coordinates, per mode.
+
+    Done once up front because ``closest_color`` compares every candidate against every
+    colour it is asked about, and the conversion is the expensive half of that.
+    """
+    palette_map = collections.defaultdict(list)
+    for mode in MODES:
+        for label, hex_value in palette[mode].items():
+            colour_xyz = colour.sRGB_to_XYZ(color_str_to_tuple(hex_value))
+            palette_map[mode].append(
+                {
+                    "label": label,
+                    "hex": hex_value,
+                    "cam16": colour.XYZ_to_CAM16UCS(colour_xyz),
+                }
+            )
+    return palette_map
+
+
+def load_default_themes(input_path: str | None) -> dict[str, dict]:
+    """Read the stock VSCode themes this patcher recolours, one per mode."""
+    directory = input_path if input_path is not None else os.getcwd()
+    themes = {}
+    for mode in MODES:
+        with open(os.path.join(directory, f"vsc_default_{mode}.json")) as handle:
+            themes[mode] = json.load(handle)
+    return themes
+
+
+def build_themes(
+    defaults: dict[str, dict], palette_map: dict[str, list], method: str
+) -> dict[str, dict]:
+    """Recolour both default themes with the active palette.
+
+    ``nearest_neighbor``, the default, maps each mode against its own palette. ``reference``
+    differs only for the light theme: colours are still matched against the light palette,
+    but the value written is the *dark* palette's entry for whichever token matched.
+    """
+    themes = {}
+    for mode in MODES:
+        theme = defaults[mode].copy()
+        theme["name"] = f"nuunamnir ({mode})"
+        lookup = palette_map["dark"] if method == "reference" and mode == "light" else None
+        themes[mode] = dict_replace_value(theme, palette_map[mode], lookup)
+    return themes
+
+
+def apply_to_user_settings(theme: dict) -> bool:
+    """Write the recoloured theme into VSCode's settings. Returns whether it was written.
+
+    VSCode may simply not be installed, which is not a failure: the patcher runs on every
+    theme switch and must not complain on a machine that has no VSCode.
+    """
+    settings_path = os.path.expanduser(USER_SETTINGS_PATH)
+    if not os.path.exists(settings_path):
+        return False
+    logger.info("Patching Visual Studio Code settings...")
+    with open(settings_path) as handle:
+        user_settings = json.load(handle)
+    user_settings["editor.tokenColorCustomizations"] = {
+        "textMateRules": theme.get("tokenColors", [])
+    }
+    user_settings["workbench.colorCustomizations"] = theme.get("colors", {})
+    with open(settings_path, "w") as handle:
+        json.dump(user_settings, handle, indent=4)
+    logger.info("Patched Visual Studio Code settings.")
+    return True
+
+
+def write_themes(themes: dict[str, dict], output_path: str) -> None:
+    """Save both recoloured themes as standalone files, for inspection or reuse."""
+    directory = os.path.expanduser(output_path)
+    logger.info(f"Saving patched Visual Studio Code settings to {directory}...")
+    for mode in MODES:
+        with open(os.path.join(directory, f"vsc_patched_{mode}.json"), "w") as handle:
+            json.dump(themes[mode], handle, indent=4)
+
+
+def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--theme-pickle-path",
         type=str,
@@ -133,7 +220,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["dark", "light"],
+        choices=list(MODES),
         default="dark",
         help="Color mode to patch.",
     )
@@ -165,77 +252,27 @@ if __name__ == "__main__":
             "If not provided, will use the current working directory."
         ),
     )
-    args = parser.parse_args()
-
-    with open(os.path.expanduser(args.theme_pickle_path), "rb") as handle:
-        colors = pickle.load(handle)
-
-    colors_map = collections.defaultdict(list)
-    for mode in ["dark", "light"]:
-        for label in colors[mode]:
-            color_rgb = color_str_to_tuple(colors[mode][label])
-            color_xyz = colour.sRGB_to_XYZ(color_rgb)
-            color_cam16 = colour.XYZ_to_CAM16UCS(color_xyz)
-            colors_map[mode].append(
-                {"label": label, "hex": colors[mode][label], "cam16": color_cam16}
-            )
-
-    default_config = {}
-    for mode in ["dark", "light"]:
-        input_path = args.input_path
-        if input_path is None:
-            input_path = os.getcwd()
-        with open(os.path.join(input_path, f"vsc_default_{mode}.json")) as input_handle:
-            default_config[mode] = json.load(input_handle)
-
-    patched_config_dark = default_config['dark'].copy()
-    patched_config_light = default_config['light'].copy()
-
-    patched_config_dark["name"] = "nuunamnir (dark)"
-    patched_config_light["name"] = "nuunamnir (light)"
-
-    if args.method == "nearest_neighbor":
-        patched_config_dark = dict_replace_value(patched_config_dark, colors_map["dark"])
-        patched_config_light = dict_replace_value(patched_config_light, colors_map["light"])
-    else:
-        patched_config_dark = dict_replace_value(patched_config_dark, colors_map["dark"])
-        patched_config_light = dict_replace_value(
-            patched_config_light, colors_map["light"], colors_map["dark"]
-        )
+    return parser.parse_args(argv)
 
 
-    if args.mode == "dark":
-        logger.info("Patching Visual Studio Code settings to dark theme...")
-        target_config = patched_config_dark
-    else:
-        logger.info("Patching Visual Studio Code settings to light theme...")
-        target_config = patched_config_light
+def main(argv: list[str] | None = None) -> int:
+    arguments = parse_arguments(argv)
 
-    if os.path.exists(os.path.expanduser("~/.config/Code/User/settings.json")):
-        logger.info("Patching Visual Studio Code settings...")
-        with open(
-            os.path.expanduser("~/.config/Code/User/settings.json")
-        ) as input_handle:
-            user_config = json.load(input_handle)
-            user_config["editor.tokenColorCustomizations"] = {
-                "textMateRules": target_config.get(
-                    "tokenColors", []
-                )
-            }
-            user_config["workbench.colorCustomizations"] = target_config.get(
-                "colors", {}
-            )
-        with open(
-            os.path.expanduser("~/.config/Code/User/settings.json"), "w"
-        ) as output_handle:
-            json.dump(user_config, output_handle, indent=4)
-        logger.info("Patched Visual Studio Code settings.")
+    with open(os.path.expanduser(arguments.theme_pickle_path), "rb") as handle:
+        palette = pickle.load(handle)
 
-    if args.output_path is not None:
-        output_path = os.path.expanduser(args.output_path)
-        logger.info(f"Saving patched Visual Studio Code settings to {output_path}...")
-        with open(os.path.join(output_path, "vsc_patched_dark.json"), "w") as output_handle:
-            json.dump(patched_config_dark, output_handle, indent=4)
+    palette_map = build_palette_map(palette)
+    themes = build_themes(
+        load_default_themes(arguments.input_path), palette_map, arguments.method
+    )
 
-        with open(os.path.join(output_path, "vsc_patched_light.json"), "w") as output_handle:
-            json.dump(patched_config_light, output_handle, indent=4)
+    logger.info(f"Patching Visual Studio Code settings to {arguments.mode} theme...")
+    apply_to_user_settings(themes[arguments.mode])
+
+    if arguments.output_path is not None:
+        write_themes(themes, arguments.output_path)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
