@@ -6,6 +6,10 @@
 __pycache__/
 *.py[cod]
 
+### Claude Code session state ###
+# Per-session agent state, not configuration this repository owns.
+.claude/
+
 ### Tool caches ###
 .ruff_cache/
 .pytest_cache/
