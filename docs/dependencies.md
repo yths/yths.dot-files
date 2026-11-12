@@ -38,8 +38,8 @@ Other AUR-only packages are marked **(AUR)** in the tables below; the rest are i
 |---|---|---|---|
 | `libqtile` | `qtile` | window manager + all widgets | the window manager package brings the library |
 | `redis` | `python-redis` | `config.py`, every widget | optional at import — widgets degrade if Redis is unreachable |
-| `numpy` | `python-numpy` | `widgets/audio.py` | level-meter math |
-| `sounddevice` | `python-sounddevice` **(AUR)** | `widgets/audio.py` | live audio sampling |
+| `numpy` | `python-numpy` | `shared/spectrum.py`, `widgets/audio.py`, `helper/preview_audio.py` | level-meter math |
+| `sounddevice` | `python-sounddevice` **(AUR)** | `widgets/audio.py`, `helper/preview_audio.py` | live audio sampling |
 
 `python-dbus-fast` is a runtime dependency of qtile itself (not an import in this repo). Install it alongside `qtile` per [install.md](install.md).
 

@@ -15,7 +15,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._stream
+import shared.stream
 
 
 class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
@@ -332,5 +332,5 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     def poll(self) -> str:
         # Assigned unconditionally: a failed read clears the cache so the cell blanks,
         # which is what every sibling widget does when Redis is unreachable.
-        self.measurement = widgets._stream.read_measurement(self.r, "claude_usage")
+        self.measurement = shared.stream.read_measurement(self.r, "claude_usage")
         return self._render()

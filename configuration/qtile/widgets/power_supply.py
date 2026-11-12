@@ -8,7 +8,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._stream
+import shared.stream
 
 
 class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
@@ -41,7 +41,7 @@ class WidgetPowerSupply(libqtile.widget.base.BackgroundPoll):
         return symbol
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "power_supply")
+        measurement = shared.stream.read_measurement(self.r, "power_supply")
         if measurement is None:
             return ""
 

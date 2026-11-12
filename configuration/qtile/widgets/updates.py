@@ -10,7 +10,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
-import widgets._stream
+import shared.stream
 
 
 class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
@@ -30,7 +30,7 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
         self.threshold = threshold
 
     def poll(self) -> str:
-        measurement = widgets._stream.read_measurement(self.r, "updates")
+        measurement = shared.stream.read_measurement(self.r, "updates")
         if measurement is None:
             return ""
         outstanding_updates = measurement.get("outstanding_updates", 0)
