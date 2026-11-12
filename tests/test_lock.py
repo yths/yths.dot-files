@@ -56,7 +56,17 @@ def test_the_lock_screen_identifies_neither_the_user_nor_the_machine(
 
 
 def test_the_password_field_reveals_nothing(configuration: dict) -> None:
-    assert patch_lock.lock_environment(configuration)["XSECURELOCK_PARANOID_PASSWORD"] == ON
+    """`asterisks` would put the password's length on a screen anyone may read. `cursor`
+    gives the same per-keystroke feedback without it."""
+    prompt = patch_lock.lock_environment(configuration)["XSECURELOCK_PASSWORD_PROMPT"]
+    assert prompt == "cursor"
+    assert prompt != "asterisks"
+
+
+def test_the_password_field_uses_the_documented_option(configuration: dict) -> None:
+    """XSECURELOCK_PARANOID_PASSWORD selects the same prompt and still works, but has been
+    dropped from xsecurelock's documentation -- which is how a setting stops being noticed."""
+    assert "XSECURELOCK_PARANOID_PASSWORD" not in patch_lock.lock_environment(configuration)
 
 
 def test_a_locked_screen_also_goes_dark(configuration: dict) -> None:

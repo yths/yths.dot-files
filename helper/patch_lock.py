@@ -29,8 +29,16 @@ BEHAVIOUR = {
     "XSECURELOCK_SHOW_USERNAME": "0",
     "XSECURELOCK_SHOW_HOSTNAME": "0",
     "XSECURELOCK_SHOW_DATETIME": "0",
-    # Neither the length of the password nor the fact that one is being typed.
-    "XSECURELOCK_PARANOID_PASSWORD": "1",
+    # Show a cursor that jumps to a random position on each keystroke, so the field gives
+    # feedback that a key landed without revealing how many have. This is xsecurelock's own
+    # default; it is named here because the alternative -- `asterisks`, which every other
+    # password prompt uses -- would put the length of the password on a screen that anyone
+    # walking past is free to read.
+    #
+    # Spelled with the documented option. The previous `XSECURELOCK_PARANOID_PASSWORD=1`
+    # selected the same thing but has been dropped from xsecurelock's documentation; the
+    # binary still honours it, which is exactly how a setting stops being noticed.
+    "XSECURELOCK_PASSWORD_PROMPT": "cursor",
     # Blank the screen a minute in, so a locked machine is not also a lit one.
     "XSECURELOCK_BLANK_TIMEOUT": "60",
     "XSECURELOCK_BLANK_DPMS_STATE": "off",
