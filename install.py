@@ -127,6 +127,8 @@ STATIC_INSTALLS = (
     ("kitty", "~/.config/kitty", "kitty"),
     ("lock", "~/.config/lock", "lock"),
     ("dunst", "~/.config/dunst", "dunst"),
+    ("gtk/gtk-3.0", "~/.config/gtk-3.0", "gtk 3"),
+    ("gtk/gtk-4.0", "~/.config/gtk-4.0", "gtk 4"),
     ("rofi", "~/.config/rofi", "rofi"),
     ("qutebrowser/config.py", "~/.config/qutebrowser/config.py", "qutebrowser"),
     ("mpv", "~/.config/mpv", "mpv"),

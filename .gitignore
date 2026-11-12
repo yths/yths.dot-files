@@ -43,6 +43,14 @@ configuration/kitty/kitty.conf.bak
 configuration/kitty/current-theme.conf
 configuration/kitty/themes/
 
+# GTK's stylesheet and settings, written whole by helper/patch_gtk.py for each toolkit
+# version. The file chooser and light/dark preferences are not here at all: they are
+# GSettings, which lives in dconf, so the patcher applies them rather than writing them.
+configuration/gtk/gtk-3.0/gtk.css
+configuration/gtk/gtk-3.0/settings.ini
+configuration/gtk/gtk-4.0/gtk.css
+configuration/gtk/gtk-4.0/settings.ini
+
 # rofi's colour variables, written whole by helper/patch_rofi.py. theme.rasi @imports this
 # file; theme.rasi and config.rasi are the source and stay tracked.
 configuration/rofi/theme_config.rasi

@@ -43,6 +43,10 @@ core = [
     "qtile", "python-dbus-fast",
     "ttc-iosevka",
     "kitty", "rofi", "dunst", "picom",
+    # Where GTK keeps the preferences that are not files -- the file chooser showing
+    # hidden entries, and the light/dark scheme GTK 4 follows. helper/patch_gtk.py
+    # writes them through gsettings, which needs this backend to make them persist.
+    "dconf",
     # The screen lock, and the daemon that fires it on idle, on suspend, and when systemd
     # asks for a session lock. xsecurelock fails closed: if it cannot grab the screen it
     # refuses to exit, rather than leaving an unlocked desktop behind.
