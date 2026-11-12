@@ -53,7 +53,10 @@ def root_prefix(*, prompt: bool) -> list[str] | None:
     An empty list means the caller is already root. ``sudo -n`` is tried first because it
     either works silently — a live timestamp, or a NOPASSWD rule — or fails immediately;
     it is the only form the unattended theme switch is allowed to use. When prompting is
-    permitted, pkexec puts the dialog on the desktop and sudo on the terminal.
+    permitted, a terminal gets sudo and only a terminal-less caller gets pkexec: without a
+    graphical polkit agent pkexec falls back to its text agent, which polkit 127's
+    socket-activated helper rejects with "No session for cookie" whatever password is typed.
+    sudo also asks once for a run that needs root twice.
     """
     if os.geteuid() == 0:
         return []
@@ -63,10 +66,10 @@ def root_prefix(*, prompt: bool) -> list[str] | None:
         return ["sudo", "-n"]
     if not prompt:
         return None
-    if os.environ.get("DISPLAY") and shutil.which("pkexec"):
-        return ["pkexec"]
     if sys.stdin.isatty() and shutil.which("sudo"):
         return ["sudo"]
+    if os.environ.get("DISPLAY") and shutil.which("pkexec"):
+        return ["pkexec"]
     return None
 
 
