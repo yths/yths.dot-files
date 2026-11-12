@@ -30,7 +30,7 @@ class WidgetServiceState(libqtile.widget.base.BackgroundPoll):
         # A failure to even run systemctl must read as "service down", not freeze the cell
         # on its last value — a health indicator stuck on "up" is worse than no indicator.
         try:
-            result = subprocess.run(  # noqa: S603 - fixed argv, service name comes from config
+            result = subprocess.run(
                 ["systemctl", "--user", "is-active", "--quiet", self.service],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

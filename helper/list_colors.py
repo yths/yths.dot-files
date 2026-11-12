@@ -32,7 +32,7 @@ try:  # the drift report's perceptual matching reuses patch_vsc + the `colour` l
     from patch_vsc import color_str_to_tuple
 
     _HAVE_COLOUR = True
-except Exception:  # noqa: BLE001 - colour is optional; any import failure falls back
+except ImportError:
     _HAVE_COLOUR = False
 
 

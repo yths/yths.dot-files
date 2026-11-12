@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Pre-commit gate for yths.dot-files.
+#
+# Enable once per clone:
+#     git config core.hooksPath helper/hooks
+#
+# Bypass a single commit with `git commit --no-verify` when you genuinely need to.
+#
+# Both checks run against the working tree, not the staged snapshot, so unstaged work
+# can fail the gate too. That is deliberate: the qtile config is loaded from this tree
+# live, so "the tree is clean" is the property worth defending.
+
+set -uo pipefail
+
+repository_root="$(git rev-parse --show-toplevel)"
+cd "$repository_root" || exit 1
+
+status=0
+
+printf '  ruff     '
+if ! command -v ruff >/dev/null 2>&1; then
+    printf 'SKIP  ruff is not installed (yay -S ruff)\n'
+    status=1
+elif output="$(ruff check . 2>&1)"; then
+    printf 'ok\n'
+else
+    printf 'FAIL\n%s\n\n' "$output"
+    status=1
+fi
+
+printf '  gendocs  '
+if output="$(python helper/gendocs.py --check 2>&1)"; then
+    printf 'ok\n'
+else
+    printf 'FAIL\n%s\n' "$output"
+    printf '           run: python helper/gendocs.py\n\n'
+    status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+    printf 'commit refused. fix the above, or use --no-verify to bypass.\n'
+fi
+
+exit "$status"

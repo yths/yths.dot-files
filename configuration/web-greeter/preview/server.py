@@ -41,9 +41,12 @@ REPO_ROOT = os.path.dirname(os.path.dirname(GREETER_ROOT))
 HELPER_DIR = os.path.join(REPO_ROOT, "helper")
 GLOBAL_CONFIG = os.path.expanduser("~/.config/config.json")
 
-sys.path.insert(0, REPO_ROOT)
-
-from helper.patch_web_greeter import patch_web_greeter  # noqa: E402 - needs the sys.path bootstrap above
+try:
+    from helper.patch_web_greeter import patch_web_greeter
+except ImportError:
+    # This file is run as a script, so the repo root is not on sys.path yet.
+    sys.path.insert(0, REPO_ROOT)
+    from helper.patch_web_greeter import patch_web_greeter
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -131,18 +134,18 @@ class PreviewHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         try:
             self._route_get()
-        except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
+        except Exception as exc:
             self.log_message("error: %s", exc)
             self._send_text(500, f"server error: {exc}")
 
     def do_POST(self) -> None:
         try:
             self._route_post()
-        except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
+        except Exception as exc:
             self.log_message("error: %s", exc)
             self._send_text(500, f"server error: {exc}")
 
-    def _route_get(self) -> None:  # noqa: PLR0911 - flat router
+    def _route_get(self) -> None:
         url = urlparse(self.path)
         path = url.path
         if path == "/":
@@ -183,7 +186,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
             return self._send_text(404, "not found")
         return self._send_file(target)
 
-    def _api_get(self, path: str, query: dict) -> None:  # noqa: PLR0911 - flat router
+    def _api_get(self, path: str, query: dict) -> None:
         if path == "/__api/themes":
             return self._send_json(200, {"themes": list_themes()})
         if path == "/__api/theme.json":
@@ -207,7 +210,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
                 return self._send_json(200, {"keys": []})
         return self._send_text(404, "no such endpoint")
 
-    def _route_post(self) -> None:  # noqa: PLR0911 - flat router
+    def _route_post(self) -> None:
         url = urlparse(self.path)
         if url.path == "/__api/theme.json":
             theme = (parse_qs(url.query).get("theme") or [""])[0]
@@ -282,7 +285,7 @@ def regenerate_now() -> dict:
             configuration = json.load(fh)
         patch_web_greeter(configuration)
         return True, None
-    except Exception as exc:  # noqa: BLE001 - a preview server must survive any single failure
+    except Exception as exc:
         sys.stderr.write(f"[watcher] regenerate failed: {exc}\n")
         return False, str(exc)
 
@@ -366,7 +369,7 @@ class WSHub:
         for ws in list(self.clients):
             try:
                 await ws.send(msg)
-            except Exception:  # noqa: BLE001 - a preview server must survive any single failure
+            except Exception:
                 dead.append(ws)
         for ws in dead:
             self.clients.discard(ws)
