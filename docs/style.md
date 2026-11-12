@@ -112,17 +112,34 @@ Three more are inventories rather than prose, and are read as lookup tables:
 |---|---|
 | `docs/palette-reference.md` | `helper/gendocs.py` (from `helper/list_palette.py`) |
 | `docs/keybindings.md` | `helper/gendocs.py` (from `helper/list_keybindings.py`) |
-| `docs/dependencies.md` | by hand; every third-party import needs a row |
+| `docs/dependencies.md` | `helper/gendocs.py` (from `helper/list_dependencies.py`) |
 
 `docs/palettes/<preset>/` holds the per-preset palette references — swatch images and a token table, one directory per bundled theme. It is the third of the three `palette*` documents: `palette-semantics.md` is what a token means, `palette-reference.md` is where it is used, `palettes/` is what it looks like.
 
 ## Subdirectory READMEs
 
-Subdirectory READMEs (`configuration/*/README.md`, `helper/README.md`, `configuration/qtile/widgets/README.md`, `configuration/qtile/shared/README.md`) are component-local references. They:
+A directory gets a README when it holds something a reader has to understand before
+changing it. A directory of one config file does not.
 
-- Open with a one-line description and a cross-link to the relevant `docs/` document for system-wide context.
-- Document the component-local workflow (how to patch this app, how to add a new widget) that doesn't belong in a global `docs/` file.
-- Do not restate content from `docs/`.
+All of them take the same shape:
+
+1. **A title naming what the directory holds**, not a task performed on it. `X Session
+   Startup`, not `Patching EDID Files`.
+2. **One paragraph that assumes nothing.** What this is, and what reads it. A reader arriving
+   from a file listing should not have to open another document to understand the first
+   sentence.
+3. **What is here**, when the directory holds more than one kind of thing.
+4. **The directory-local workflow** — how to add a widget, patch an app, deploy a theme.
+5. **What belongs here**, where the directory has a scope rule worth enforcing.
+
+Two rules keep them from growing into a second copy of `docs/`:
+
+- **Scope down.** A README covers its own directory and its subdirectories, nothing above or
+  beside it. The EDID procedure lived under `configuration/xorg/` while documenting files
+  under `configuration/hardware/edid/`; it now lives with the files.
+- **Link out rarely.** Every cross-reference is a reader sent elsewhere mid-sentence, and a
+  link that must be kept correct. Prefer restating one clause to linking a document for it.
+  Link when the other document genuinely owns the subject.
 
 ## Stability Rules
 

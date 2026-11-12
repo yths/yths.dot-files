@@ -20,6 +20,7 @@ import re
 import sys
 from pathlib import Path
 
+import list_dependencies
 import list_keybindings
 import list_palette
 
@@ -121,6 +122,11 @@ def invariants() -> list[tuple[str, list[str], str]]:
             "Name modules by their path from the repository root, e.g. helper/patch_vsc.py.",
         ),
         (
+            "Imports and the recorded Arch packages disagree:",
+            list_dependencies.mismatches(list_dependencies.third_party_imports()),
+            "Edit ARCH_PACKAGES in helper/list_dependencies.py.",
+        ),
+        (
             "Not widgets, but sitting in configuration/qtile/widgets/:",
             [str(path.relative_to(REPO_ROOT)) for path in stray_widget_modules()],
             "Code shared between widgets belongs in configuration/qtile/shared/; "
@@ -196,6 +202,10 @@ GENERATORS = {
     "KEYBINDINGS": (
         "docs/keybindings.md",
         list_keybindings.generate_markdown,
+    ),
+    "DEPENDENCIES": (
+        "docs/dependencies.md",
+        list_dependencies.generate_markdown,
     ),
     "PALETTE": (
         "docs/palette-reference.md",

@@ -33,6 +33,8 @@ python install.py
 - [docs/issues.md](docs/issues.md) — known issues and roadmap
 - [docs/style.md](docs/style.md) — documentation style guide (for contributors)
 
+Changing anything here: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 [MIT](LICENSE.md).
