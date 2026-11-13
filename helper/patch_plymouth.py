@@ -234,7 +234,7 @@ def _rgb(hex_colour: str) -> tuple[float, float, float]:
 def render_configuration(
     configuration: dict[str, Any], theme_path: str, theme: str, name: str
 ) -> None:
-    """Rewrite the theme's ``.plymouth`` INI with the active palette, fonts, name and text.
+    """Render the theme's INI and script with the active palette, fonts, name and text.
 
     The messages are the newest of those. Until the vocabulary existed they were the one part
     of the splash a theme could not reach: this function rewrote the fonts and the colours
@@ -251,36 +251,34 @@ def render_configuration(
     plymouth_configuration.optionxform = str
     plymouth_configuration.read(ini_path)
 
-    two_step = plymouth_configuration["two-step"]
+    settings = plymouth_configuration["script"]
     font_family = configuration["font"]["family"]
     font_size = configuration["font"]["size"]
     palette = configuration["palette"][theme]
 
-    two_step["Font"] = f"{font_family} {round(font_size * 1.25)}"
-    two_step["TitleFont"] = f"{font_family} {round(font_size * 1.25)}"
-    two_step["MonospaceFont"] = f"{font_family} {round(font_size * 0.85)}"
+    settings["Font"] = f"{font_family} {round(font_size * 1.25)}"
+    settings["TitleFont"] = settings["Font"]
+    settings["MonospaceFont"] = f"{font_family} {round(font_size * 0.85)}"
 
     # Plymouth writes colours as 0xrrggbb rather than #rrggbb.
-    two_step["BackgroundStartColor"] = palette["background"].replace("#", "0x")
-    two_step["BackgroundEndColor"] = palette["background"].replace("#", "0x")
-    two_step["ProgressBarBackgroundColor"] = palette["neutral"].replace("#", "0x")
-    two_step["ConsoleLogTextColor"] = palette["foreground"].replace("#", "0x")
-    two_step["ConsoleLogBackgroundColor"] = palette["background"].replace("#", "0x")
+    settings["BackgroundStartColor"] = palette["background"].replace("#", "0x")
+    settings["BackgroundEndColor"] = palette["background"].replace("#", "0x")
+    settings["ConsoleLogTextColor"] = palette["foreground"].replace("#", "0x")
+    settings["ConsoleLogBackgroundColor"] = palette["background"].replace("#", "0x")
 
     # Derived, not carried over from the source. ImageDir is an absolute path into the
     # system theme directory, so it has to name wherever install_theme is about to put this
     # -- and it silently pointed at a directory belonging to the preset's previous name
     # after the bundle was renamed, which plymouth answers by drawing no images at all.
-    two_step["ImageDir"] = os.path.join(SYSTEM_THEME_ROOT, name)
+    settings["ImageDir"] = os.path.join(SYSTEM_THEME_ROOT, name)
+    settings["ScriptFile"] = os.path.join(SYSTEM_THEME_ROOT, name, "theme.script")
     header = plymouth_configuration["Plymouth Theme"]
     header["Name"] = name
     header["Description"] = f"Boot splash for the {name} preset."
 
     # One title and one subtitle per mode plymouth can boot, shut down or update in. A
-    # section the INI does not carry is skipped rather than created: the section list is
-    # plymouth's, and inventing one would put a mode in the file that this theme never
-    # declared an animation for.
-    _, strings = symbols.resolve(configuration)
+    # section the INI does not carry is skipped rather than created.
+    glyphs, strings = symbols.resolve(configuration)
     for section, prefix in symbols.PLYMOUTH_SECTIONS.items():
         if section not in plymouth_configuration:
             continue
@@ -290,6 +288,26 @@ def render_configuration(
             value = strings.get(f"plymouth.{prefix}.{field}")
             if value is not None:
                 plymouth_configuration[section][ini_key] = value
+
+    script_values: dict[str, str | float] = {
+        "font": settings["Font"],
+        "bullet": glyphs["plymouth.bullet"],
+    }
+    for token in ("background", "foreground"):
+        for component, value in zip(("red", "green", "blue"), _rgb(palette[token]), strict=True):
+            script_values[f"{token}_{component}"] = value
+    for section in symbols.PLYMOUTH_SECTIONS:
+        if section not in plymouth_configuration:
+            continue
+        mode = "boot" if section == "boot-up" else section
+        for field, ini_key in (("titles", "Title"), ("subtitles", "SubTitle")):
+            script_values[f'{field}[{json.dumps(mode)}]'] = plymouth_configuration[section].get(ini_key, "")
+    with open(os.path.join(theme_path, "theme.script.in"), encoding="utf-8") as handle:
+        script_template = handle.read()
+    with open(os.path.join(theme_path, "theme.script"), "w", encoding="utf-8") as handle:
+        for key, value in script_values.items():
+            handle.write(f"theme.{key} = {json.dumps(value, ensure_ascii=False)};\n")
+        handle.write("\n" + script_template)
 
     # plymouth finds a theme's INI by the directory's name -- themes/<name>/<name>.plymouth --
     # so the file is renamed along with everything it says.
@@ -321,6 +339,13 @@ def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) ->
             context.move_to(*origin)
             context.show_text(glyph)
             surface.write_to_png(os.path.join(theme_path, filename))
+        if key == "plymouth.throbber":
+            # Align visible ink rather than the old transparent animation canvas.
+            with PIL.Image.open(os.path.join(theme_path, filename)) as image:
+                bounds = image.getbbox()
+                if bounds is None:
+                    raise ValueError(f"The Plymouth throbber glyph {glyph!r} rendered empty")
+                image.crop(bounds).save(os.path.join(theme_path, filename))
 
 
 def render_theme(

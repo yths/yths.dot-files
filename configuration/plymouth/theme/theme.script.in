@@ -1,0 +1,239 @@
+Window.SetBackgroundTopColor(theme.background_red, theme.background_green, theme.background_blue);
+Window.SetBackgroundBottomColor(theme.background_red, theme.background_green, theme.background_blue);
+
+mode = Plymouth.GetMode();
+wallpaper = Image("background-tile.png");
+throbber[0] = Image("throbber-01.png");
+throbber[1] = Image("throbber-02.png");
+lock_image = Image("lock.png");
+capslock_image = Image("capslock.png");
+bullet_image = Image("bullet.png");
+frame = 0;
+dialog_active = 0;
+secret = 0;
+prompt_text = "";
+entry_text = "";
+password_bullets = 0;
+keyboard_layout = Plymouth.GetKeyboardLayout();
+message_text = "";
+views = [];
+
+fun text_image(text)
+{
+    return Image.Text(text, theme.foreground_red, theme.foreground_green,
+                      theme.foreground_blue, 1, theme.font);
+}
+
+fun fit_image(image, width)
+{
+    if (image.GetWidth() > width)
+        return image.Scale(width, Math.Int(image.GetHeight() * width / image.GetWidth()));
+    return image;
+}
+
+fun place_text(sprite, text, x, y, width)
+{
+    local.image = fit_image(text_image(text), width);
+    sprite.SetImage(image);
+    sprite.SetPosition(x, y, 10);
+    return image.GetHeight();
+}
+
+fun place_entry(sprite, x, y, width)
+{
+    if (!secret)
+        return place_text(sprite, entry_text, x, y, width);
+    sprite.SetOpacity(password_bullets > 0);
+    if (password_bullets > 0)
+    {
+        local.count = password_bullets;
+        if (count * bullet_image.GetWidth() > width)
+            count = Math.Int(width / bullet_image.GetWidth());
+        sprite.SetImage(bullet_image.Tile(count * bullet_image.GetWidth(), bullet_image.GetHeight()));
+        sprite.SetPosition(x, y, 10);
+    }
+    return bullet_image.GetHeight();
+}
+
+fun layout()
+{
+    local.index;
+    local.output_x = 0;
+    for (index = 0; Window.GetWidth(index); index++)
+    {
+        # Script sprites share a canvas; give each output its own viewport.
+        Window.SetX(index, output_x);
+        Window.SetY(index, 0);
+        output_x += Window.GetWidth(index);
+        local.view;
+        if (!views[index])
+        {
+            view = NULL;
+            view.background = Sprite();
+            view.icon = Sprite(throbber[0]);
+            view.title = Sprite();
+            view.subtitle = Sprite();
+            view.prompt = Sprite();
+            view.entry = Sprite();
+            view.lock = Sprite(lock_image);
+            view.capslock = Sprite(capslock_image);
+            view.keyboard = Sprite();
+            view.message = Sprite();
+            global.views[index] = view;
+        }
+        view = views[index];
+        local.width = Window.GetWidth(index);
+        local.height = Window.GetHeight(index);
+        local.left = Window.GetX(index) + Math.Int(width * 0.05);
+        local.top = Window.GetY(index) + Math.Int(height * 0.1);
+        local.available = width - 2 * Math.Int(width * 0.05);
+        local.gap = 16;
+        if (wallpaper && (view.width != width || view.height != height))
+        {
+            local.scale = width / wallpaper.GetWidth();
+            if (height / wallpaper.GetHeight() > scale)
+                scale = height / wallpaper.GetHeight();
+            local.background = wallpaper.Scale(Math.Int(wallpaper.GetWidth() * scale),
+                                                Math.Int(wallpaper.GetHeight() * scale));
+            view.background.SetImage(background.Crop(Math.Int((background.GetWidth() - width) / 2),
+                                                    Math.Int((background.GetHeight() - height) / 2),
+                                                    width, height));
+            view.background.SetPosition(Window.GetX(index), Window.GetY(index), -100);
+        }
+        local.title_x = left + throbber[0].GetWidth() + gap;
+        local.title_height = place_text(view.title, theme.titles[mode], title_x, top,
+                                       available - throbber[0].GetWidth() - gap);
+        view.icon.SetPosition(left, top + (title_height - throbber[0].GetHeight()) / 2, 10);
+        local.row_height = title_height;
+        if (throbber[0].GetHeight() > row_height)
+            row_height = throbber[0].GetHeight();
+        local.subtitle_y = top + row_height + gap;
+        local.subtitle_height = place_text(view.subtitle, theme.subtitles[mode], left,
+                                          subtitle_y, available);
+        local.message_y = subtitle_y + subtitle_height + gap;
+        view.icon.SetOpacity(!dialog_active);
+        view.title.SetOpacity(!dialog_active);
+        view.subtitle.SetOpacity(!dialog_active);
+        view.prompt.SetOpacity(dialog_active);
+        view.entry.SetOpacity(dialog_active);
+        view.lock.SetOpacity(dialog_active && secret);
+        view.keyboard.SetOpacity(dialog_active && keyboard_layout != NULL && keyboard_layout != "");
+        view.capslock.SetOpacity(dialog_active && secret && Plymouth.GetCapslockState());
+        if (dialog_active)
+        {
+            local.prompt_height = place_text(view.prompt, prompt_text, left, top, available);
+            local.entry_y = top + prompt_height + gap;
+            local.entry_x = left;
+            if (secret)
+                entry_x += lock_image.GetWidth() + gap;
+            local.entry_height = place_entry(view.entry, entry_x, entry_y,
+                                            available - (entry_x - left));
+            if (secret)
+                view.entry.SetY(entry_y + (lock_image.GetHeight() - entry_height) / 2);
+            view.lock.SetPosition(left, entry_y, 10);
+            local.keyboard_y = entry_y + entry_height + lock_image.GetHeight() + gap;
+            local.keyboard_height = 0;
+            if (keyboard_layout != NULL && keyboard_layout != "")
+                keyboard_height = place_text(view.keyboard, keyboard_layout, left, keyboard_y, available);
+            view.capslock.SetPosition(left + available - capslock_image.GetWidth(), keyboard_y, 10);
+            message_y = keyboard_y + keyboard_height + gap;
+        }
+        place_text(view.message, message_text, left, message_y, available);
+        view.message.SetOpacity(dialog_active);
+        view.width = width;
+        view.height = height;
+    }
+    # Removed outputs must not leave sprites on the remaining displays.
+    while (views[index])
+    {
+        views[index] = NULL;
+        index++;
+    }
+}
+
+fun refresh()
+{
+    global.frame++;
+    local.current_layout = Plymouth.GetKeyboardLayout();
+    if (current_layout != keyboard_layout)
+    {
+        global.keyboard_layout = current_layout;
+        layout();
+    }
+    local.index;
+    for (index = 0; Window.GetWidth(index); index++)
+    {
+        if (!views[index] || views[index].width != Window.GetWidth(index) ||
+            views[index].height != Window.GetHeight(index))
+        {
+            layout();
+            break;
+        }
+        views[index].icon.SetImage(throbber[Math.Int(frame / 25) % 2]);
+        views[index].capslock.SetOpacity(dialog_active && secret && Plymouth.GetCapslockState());
+    }
+}
+
+fun display_normal()
+{
+    global.dialog_active = 0;
+    global.secret = 0;
+    global.prompt_text = "";
+    global.entry_text = "";
+    global.password_bullets = 0;
+    global.message_text = "";
+    layout();
+}
+
+fun display_password(prompt, bullets)
+{
+    global.dialog_active = 1;
+    global.secret = 1;
+    global.prompt_text = prompt;
+    global.entry_text = "";
+    global.password_bullets = bullets;
+    layout();
+}
+
+fun display_question(prompt, entry)
+{
+    global.dialog_active = 1;
+    global.secret = 0;
+    global.prompt_text = prompt;
+    global.entry_text = entry;
+    global.password_bullets = 0;
+    layout();
+}
+
+fun display_prompt(prompt, entry, is_secret)
+{
+    if (is_secret)
+        display_password(prompt, entry.Length());
+    else
+        display_question(prompt, entry);
+}
+
+fun display_message(message)
+{
+    global.message_text = message;
+    layout();
+}
+
+fun hide_message(message)
+{
+    if (message == message_text)
+    {
+        global.message_text = "";
+        layout();
+    }
+}
+
+Plymouth.SetRefreshFunction(refresh);
+Plymouth.SetDisplayHotplugFunction(layout);
+Plymouth.SetDisplayNormalFunction(display_normal);
+Plymouth.SetDisplayPasswordFunction(display_password);
+Plymouth.SetDisplayQuestionFunction(display_question);
+Plymouth.SetDisplayPromptFunction(display_prompt);
+Plymouth.SetDisplayMessageFunction(display_message);
+Plymouth.SetHideMessageFunction(hide_message);
+layout();

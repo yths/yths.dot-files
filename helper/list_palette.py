@@ -257,7 +257,7 @@ def _aliases(function: ast.AST) -> dict[str, list[str]]:
     """Locals that stand for a path into ``configuration``, so ``palette["x"]`` resolves.
 
     ``palette = configuration["palette"][theme]`` is the one that matters; the same pass
-    picks up ``two_step = plymouth_configuration["two-step"]``, which is what lets a field
+    picks up ``settings = plymouth_configuration["script"]``, which is what lets a field
     be reported under its INI section.
     """
     found: dict[str, list[str]] = {}

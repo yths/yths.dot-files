@@ -4,8 +4,8 @@ The boot-splash theme. For where Plymouth fits in the system, see
 [../../docs/architecture.md](../../docs/architecture.md); for debugging the splash without
 rebooting, see [../../docs/tips.md](../../docs/tips.md).
 
-This directory holds theme *sources* only — the `.plymouth` INI, the keymap render, and a
-link to the active wallpaper. Everything else the splash draws is rendered from the palette
+This directory holds theme *sources* only — the `.plymouth` INI, the script template, the
+keymap render, and a link to the active wallpaper. Everything else the splash draws is rendered from the palette
 by `helper/patch_plymouth.py` and never written back here: the eight glyph and panel images
 would otherwise be rewritten on every theme switch, and they are build artefacts, not
 source. They were tracked once, and the committed copies had been stale since May.
@@ -62,6 +62,23 @@ initramfs to change something nobody is looking at.
 
 So this is a system decision, made once. Re-run the command above when the palette itself
 changes.
+
+## Resolution-independent Layout
+
+The script plugin gives the throbber and subtitle a shared left edge, five percent of each
+display's width from its edge. The title starts 16 pixels after the cropped throbber image,
+not at a separate percentage of the screen width. Longer text scales down to fit the display.
+The same layout runs independently on each output and is recalculated when outputs change.
+
+The former `two-step` plugin positioned the throbber by its centre and each text label by
+its own width. Percentage adjustments only lined them up at particular resolutions.
+`theme.script.in` now defines the layout; rendering adds the active fonts, colours, glyphs,
+and per-mode messages to produce `theme.script`. Password and question prompts remain
+interactive, with masked password input and keyboard-layout/caps-lock indicators.
+Password masks repeat the theme's pre-rendered `bullet.png`, vertically centered against
+the lock icon, so the configured glyph does
+not depend on font availability in the initramfs. The keyboard layout is shown only when
+Plymouth supplies a non-empty name; it updates if that information becomes available later.
 
 ## Silent Boot
 

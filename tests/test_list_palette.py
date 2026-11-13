@@ -266,7 +266,7 @@ def test_plymouth_is_reported_as_always_dark(
     staged = tmp_path / "staged"
     # `background-tile.png` in that directory is a tracked symlink to a wallpaper the
     # installer materialises, and wallpapers are gitignored -- so in a fresh clone it dangles
-    # and a plain copytree raises. The INI is all render_configuration reads.
+    # and a plain copytree raises. Rendering only needs the INI and script template.
     shutil.copytree(source, staged, ignore_dangling_symlinks=True)
     light = dict(configuration, state={"theme": "light"})
     light["palette"] = {"dark": PALETTE, "light": dict.fromkeys(PALETTE, "#ffffff")}
@@ -274,7 +274,7 @@ def test_plymouth_is_reported_as_always_dark(
 
     parser = configparser.ConfigParser(interpolation=None)
     parser.read(str(staged / "d.plymouth"))
-    written = parser["two-step"]["BackgroundStartColor"]
+    written = parser["script"]["BackgroundStartColor"]
     assert written == PALETTE["background"].replace("#", "0x"), (
         "the splash followed state.theme; the map says it cannot"
     )
