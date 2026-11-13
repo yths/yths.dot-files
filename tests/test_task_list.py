@@ -224,7 +224,8 @@ outlined = int(sys.argv[2]) > 1
 assert len(config['screens']) == int(sys.argv[2])
 for screen in config['screens']:
     assert bool(screen.top.border_width[0]) == outlined
-    for edge in (screen.bottom, screen.left, screen.right):
+    assert bool(screen.bottom.outline_size) == outlined
+    for edge in (screen.left, screen.right):
         assert (edge is not None) == outlined
         if outlined:
             assert edge.size == config['FOCUS_BORDER_WIDTH']
