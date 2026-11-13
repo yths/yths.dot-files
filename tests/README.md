@@ -27,3 +27,9 @@ symlinks, plymouth's images. Those were verified in the session that wrote them,
 that compared old and new output and were then thrown away. Bringing them here means
 fixtures for a home directory, a Redis and a palette — worth doing, and a larger job than
 this.
+
+The lock renderer is checked separately by the
+[feedback package](../configuration/lock/pam/PKGBUILD), not by pytest. `makepkg` runs
+pixel-comparison tests in Xvfb with Xft and core fonts: old password or lockout text must
+not survive a transition or dialog closure, even without background repainting. These
+checks do not run the real locker or authenticate against PAM.

@@ -13,6 +13,11 @@ set -eu
 environment="${XDG_CONFIG_HOME:-$HOME/.config}/lock/environment"
 [ -f "$environment" ] && . "$environment"
 
+# Do not override an explicitly selected renderer.
+if [ -z "${XSECURELOCK_AUTH:-}" ] && [ -x /usr/lib/xsecurelock/auth_x11_feedback ]; then
+    export XSECURELOCK_AUTH=/usr/lib/xsecurelock/auth_x11_feedback
+fi
+
 # exec, not a subshell: xss-lock tracks this process to know whether the screen is still
 # locked, and a wrapper that outlived the locker would leave it thinking it is.
 exec xsecurelock

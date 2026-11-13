@@ -84,6 +84,26 @@ def test_unmaintained_directories_are_skipped(docs: pathlib.Path) -> None:
     assert gendocs.broken_documentation_links() == []
 
 
+@pytest.mark.parametrize("build_directory", ["src", "pkg"])
+def test_makepkg_build_documentation_is_not_maintained(
+    docs: pathlib.Path, build_directory: str,
+) -> None:
+    recipe = docs / "configuration" / "lock" / "pam"
+    generated = recipe / build_directory / "upstream"
+    generated.mkdir(parents=True)
+    (recipe / "PKGBUILD").write_text("pkgname=xsecurelock-pam-feedback\n")
+    (generated / "README.md").write_text("[upstream](not-shipped.md)\n")
+    (recipe / "README.md").write_text("[ours](missing.md)\n")
+    assert gendocs.broken_documentation_links() == ["configuration/lock/pam/README.md — missing.md"]
+
+
+def test_source_directories_without_a_pkgbuild_are_still_checked(docs: pathlib.Path) -> None:
+    source = docs / "src"
+    source.mkdir()
+    (source / "README.md").write_text("[ours](missing.md)\n")
+    assert gendocs.broken_documentation_links() == ["src/README.md — missing.md"]
+
+
 def test_the_real_documentation_has_no_broken_links() -> None:
     """The check, against the tree it guards."""
     assert gendocs.broken_documentation_links() == []

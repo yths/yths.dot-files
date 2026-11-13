@@ -175,6 +175,39 @@ def test_the_package_owns_the_file_rather_than_copying_it() -> None:
     assert "install -Dm644" in text and "/etc/pam.d/xsecurelock" in text
 
 
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_the_installer_builds_only_sources_outside_the_live_clone(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, returncode: int,
+) -> None:
+    source = tmp_path / "recipe"
+    source.mkdir()
+    (source / "PKGBUILD").write_text("pkgname=xsecurelock-pam-feedback\n")
+    (source / "auth_x11.patch").write_text("renderer patch\n")
+    (source / "src").mkdir()
+    (source / "src" / "README.md").write_text("upstream documentation\n")
+    (source / "pkg").mkdir()
+    (source / "old.pkg.tar.zst").write_text("old package\n")
+    (source / "upstream.tar.gz").write_text("old source archive\n")
+    (source / "build.log").write_text("old build log\n")
+    monkeypatch.setattr(patch_lock, "template_path", lambda *parts: str(source))
+    builds: list[pathlib.Path] = []
+
+    def run(command: list[str], *, cwd: str, check: bool) -> subprocess.CompletedProcess[str]:
+        directory = pathlib.Path(cwd)
+        builds.append(directory)
+        assert directory != source
+        assert {path.name for path in directory.iterdir()} == {"PKGBUILD", "auth_x11.patch"}
+        assert command == ["makepkg", "--syncdeps", "--install", "--needed", "--noconfirm"]
+        assert check is False
+        return subprocess.CompletedProcess(command, returncode)
+
+    monkeypatch.setattr(patch_lock.subprocess, "run", run)
+    assert patch_lock.install_pam_service() is (returncode == 0)
+    assert len(builds) == 1
+    assert not builds[0].exists()
+    assert (source / "src" / "README.md").is_file()
+
+
 # Naming a service with no file in /etc/pam.d is worse than the silence it fixes: PAM falls
 # through to /etc/pam.d/other, which on Arch denies everything.
 def test_the_environment_names_the_service_only_when_it_is_installed() -> None:

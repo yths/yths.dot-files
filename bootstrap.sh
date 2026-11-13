@@ -251,5 +251,7 @@ cat <<'EOF'
     Left for later, from the desktop -- none of it is needed to log in:
       - the boot splash: add `plymouth` to HOOKS in /etc/mkinitcpio.conf and `splash` to the
         kernel command line, then `python install.py --migrate --system`
+      - lock-screen failure messages and clean redrawing:
+        `python helper/patch_lock.py --install-pam` (optional package; asks for sudo)
       - display calibration, credentials, a different theme: docs/install.md
 EOF

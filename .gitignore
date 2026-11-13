@@ -80,11 +80,12 @@ configuration/vscode/settings.json
 
 ### makepkg build artifacts ###
 # configuration/lock/pam/ is a real PKGBUILD, so makepkg leaves its scratch directories and
-# the built package beside it. Only the PKGBUILD and the .pam file it installs are source.
+# the built package beside it. The build recipe, PAM service, renderer patch and tests are source.
 configuration/lock/pam/pkg/
 configuration/lock/pam/src/
 configuration/lock/pam/*.pkg.tar.*
 configuration/lock/pam/*.log
+configuration/lock/pam/*.tar.gz
 # packages/<pkgname>/ are the same for the third-party packages the AUR cannot build. bootstrap.sh
 # builds them in a scratch directory, but a `makepkg` run by hand lands here, and the source
 # tarball it downloads with it.

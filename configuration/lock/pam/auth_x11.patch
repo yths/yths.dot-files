@@ -1,0 +1,27 @@
+diff --git a/helpers/auth_x11.c b/helpers/auth_x11.c
+--- a/helpers/auth_x11.c
++++ b/helpers/auth_x11.c
+@@ -549,4 +549,6 @@ void DestroyPerMonitorWindows(size_t keep_windows) {
+   for (size_t i = keep_windows; i < num_windows; ++i) {
++    // Erase before exposing the parent, which may not repaint this area.
++    XClearWindow(display, windows[i]);
+ #ifdef HAVE_XFT_EXT
+     XftDrawDestroy(xft_draws[i]);
+ #endif
+@@ -590,4 +592,7 @@ void CreateOrUpdatePerMonitorWindow(size_t i, const Monitor *monitor,
+   if (i < num_windows) {
++    // Clear the old bounds, not just the smaller window after a resize.
++    XClearWindow(display, windows[i]);
++
+     // Move the existing window.
+     XMoveResizeWindow(display, windows[i], x, y, w, h);
+     return;
+@@ -1450,7 +1455,7 @@ int Authenticate(void) {
+     char type = ReadPacket(requestfd[0], &message, 1);
+     switch (type) {
+       case PTYPE_INFO_MESSAGE:
+-        DisplayMessage("PAM says", message, 0);
++        DisplayMessage("", message, 0);
+         explicit_bzero(message, strlen(message));
+         free(message);
+         PlaySound(SOUND_INFO);

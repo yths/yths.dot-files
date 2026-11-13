@@ -86,6 +86,13 @@ the module gets a value it can act on, and the shell still gets its status.
 
 A patcher takes the active configuration (`~/.config/config.json`), extracts the bits it needs (palette, font, state), and writes them into an app-specific format. The canonical minimal patcher is `patch_xorg.py`: it reads one number off the configuration and writes one line. `patch_web_greeter.py` and `patch_plymouth.py` are the two that also *install* — their target is root-owned rather than under `~`, so each splits into a patch stage that needs no privileges and an install stage that does.
 
+`patch_lock.py --install-pam` is a separate opt-in package install: it runs `makepkg` as
+the current user in a temporary build directory, asks for sudo as needed, then regenerates
+the lock environment.
+The package owns the PAM feedback service and a patched display helper; neither is installed
+by ordinary theme patching or `install.py --system`. See
+[the lock documentation](../configuration/lock/README.md) for building, selection and recovery.
+
 ```python
 """Patch <app>: write palette values into <app>'s native config format."""
 

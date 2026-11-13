@@ -1,7 +1,5 @@
-# A local package, not an AUR one: it exists to put one file in /etc/pam.d and to be the
-# thing that owns it. `pacman -Qo /etc/pam.d/xsecurelock` then names it, `pacman -R` removes
-# it cleanly, and an xsecurelock update cannot quietly replace it -- which is more than a
-# `cp` from an installer can offer for a file that decides whether a screen unlocks.
+# A separate PAM service and patched display helper. The system locker and authentication
+# protocol stay untouched; lock.sh selects auth_x11_feedback only while it is installed.
 #
 # Build and install:
 #
@@ -10,18 +8,56 @@
 # makepkg refuses to run as root and calls pacman for the install step itself, so run it as
 # your own user and let it prompt.
 pkgname=xsecurelock-pam-feedback
-pkgver=1.0.0
-pkgrel=1
-pkgdesc="PAM service for xsecurelock that reports a failed unlock attempt"
-arch=('any')
+pkgver=1.1.0
+pkgrel=2
+_upstream=1.9.0
+pkgdesc="PAM feedback and clean message rendering for xsecurelock"
+arch=('x86_64' 'aarch64')
 url='https://github.com/yths/yths.dot-files'
-license=('MIT')
-depends=('pam' 'xsecurelock')
+license=('MIT' 'Apache-2.0')
+depends=('pam' 'xsecurelock' 'libx11' 'libxext' 'libxft' 'libxmu' 'libxrandr'
+         'libxfixes' 'libxcomposite' 'libxss' 'fontconfig')
+makedepends=('autoconf' 'automake' 'gcc' 'make' 'pkgconf')
+checkdepends=('xorg-server-xvfb' 'xorg-xauth')
 # pacman leaves a .pacnew rather than overwriting a stack somebody has edited by hand.
 backup=('etc/pam.d/xsecurelock')
-source=('xsecurelock.pam')
-sha256sums=('d85ef276394304530163bfcbe6d6640d6a45c5835a7b860d34d20a4c6713461b')
+source=('xsecurelock.pam'
+        "xsecurelock-${_upstream}.tar.gz::https://codeload.github.com/google/xsecurelock/tar.gz/refs/tags/v${_upstream}"
+        'auth_x11.patch' 'render-test.c' 'render-test.mk')
+sha256sums=('d85ef276394304530163bfcbe6d6640d6a45c5835a7b860d34d20a4c6713461b'
+            '22aca05799326681bf296a288182d7b28066ff2d4db26d09bd7b2dfe8405269e'
+            '4f4aec943ea6dc071d32f7f4adedd382f0d84d7b0cfde4408ef75d36b0371132'
+            'cac799f4606065e6670485e82d9f7cab5eb30136fa6a768cd571a15bb3654d0d'
+            '071dc5d6d0470f970c7e4f843dc999d9323ace2951e001430e6381567eeb26c5')
+
+prepare() {
+    cd "$srcdir/xsecurelock-$_upstream"
+    patch --forward --strip=1 --input="$srcdir/auth_x11.patch"
+    cp "$srcdir/render-test.c" .
+    sh autogen.sh
+}
+
+build() {
+    cd "$srcdir/xsecurelock-$_upstream"
+    ./configure --prefix=/usr --libexecdir=/usr/lib --with-pam-service-name=system-auth
+    make auth_x11
+}
+
+check() {
+    cd "$srcdir/xsecurelock-$_upstream"
+    make -f Makefile -f "$srcdir/render-test.mk" render-test
+    xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp' ./render-test
+    xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp' ./render-test core
+    if grep -Fq '"PAM says"' helpers/auth_x11.c; then
+        printf '%s\n' 'The unwanted PAM heading is still present.' >&2
+        return 1
+    fi
+}
 
 package() {
     install -Dm644 "$srcdir/xsecurelock.pam" "$pkgdir/etc/pam.d/xsecurelock"
+    install -Dm755 "$srcdir/xsecurelock-$_upstream/auth_x11" \
+        "$pkgdir/usr/lib/xsecurelock/auth_x11_feedback"
+    install -Dm644 "$srcdir/xsecurelock-$_upstream/LICENSE" \
+        "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

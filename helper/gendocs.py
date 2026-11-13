@@ -135,6 +135,10 @@ def documentation_files() -> list[Path]:
         path
         for path in REPO_ROOT.rglob("*.md")
         if not UNMAINTAINED & set(path.parts)
+        and not any(
+            parent.name in {"src", "pkg"} and (parent.parent / "PKGBUILD").is_file()
+            for parent in path.parents
+        )
     )
 
 

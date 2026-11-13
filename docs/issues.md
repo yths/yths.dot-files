@@ -118,6 +118,24 @@
     - (2026-09-08) toggling caps lock off left `Key` and `ock` in the warning colour either side of the shorter string. xsecurelock clears a fixed-width region before redrawing that row rather than one sized to the text being replaced, so `Keyboard: English (intl., with AltGr dead keys), Caps Lock` overhung it at both ends.
     - (2026-09-08) reproduced in a nested X server (Xephyr) with the machine's own layout, font and lock environment, rather than on the live session -- it does not reproduce under a plain `us` layout, where the string is short enough to fit, which is why the layout mattered.
     - (2026-09-08) fixed with `XSECURELOCK_SHOW_KEYBOARD_LAYOUT=0`: the row becomes `Keyboard: Caps Lock`, which fits. The warning is kept, and the layout is the kind of detail this screen withholds anyway. The clearing itself is still wrong upstream, and any long string on that row would show it again.
+    - (2026-11-13) the fixed-width explanation above was incomplete: the renderer clears
+      after resizing, so the newly exposed area can retain old pixels if its background does
+      not repaint. The local renderer patch now clears the old window before resizing or
+      closing it. The shorter keyboard row remains useful for privacy and as a fallback.
+
+- [x] Password and account-lockout messages leave old text behind
+    - (2026-11-13) expanded `xsecurelock-pam-feedback` to build a separately named
+      `auth_x11_feedback` from pinned upstream source. It clears old window bounds before
+      resizing or closing and removes the hardcoded "PAM says" heading, without changing
+      authentication or the lockout policy. The launcher selects it only when installed,
+      and respects `XSECURELOCK_AUTH`.
+    - (2026-11-13) pixel-comparison checks in Xvfb fail on the original renderer and pass
+      with the patch, using both Xft and core fonts and a background that does not repaint.
+      Checks cover password-to-message, lockout-to-password and dialog closure, without
+      authenticating or incrementing real failure counters.
+    - (2026-11-13) install or upgrade explicitly with
+      `python helper/patch_lock.py --install-pam`. Corrected the Arch library dependency to
+      `libxss`; `libxscrnsaver` is not its package name.
 
 - [x] The dunst configuration carried four settings dunst no longer accepts
     - (2026-09-11) `gaps` and `startup_notification` were removed from dunst; `gap_size` is global-only and was repeated in all three urgency sections; `msg_urgency` is a filtering rule, which a special section refuses. dunst named every one of them on startup and then ignored them, so nothing broke and nothing said so either — found while investigating the lock screen, in the log of a dunst started for an unrelated test.
@@ -163,6 +181,9 @@
       entry below.
 
 - [ ] The lock screen's password field reads as a graphics artefact
+    - (2026-11-13) this concerns the field's appearance while entering a password, not stale
+      text after a message transition. The renderer patch fixes the latter while preserving
+      the existing 32-character cursor feedback.
     - (2026-09-26) `XSECURELOCK_PASSWORD_PROMPT=cursor` draws a 32-character row of
       underscores with a cursor jumping around inside it. Underscores are contiguous glyphs, so
       the row is an unbroken line at any size, and on 4K — doubly so on HDMI-0, downscaled 2:1

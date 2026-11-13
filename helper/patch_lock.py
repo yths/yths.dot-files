@@ -13,8 +13,10 @@ challenge.
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 # Resolves whether this runs as ``helper.patch_lock`` or as a script; see helper/README.md.
@@ -33,9 +35,6 @@ ENVIRONMENT_PATH = os.path.join("~", ".config", "lock", "environment")
 #: `system-auth`, which is the behaviour this repository had all along.
 PAM_SERVICE = "xsecurelock"
 PAM_SERVICE_PATH = "/etc/pam.d/xsecurelock"
-
-#: Where the package that installs it lives, for the message that says how.
-PAM_PACKAGE_PATH = "configuration/lock/pam"
 
 #: Settings that are a decision rather than a colour, with the reason attached.
 BEHAVIOUR = {
@@ -63,14 +62,9 @@ BEHAVIOUR = {
     # lock screen can do, and this is the usual cause. Pinned rather than left to the
     # default because the line below now depends on it being the only thing on that row.
     "XSECURELOCK_SHOW_LOCKS_AND_LATCHES": "1",
-    # ... and do not name the keyboard layout, which shares that row and is the long half of
-    # it. xsecurelock clears a fixed-width region before redrawing the row rather than one
-    # sized to the text it is replacing, so a string wider than that region leaves its ends
-    # behind. Toggling caps lock off left `Key` and `ock` in the warning colour either side
-    # of the shorter string, because "Keyboard: English (intl., with AltGr dead keys), Caps
-    # Lock" overhangs it at both ends. Without the layout the row reads "Keyboard: Caps
-    # Lock", which fits. The layout is also the kind of detail this screen withholds
-    # anyway -- and one this machine only has a single value for.
+    # Keep the layout private and the row short, including on machines without the patched
+    # renderer. The original renderer could leave the ends of a long layout name behind
+    # when caps lock was switched off.
     "XSECURELOCK_SHOW_KEYBOARD_LAYOUT": "0",
 }
 
@@ -109,7 +103,7 @@ def pam_service() -> dict[str, str]:
         logger.info(
             f"No {PAM_SERVICE_PATH}; the lock screen will use Arch's system-auth and stay "
             f"silent on a wrong password. Install it with: "
-            f"cd {PAM_PACKAGE_PATH} && makepkg --syncdeps --install"
+            "python helper/patch_lock.py --install-pam"
         )
         return {}
     return {"XSECURELOCK_PAM_SERVICE": PAM_SERVICE}
@@ -127,12 +121,13 @@ def patch_lock(configuration: dict[str, Any]) -> None:
 
 
 def install_pam_service() -> bool:
-    """Build and install the package that owns ``/etc/pam.d/xsecurelock``.
+    """Install the separate PAM service and patched lock-screen display helper.
 
-    A package rather than a copy, because this file decides whether a screen unlocks: pacman
-    then names its owner, removes it cleanly, and leaves a ``.pacnew`` rather than replacing a
-    stack somebody edited. The two patchers that install into root-owned directories copy with
-    ``root_prefix``; nothing there could have offered any of that.
+    Build in a temporary directory so upstream sources do not land in the live clone.
+    The package owns ``/etc/pam.d/xsecurelock`` and
+    ``/usr/lib/xsecurelock/auth_x11_feedback`` without replacing the system locker or its
+    authentication protocol. Its checks exercise rendering in Xvfb, not real authentication.
+    pacman leaves a ``.pacnew`` rather than replacing a PAM stack somebody edited.
 
     ``makepkg`` is run rather than ``sudo makepkg``: it refuses to run as root and calls pacman
     for the install step itself, which is where the prompt belongs.
@@ -142,21 +137,31 @@ def install_pam_service() -> bool:
         logger.warning(f"No PKGBUILD in {directory}; nothing to install.")
         return False
     try:
-        result = subprocess.run(
-            ["makepkg", "--syncdeps", "--install", "--needed", "--noconfirm"],
-            cwd=directory, check=False,
-        )
+        with tempfile.TemporaryDirectory(prefix="xsecurelock-feedback-") as build_directory:
+            shutil.copytree(
+                directory, build_directory, dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("src", "pkg", "*.pkg.tar.*", "*.tar.gz", "*.log"),
+            )
+            result = subprocess.run(
+                ["makepkg", "--syncdeps", "--install", "--needed", "--noconfirm"],
+                cwd=build_directory, check=False,
+            )
     except OSError as error:
-        logger.warning(f"Could not run makepkg: {error}")
+        logger.warning(f"Could not build or install lock feedback: {error}")
         return False
     if result.returncode != 0:
-        logger.warning(f"makepkg exited {result.returncode}; the PAM service is not installed.")
+        logger.warning(
+            f"makepkg exited {result.returncode}; the lock feedback package was not installed "
+            "or upgraded."
+        )
         return False
 
-    logger.info(f"Installed {PAM_SERVICE_PATH}.")
+    logger.info(f"Installed lock feedback: {PAM_SERVICE_PATH} and auth_x11_feedback.")
     logger.info(
-        "Re-run this patcher to point the lock screen at it, then verify once before "
-        "relying on it: lock the screen, type a wrong password, and check that it says so. "
+        "The environment will be regenerated now; the launcher selects the patched renderer "
+        "on the next lock unless XSECURELOCK_AUTH is explicitly set. Verify a correct unlock "
+        "and one wrong-password message before relying on it; do not deliberately trigger "
+        "the account lockout. "
         "If a correct password is ever refused, switch to another terminal with Ctrl-Alt-F1 "
         "and run `killall xsecurelock`."
     )
@@ -171,8 +176,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--install-pam", action="store_true",
-        help=f"build and install the package owning {PAM_SERVICE_PATH}, so a wrong password "
-             "says so instead of showing an empty field",
+        help="build or upgrade the PAM feedback service and patched display helper, then "
+             "regenerate the lock environment (sudo is requested by makepkg)",
     )
     arguments = parser.parse_args(argv)
 

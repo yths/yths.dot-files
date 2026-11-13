@@ -53,13 +53,19 @@ message at all. So the screen showed `Processing...`, then an empty field, and n
 why.
 
 `configuration/lock/pam/` fixes that without going near the stack the rest of the system logs
-in through. It is a `PKGBUILD` and one file:
+in through. Its package owns the PAM service and a separately named patched display helper:
 
 ```bash
 cd configuration/lock/pam && makepkg --syncdeps --install
 # or
 python helper/patch_lock.py --install-pam
 ```
+
+This is deliberately opt-in, not part of bootstrap, `install.py --system` or a theme switch.
+The helper command installs build/test dependencies through `makepkg`, asks for sudo when
+needed, builds or upgrades the package in a temporary directory, then regenerates the
+environment. Rerun it after pulling renderer changes; regenerating colours alone does not
+upgrade the binary.
 
 The stack is system-auth's auth section with a single `pam_echo` on the failure path; the
 account, password and session phases are `include`d from system-auth rather than copied, so an
@@ -71,6 +77,13 @@ Arch denies everything, and that is a worse failure than the silence it replaces
 A package rather than a `cp`, unlike the plymouth and web-greeter install stages, because this
 file decides whether a screen unlocks: pacman names its owner, removes it cleanly, and leaves a
 `.pacnew` rather than replacing a stack somebody edited by hand.
+
+The same package builds `auth_x11_feedback` from pinned upstream source. Its rendering patch
+clears the old window before resizing or closing it, preventing leftover text when exposed
+background areas are not repainted, and removes the "PAM says" heading. The launcher selects
+this helper only while installed and respects an explicit `XSECURELOCK_AUTH`. The system
+locker, authentication protocol and lockout policy are not replaced. Package checks compare
+rendered pixels in an isolated Xvfb display without authenticating.
 
 PAM counts jumps in lines, so inserting that one line moved every target that skips past it.
 `tests/test_lock_pam.py` exercises both branches in a bubblewrap sandbox with a fake

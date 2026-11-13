@@ -108,6 +108,35 @@ python helper/patch_plymouth.py --install --rebuild
 The installer warns if the hook is missing. Bootstrap also verifies that the configured theme
 is selected and retries the theme install if needed. Reboot for the changes to take effect.
 
+### Screen Lock Feedback
+
+The standard locker is installed by bootstrap. Its optional local feedback package is a
+separate, explicit install; neither bootstrap nor `install.py --system` changes the lock
+screen's PAM service automatically:
+
+```bash
+python helper/patch_lock.py --install-pam
+```
+
+Run this as your own user. `makepkg` installs build/test dependencies and asks for sudo when
+needed. The command builds or upgrades `xsecurelock-pam-feedback` in a temporary directory,
+runs its isolated Xvfb rendering checks, installs it through pacman, then regenerates the
+lock environment.
+
+The package supplies a separate PAM service for wrong-password messages and a patched display
+helper that clears old text and removes "PAM says". The system locker, authentication
+protocol and account-lockout policy are unchanged. The next lock uses the helper unless
+`XSECURELOCK_AUTH` is explicitly set; no session restart is needed.
+
+On Arch the Screen Saver extension library is `libxss`, not `libxscrnsaver`. Dependencies
+belong in the [package recipe](../configuration/lock/pam/PKGBUILD), not `setup.toml`.
+After pulling renderer updates, rerun the command above to rebuild or upgrade the package;
+theme regeneration alone does not update the installed binary.
+
+Verify a correct unlock and one wrong-password message, without intentionally triggering
+account lockout. See [the lock documentation](../configuration/lock/README.md) for renderer
+selection and [recovery steps](architecture.md#the-lock-screens-pam-service) if unlocking fails.
+
 ### Credentials
 
 `install.py` offers to collect the secrets listed under `[credentials]` in `setup.toml` into
