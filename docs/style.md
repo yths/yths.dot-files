@@ -102,7 +102,7 @@ Five files; each one has a single job. Do not blur them.
 | `docs/os-build.md` | procedure | Step-by-step instructions for getting from a blank disk to a bootable Arch system. Imperative voice. |
 | `docs/notes.md` | concepts | Long-lived explanations of how the system fits together. Declarative voice. Stable across normal development. |
 | `docs/tips.md` | recipes | Short, recipe-style pointers for specific tasks (theme switching, debugging Plymouth, etc.). Imperative voice. |
-| `docs/issues.md` | tracker | Checklist of open and closed work. Closed items get a date and a one-line resolution note. |
+| `docs/issues.md` | tracker | Checklist of open work. A closed item is deleted; its commit carries the resolution and git keeps the entry. |
 
 Architecture-tier documents (`docs/architecture.md`, `docs/config-schema.md`, `docs/palette-semantics.md`, `docs/style.md`) live alongside the five genre files but are reference documents — written once, edited only when the contract they describe changes.
 

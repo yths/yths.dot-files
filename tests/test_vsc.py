@@ -1,8 +1,7 @@
 """Recolouring a stock VSCode theme: the walk, the naming, and the two mapping methods.
 
 The perceptual matching itself now lives in `helper/color_match.py` and is tested in
-`tests/test_color_match.py` -- including the selection-invisibility rule, which is the defect
-recorded in docs/issues.md under the VSCode selection-visibility entry. What is left here is
+`tests/test_color_match.py` -- including the selection-invisibility rule. What is left here is
 what `patch_vsc` still owns: finding every colour in a theme file whatever it is nested
 inside, and the difference between mapping each mode against its own palette and writing one
 mode's colours for another's matches.

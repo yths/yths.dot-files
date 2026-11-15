@@ -28,8 +28,7 @@ NAMED: dict[str, str] = {
 
 #: Keys whose *background* is a highlight drawn over the editor rather than the editor's own
 #: surface. Matching one of these to the background token paints a selection in the colour it
-#: is selecting against, which is invisible -- the defect recorded in docs/issues.md under the
-#: VSCode selection-visibility entry.
+#: is selecting against, which is invisible.
 HIGHLIGHT_KEY_MARKERS = (
     "selection",
     "highlight",

@@ -25,8 +25,7 @@ Two patterns worth knowing how to read:
 
 - **The largest distances cluster on keys where `background` is excluded.** Selection, hover,
   drop, focus, match and range backgrounds may not match the `background` token, because a
-  selection painted in the colour it is selecting against is invisible — the defect recorded
-  in [issues.md](issues.md). Stock themes make those surfaces a near-background grey, so with
+  selection painted in the colour it is selecting against is invisible. Stock themes make those surfaces a near-background grey, so with
   the one plausible token withheld they land far away. A large ΔE there is the exclusion
   working, not the palette failing.
 - **One token absorbing every outlier** is the palette's real gap: the stock theme needs a

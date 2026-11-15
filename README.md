@@ -115,7 +115,7 @@ the bundle the default for a fresh install too, set `theme` in [setup.toml](setu
 - [docs/keybindings.md](docs/keybindings.md) — generated: every keyboard binding, grouped by tool
 - [docs/dependencies.md](docs/dependencies.md) — generated: every import mapped to the Arch package providing it
 - [docs/tips.md](docs/tips.md) — recipes for theme switching, previewing, debugging
-- [docs/issues.md](docs/issues.md) — open and closed work
+- [docs/issues.md](docs/issues.md) — open work
 - [docs/style.md](docs/style.md) — how these documents are written
 
 Changing anything here: [CONTRIBUTING.md](CONTRIBUTING.md).
