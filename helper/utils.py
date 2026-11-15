@@ -11,6 +11,8 @@ the repository file -- which is what lets a theme switch and a hand edit under
 lands on a tracked file.
 """
 
+import getpass
+import glob
 import json
 import os
 import re
@@ -282,21 +284,22 @@ def install_credentials(
     secrets = {}
     logger.info("Installing credentials...")
     for credential in credentials:
-        secret = input(f"Enter the value for {credential}: ")
-        secrets[credential] = secret
+        # getpass rather than input: a token typed at an echoing prompt stays in the
+        # terminal's scrollback long after the file holding it is chmod 0600.
+        secrets[credential] = getpass.getpass(f"Enter the value for {credential}: ")
     destination_path = os.path.expanduser(destination_path)
     if os.path.exists(destination_path):
         logger.info(f"Credentials file {destination_path} already exists.")
+        # One backup is enough to undo a mistyped re-run; every older one is a stale copy
+        # of secrets nothing reads, so it goes before the new backup is made.
+        for stale in glob.glob(f"{glob.escape(destination_path)}.*.bak"):
+            os.remove(stale)
+            logger.info(f"Removed older credentials backup {stale}.")
         timestamp = int(time.time())
-        os.rename(
-            destination_path,
-            f"{destination_path}.{timestamp}.bak",
-        )
-        # change file permissions of the backup file to read only for the user
-        os.chmod(f"{destination_path}.{timestamp}.bak", 0o600)
-        logger.info(
-            f"Backed up existing credentials file to {destination_path}.{timestamp}.bak."
-        )
+        backup_path = f"{destination_path}.{timestamp}.bak"
+        os.rename(destination_path, backup_path)
+        os.chmod(backup_path, 0o600)
+        logger.info(f"Backed up existing credentials file to {backup_path}.")
     # Create with 0600 already set rather than chmod'ing afterwards: the previous order
     # left the API token on disk world-readable for the window between write and chmod.
     descriptor = os.open(destination_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)

@@ -160,3 +160,26 @@ def test_a_terminal_is_asked_through_sudo_not_pkexec(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("DISPLAY", ":0")
 
     assert utils.root_prefix(prompt=True) == ["sudo"]
+
+
+# The token was read with input(), so it echoed and stayed in the terminal's scrollback; and
+# every re-run left one more world-unreadable but never-deleted copy of the old secrets.
+def test_credentials_are_read_without_echo_and_only_one_backup_is_kept(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    prompts = []
+    monkeypatch.setattr(utils.getpass, "getpass", lambda prompt: prompts.append(prompt) or "s3")
+    monkeypatch.setattr("builtins.input", lambda *_args: pytest.fail("input() echoes secrets"))
+    destination = tmp_path / "credentials.json"
+    destination.write_text("{}")
+    (tmp_path / "credentials.json.1.bak").write_text("{}")
+    (tmp_path / "credentials.json.2.bak").write_text("{}")
+
+    utils.install_credentials(["TOKEN"], str(destination))
+
+    assert prompts == ["Enter the value for TOKEN: "]
+    assert destination.read_text().strip().startswith("{")
+    assert "s3" in destination.read_text()
+    backups = list(tmp_path.glob("credentials.json.*.bak"))
+    assert len(backups) == 1
+    assert backups[0].stat().st_mode & 0o777 == 0o600
