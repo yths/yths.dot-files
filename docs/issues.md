@@ -240,11 +240,13 @@
       moved to a constant name for this reason; the greeter could follow.
     - (2026-10-04) fixed: the login screen installs and activates under the active theme's name, as the boot splash does, and each install removes the ones this repository put there for earlier themes.
 
-- [ ] The `nippur` host script positions a monitor relative to itself
+- [x] The `nippur` host script positions a monitor relative to itself
     - (2026-10-04) `configuration/hardware/hosts/nippur.sh` runs
       `xrandr --output DP-1-5 --right-of DP-1-5`, carried over unchanged from `~/.xinitrc`.
       It was almost certainly meant to be `--right-of DP-1-6`; it needs checking on that
       machine.
+    - (2026-11-15) changed to `--right-of DP-1-6`, chaining eDP-1 → DP-1-6 → DP-1-5; not
+      yet confirmed on the machine itself.
 - [ ] `docs/os-build.md` is past its own verification date
     - (2026-10-04) last verified 2026-05-16 on Arch ISO 2026.04.01; the gate has warned on
       every commit since. Re-run it against a current ISO and bump the date.
