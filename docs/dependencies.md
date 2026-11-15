@@ -55,6 +55,7 @@ working without them; this table says what each group's less obvious members are
 | `pacman-contrib`, `yay` | required by the backend service's pacman post-transaction hook |
 | `python-schedule`, `python-requests`, `python-gobject`, `python-obsws` | what yths.backend-service imports; without any one of them `backend.service` exits at start and the bar stays empty |
 | `ruff`, `python-pytest`, `python-rich`, `base-devel`, `bubblewrap` | the `development` group: the pre-commit gate, yths.backend-service's live stream viewer and its tests, and the lock screen's PAM test. Not installed by default; see [../CONTRIBUTING.md](../CONTRIBUTING.md#setup) |
+| `tlp` | **optional** — laptop power management and charge thresholds. The backend runs `tlp-stat -s` once a minute for the active profile, which the battery cell shows on hover; without it the profile is left out and the rest of the cell is unchanged. Battery health, cycles and thresholds are read from `/sys/class/power_supply` either way, since `tlp-stat -b` needs root |
 | `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated and nothing fails |
 
 ## Checking a Machine

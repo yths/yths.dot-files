@@ -99,6 +99,7 @@ python = [
 # Everything still works without these; each one buys a specific thing.
 optional = [
     "displaycal",   # display colour calibration; without it, screens run uncalibrated
+    "tlp",          # laptop power management; the battery cell's hover shows its profile
     "mpv",          # video playback, bound to `,m` in qutebrowser
     "qutebrowser",  # the browser the palette is mapped for
     "tmux",

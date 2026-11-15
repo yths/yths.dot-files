@@ -15,11 +15,12 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
+import shared.hover
 import shared.stream
 import symbols as vocabulary
 
 
-class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
+class WidgetClaudeUsage(shared.hover.HoverExpand, libqtile.widget.base.BackgroundPoll):
     # The robot glyph's ink overruns its cell by 0.418em where the bluetooth headset only
     # overruns by 0.250em, so a single space leaves it visually glued to the bars. Iosevka
     # forces every space character to a full cell, so the shortfall is made up with a
@@ -272,66 +273,6 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
                 args=["notify-send", "-u", "low", self.strings["claude.notification_title"],
                       self._summary()]
             )
-
-    def mouse_enter(self, x: int, y: int) -> None:
-        self.expanded = True
-        self._refresh()
-
-    def mouse_leave(self, x: int, y: int) -> None:
-        self.expanded = False
-        self._refresh()
-
-    def _refresh(self) -> None:
-        """Re-render from the current state. Always called on the event loop."""
-        libqtile.widget.base.BackgroundPoll.update(self, self._render())
-
-    def _pointer_is_on_me(self) -> bool:
-        """Whether the pointer is inside this cell, asked of the pointer itself.
-
-        Hover is driven by enter and leave events, which arrive on every pointer motion and
-        are what makes the cell react immediately; see ``shared.hover_bar``. This is the
-        slow backstop for the one case no motion event covers: the cell changing width under
-        a pointer that has not moved, when new data arrives or the theme switches.
-
-        The rectangle has to be the one ``HoverBar.get_widget_in_position`` tests, or the
-        two disagree and each poll undoes what the last crossing did. Widgets span the bar
-        from ``offsety`` for ``bar.size`` across, which is not the same as ``0`` to
-        ``bar.size``: the window is taller than ``size`` by the width of the north border.
-
-        Returns the current flag when the position cannot be read, so an unavailable pointer
-        never forces a state change.
-        """
-        bar = getattr(self, "bar", None)
-        window = getattr(bar, "window", None)
-        core = getattr(getattr(self, "qtile", None), "core", None)
-        if window is None or core is None:
-            return self.expanded
-        try:
-            pointer_x, pointer_y = core.get_mouse_position()
-        except (AttributeError, TypeError, OSError):
-            return self.expanded
-        x = pointer_x - window.x
-        y = pointer_y - window.y
-        return (
-            self.offsetx <= x < self.offsetx + self.length
-            and self.offsety <= y < self.offsety + bar.size
-        )
-
-    def update(self, text: str) -> None:
-        """Apply the *current* state, not the text handed in.
-
-        ``poll()`` runs on a worker thread, so the string it produced can predate a pointer
-        that entered or left while the Redis read was still in flight. Applying that stale
-        snapshot made hover sometimes fail to expand, and sometimes fail to contract on
-        leave. Re-deriving the flag here costs one pointer query every five seconds and
-        makes the poll unable to contradict the pointer.
-
-        Only the poll path reconciles. The hover handlers call ``_refresh`` directly,
-        because they run before the pointer has settled and re-deriving there would fight
-        the very event being handled.
-        """
-        self.expanded = self._pointer_is_on_me()
-        self._refresh()
 
     def poll(self) -> str:
         # Assigned unconditionally: a failed read clears the cache so the cell blanks,

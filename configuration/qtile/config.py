@@ -846,6 +846,7 @@ screens = [
                 ),
                 widgets.claude_usage.WidgetClaudeUsage(
                     symbols=SYMBOLS,
+                    strings=STRINGS,
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     notification_color=configuration["palette"][theme]["notification"],
@@ -913,6 +914,7 @@ screens = [
                 ),
                 widgets.power_supply.WidgetPowerSupply(
                     symbols=SYMBOLS,
+                    strings=STRINGS,
                     r=r,
                     warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(

@@ -152,7 +152,7 @@ Every default is ASCII, so a machine whose font has no private use area still dr
 | `greeter.session_chevron` | `v` | U+F0140 | `helper/patch_web_greeter.py` |
 | `greeter.user_list_prefix` | `uu` | U+F0C0 | `helper/patch_web_greeter.py` |
 
-### Strings (28)
+### Strings (35)
 
 The boot splash's messages are the ones worth knowing about: they were the only part of the splash a theme could not reach until the vocabulary existed.
 
@@ -185,5 +185,12 @@ The boot splash's messages are the ones worth knowing about: they were the only 
 | `claude.weekly` | `weekly` | _the default_ | `configuration/qtile/widgets/claude_usage.py` |
 | `claude.stale` | `stale` | _the default_ | `configuration/qtile/widgets/claude_usage.py` |
 | `claude.notification_title` | `Claude usage` | _the default_ | `configuration/qtile/widgets/claude_usage.py` |
+| `battery.notification_title` | `Battery` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.no_data` | `no data` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.health` | `health` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.cycles` | `cycles` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.thresholds` | `charges` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.left` | `left` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
+| `battery.to_threshold` | `to threshold` | _the default_ | `configuration/qtile/widgets/power_supply.py` |
 | `tmux.reload` | `::: tmux config reloaded :::` | _the default_ | `helper/patch_tmux.py` |
 <!-- END: SYMBOLS -->

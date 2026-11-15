@@ -146,13 +146,21 @@ STRINGS: dict[str, str] = {
     "greeter.restart_title": "restart",
     "greeter.suspend_title": "suspend",
     "greeter.hibernate_title": "hibernate",
-    # --- the bar's one widget with words rather than a number
+    # --- the bar's Claude cell
     "claude.no_data": "no data",
     "claude.unavailable": "unavailable",
     "claude.session": "session",
     "claude.weekly": "weekly",
     "claude.stale": "stale",
     "claude.notification_title": "Claude usage",
+    # --- the battery cell's hover text and right-click summary
+    "battery.notification_title": "Battery",
+    "battery.no_data": "no data",
+    "battery.health": "health",
+    "battery.cycles": "cycles",
+    "battery.thresholds": "charges",
+    "battery.left": "left",
+    "battery.to_threshold": "to threshold",
     # --- tmux's one message
     "tmux.reload": "::: tmux config reloaded :::",
 }
