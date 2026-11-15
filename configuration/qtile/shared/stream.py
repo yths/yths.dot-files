@@ -11,15 +11,6 @@ from typing import Any
 
 import redis.exceptions
 
-#: Streams renamed here before yths.backend-service could follow. ``read_measurement``
-#: falls back to the old name, so a cell keeps working against a backend that still
-#: publishes it: this repository and the backend are separate deployments and cannot change
-#: in the same commit. Delete an entry once no machine runs a backend old enough to need it
-#: -- for ``broadcast``, one published by yths.backend-service before 2026-08-30, which is
-#: when jobs/broadcast.py there began writing the new name.
-#: A stale key also outlives the job that wrote it: `redis-cli -n 1 DEL stream` clears it.
-LEGACY_STREAM_NAMES = {"broadcast": "stream"}
-
 #: Everything a malformed entry, an absent stream or an unreachable server can raise.
 #: ``json.JSONDecodeError`` subclasses ``ValueError`` and is listed for the reader's benefit.
 STREAM_ERRORS = (
@@ -52,17 +43,10 @@ def read_measurement(r: redis.Redis | None, stream: str) -> dict[str, Any] | Non
     an empty stream, a missing field, or a payload that is not a JSON object. Callers render
     an empty string rather than raising — an exception escaping ``poll()`` stops qtile
     rescheduling that cell for the rest of the session.
-
-    A stream listed in ``LEGACY_STREAM_NAMES`` is retried under its old name when the new
-    one yields nothing, which costs one extra ``xrevrange`` against a local Redis only while
-    the backend has not caught up.
     """
     if r is None:
         return None
-    measurement = _read_one(r, stream)
-    if measurement is None and stream in LEGACY_STREAM_NAMES:
-        return _read_one(r, LEGACY_STREAM_NAMES[stream])
-    return measurement
+    return _read_one(r, stream)
 
 
 def read_latest(

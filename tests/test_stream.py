@@ -61,21 +61,8 @@ def test_a_payload_that_is_not_an_object_returns_none(payload: Any) -> None:
     assert stream.read_measurement(FakeRedis({"vpn": entry(payload)}), "vpn") is None
 
 
-# The widget was renamed to `broadcast` before yths.backend-service could follow; the two
-# are separate deployments and cannot change in one commit.
-def test_a_renamed_stream_falls_back_to_the_name_the_backend_still_publishes() -> None:
-    client = FakeRedis({"stream": entry({"streaming": False})})
-    assert stream.read_measurement(client, "broadcast") == {"streaming": False}
-    assert client.asked == ["broadcast", "stream"], "new name first, old name only as fallback"
-
-
-def test_the_new_name_wins_once_the_backend_publishes_it() -> None:
-    client = FakeRedis({"broadcast": entry({"obs": True}), "stream": entry({"obs": False})})
-    assert stream.read_measurement(client, "broadcast") == {"obs": True}
-    assert client.asked == ["broadcast"], "no second read once the new name answers"
-
-
-def test_a_stream_with_no_alias_costs_one_read() -> None:
+# One cell, one read per poll: a stream that answers nothing is not retried under another name.
+def test_a_missing_stream_costs_one_read() -> None:
     client = FakeRedis({})
     assert stream.read_measurement(client, "vpn") is None
     assert client.asked == ["vpn"]

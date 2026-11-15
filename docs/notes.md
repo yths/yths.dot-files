@@ -72,7 +72,7 @@ machine that generated the theme, which no reader ever consulted.
 
 The widgets under `configuration/qtile/widgets/` each render a small status segment. Eight of the nine read one Redis stream populated by [yths.backend-service](https://github.com/yths/yths.backend-service); `service_state.py` reports whether that service is running and so polls `systemctl` directly, since it cannot ask the service it monitors whether it is alive. Most inherit from `libqtile.widget.base.BackgroundPoll` so the poll runs off the qtile event loop; a few (e.g. `audio`) use `InLoopPollText` because they need to integrate with a callback running on its own thread.
 
-A widget's module name is the Redis stream it reads. `shared/stream.py` carries a fallback for one stream that was renamed — see `LEGACY_STREAM_NAMES` there — which stays until no machine runs a backend old enough to need it.
+A widget's module name is the Redis stream it reads, as the backend's job module that writes it is named too. A stream is read under its one name only; a backend old enough to publish OBS state as `stream` rather than `broadcast` leaves that cell empty until it is updated.
 
 Connection settings come from `BACKEND_REDIS_HOST` / `BACKEND_REDIS_PORT` / `BACKEND_REDIS_DB` environment variables — the same ones the backend service reads. If Redis is unreachable at qtile startup, the widgets silently fall back to empty values.
 
