@@ -3,33 +3,6 @@
 Open work only. An item is deleted when it is done; the commit that closes it says how, and
 `git log -- docs/issues.md` keeps every entry that was ever here.
 
-## Themes
-
-- [ ] `yths.themes` still writes `palette.pkl`
-    - (2026-11-15) bundles here now carry `palette.json`: unpickling a file another tool drops
-      into `assets/` runs whatever code it holds, so the pickle was a trust boundary rather
-      than the trusted local artifact the `S301` suppression claimed. The generator's export
-      and its contract test have to switch to `palette.json` too; until then, each fresh export
-      converts with `python helper/convert_palette.py assets/<name>`, which refuses any pickle
-      holding more than plain data.
-
-- [ ] `yths.themes` does not emit the `symbols` and `strings` blocks
-    - (2026-09-19) the bundle manifest gained two optional keys, and the generator writes
-      neither, so every exported bundle currently falls back to the ASCII vocabulary. That is
-      the designed behaviour rather than a break — a bundle that omits both gets a desktop
-      that renders without a Nerd Font — but it means a generated theme cannot yet ship its
-      own icons the way the tracked `assets/default/` does.
-    - (2026-09-19) `docs/notes.md` says a schema change lands in both repositories at once,
-      and this is the half that did not. The contract to mirror is in `docs/symbols.md`:
-      the key vocabulary is closed, values are a string or a ramp of a declared length, and
-      an override is partial. `helper/symbols.py` holds the list; `gendocs.py` already
-      refuses a bundle here that overrides a key nothing declares, so the generator emitting
-      an unknown key fails the gate on this side rather than silently doing nothing.
-    - (2026-10-04) the same holds for `bluetooth_devices`, the optional MAC-to-icon map the
-      bar's bluetooth widget reads (`docs/config-schema.md`). It is per-user data rather than
-      design, so the generator may reasonably leave it to whoever owns the devices — but the
-      contract should say so on both sides.
-
 ## Configurations
 
 - [ ] Delete the legacy `state` translation in `configuration/qtile/shared/state.py`

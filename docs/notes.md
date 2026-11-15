@@ -56,7 +56,9 @@ ASCII as the default rather than as a fallback somebody has to select. See
 [symbols.md](symbols.md). The optional `bluetooth_devices` block, which maps a device's MAC
 address to the icon the bar draws for it, is copied as it is; see
 [config-schema.md](config-schema.md). The tracked `assets/default/` carries none, since MAC
-addresses belong to somebody's devices. These four are the only load-bearing keys.
+addresses belong to somebody's devices. `yths.themes` writes all three blocks from its
+Symbols step; `bluetooth_devices` holds whatever devices the theme's owner mapped there and
+is otherwise left out. These four are the only load-bearing keys.
 
 Everything else it derives. It detects `monitors` from the hardware,
 loads `palette` from `palette.json`, links `wallpapers` from the bundle's own `wallpapers/`
