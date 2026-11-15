@@ -53,6 +53,8 @@ working without them; this table says what each group's less obvious members are
 | `python-colour-science`, `openimageio` | perceptual colour matching, and the image library `colour` imports when it is present. Also built from [../packages/](../packages/README.md): the AUR PKGBUILD leaves `openimageio` out of `depends` and has a test that fails against the current one |
 | `plymouth` | boot splash |
 | `pacman-contrib`, `yay` | required by the backend service's pacman post-transaction hook |
+| `python-schedule`, `python-requests`, `python-gobject`, `python-obsws` | what yths.backend-service imports; without any one of them `backend.service` exits at start and the bar stays empty |
+| `ruff`, `python-pytest`, `python-rich`, `base-devel`, `bubblewrap` | the `development` group: the pre-commit gate, yths.backend-service's live stream viewer and its tests, and the lock screen's PAM test. Not installed by default; see [../CONTRIBUTING.md](../CONTRIBUTING.md#setup) |
 | `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated and nothing fails |
 
 ## Checking a Machine

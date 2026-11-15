@@ -2,7 +2,8 @@
 # Install this desktop on a fresh Arch system, in one command.
 #
 #     ./bootstrap.sh                  from a clone
-#     ./bootstrap.sh --dev            also install pytest and test tools, for changing the repository
+#     ./bootstrap.sh --dev            also install the development packages (ruff, pytest and
+#                                     the test tools), for changing the repository
 #     ./bootstrap.sh --dry-run        print what would happen and stop
 #     ./bootstrap.sh --skip-system    leave the boot splash and login screen alone
 #
@@ -93,6 +94,10 @@ print(" ".join(dict.fromkeys(names)))
 PYEOF
 )"
 say "Installing $(printf '%s' "$packages" | wc -w) packages"
+if ! $development; then
+    printf '    %s\n' "Leaving out the development packages (ruff, pytest, test tools)." \
+        "Re-run with --dev to include them, or see CONTRIBUTING.md once installed."
+fi
 # shellcheck disable=SC2086 -- the list is deliberately word-split into arguments.
 run yay -S --needed --noconfirm $packages
 
@@ -255,3 +260,12 @@ cat <<'EOF'
         `python helper/patch_lock.py --install-pam` (optional package; asks for sudo)
       - display calibration, credentials, a different theme: docs/install.md
 EOF
+if ! $development; then
+    cat <<'EOF'
+
+    To change this repository, install the development packages (ruff, pytest, the test
+    tools). From the clone, without re-running the bootstrap:
+      yay -S --needed $(python -c 'import tomllib; print(" ".join(tomllib.load(open("setup.toml", "rb"))["packages"]["development"]))')
+    See CONTRIBUTING.md.
+EOF
+fi

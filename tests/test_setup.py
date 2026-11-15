@@ -89,9 +89,20 @@ def test_the_development_group_is_not_needed_to_run_the_desktop(setup: dict) -> 
     assert not (set(setup["packages"]["development"]) & recorded)
 
 
-def test_default_bootstrap_installs_linter_vpn_and_editor(setup: dict) -> None:
-    assert set(setup["packages"]["optional"]) >= {
-        "ruff", "nordvpn-bin", "visual-studio-code-bin",
+def test_default_bootstrap_installs_vpn_and_editor(setup: dict) -> None:
+    assert set(setup["packages"]["optional"]) >= {"nordvpn-bin", "visual-studio-code-bin"}
+
+
+def test_the_linter_is_a_development_package(setup: dict) -> None:
+    # Only the pre-commit gate runs ruff, so a machine that just runs the desktop needs none.
+    assert "ruff" in setup["packages"]["development"]
+    assert "ruff" not in setup["packages"]["optional"]
+
+
+def test_the_backend_service_can_start_from_a_bootstrap(setup: dict) -> None:
+    # monitor.py's imports. Missing any one, backend.service exits and the bar stays empty.
+    assert set(setup["packages"]["backend"]) >= {
+        "python-redis", "python-schedule", "python-requests", "python-gobject", "python-obsws",
     }
 
 

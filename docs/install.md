@@ -28,8 +28,10 @@ get there.
 To change the theme, the fallback font or the package list, edit
 [../setup.toml](../setup.toml) between the `cd` and the `./bootstrap.sh`; it is the one file
 the whole install reads. `./bootstrap.sh --dry-run` prints what would happen and stops;
-`--skip-system` leaves the login screen and boot splash alone; `--dev` adds the test runner
-and test tools. Ruff, NordVPN and Visual Studio Code are installed by default. It is safe to re-run.
+`--skip-system` leaves the login screen and boot splash alone; `--dev` adds the development
+packages (ruff, pytest and the test tools; see
+[CONTRIBUTING.md](../CONTRIBUTING.md#setup) to add them later). NordVPN and Visual Studio
+Code are installed by default. It is safe to re-run.
 
 ### What it does
 
@@ -207,7 +209,8 @@ cd yay-bin && makepkg -si && cd .. && rm -rf yay-bin
 
 **The packages**, from the `[packages]` groups of `setup.toml` with the fallback font ahead
 of them. Drop a group to leave it out -- `boot` for no login screen or splash, `optional` for
-the browser, media player and shell tools:
+the browser, media player and shell tools -- or add `development` for the packages
+[CONTRIBUTING.md](../CONTRIBUTING.md#setup) needs:
 
 ```bash
 yay -S --needed $(python - setup.toml core boot backend python optional <<'PYEOF'

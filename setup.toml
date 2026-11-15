@@ -80,8 +80,13 @@ core = [
 # these are in place. Anything under packages/ is installed that way and belongs in no group.
 boot = ["lightdm", "plymouth"]
 
-# The metrics service the bar reads from, and its pacman hook.
-backend = ["valkey", "python-redis", "pacman-contrib"]
+# The metrics service the bar reads from, and its pacman hook. The python-* packages are
+# what yths.backend-service's monitor.py imports; without any one of them the service exits
+# at start and every bar cell stays empty.
+backend = [
+    "valkey", "python-redis", "pacman-contrib",
+    "python-schedule", "python-requests", "python-gobject", "python-obsws",
+]
 
 # Imported by the helper scripts. helper/list_dependencies.py checks this list against what
 # the code actually imports, and the pre-commit gate fails if they disagree.
@@ -100,14 +105,19 @@ optional = [
     "starship",
     "rate-mirrors-bin",  # ranks the mirrors for the `yay-update-all` alias in ~/.bashrc
     "vim",
-    "ruff",
     "nordvpn-bin",
     "visual-studio-code-bin",
 ]
 
-# Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them.
+# Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them;
+# CONTRIBUTING.md has the command for a machine that already runs the desktop.
 development = [
+    # The pre-commit gate: ruff lints, pytest runs the tests.
+    "ruff",
     "python-pytest",
+    # yths.backend-service's redis_debug.py, the live viewer for its streams, and the tests
+    # that import it. The service itself runs without it.
+    "python-rich",
     # tests/test_lock_pam.py exercises the lock screen's PAM stack by compiling a small client
     # against libpam and running it in a sandbox with a fake /etc/pam.d -- which is how the
     # success path gets checked without a real password, and without touching the stack the

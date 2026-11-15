@@ -19,7 +19,7 @@ status=0
 
 printf '  ruff     '
 if ! command -v ruff >/dev/null 2>&1; then
-    printf 'SKIP  ruff is not installed (yay -S ruff)\n'
+    printf 'SKIP  ruff is not installed (development packages: see CONTRIBUTING.md)\n'
     status=1
 elif output="$(ruff check . 2>&1)"; then
     printf 'ok\n'

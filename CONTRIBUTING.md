@@ -5,9 +5,22 @@ checks.
 
 ## Setup
 
+The development packages are the `development` group in [setup.toml](setup.toml): `ruff`
+and `python-pytest` for the gate, `python-rich` for the backend service's stream viewer and
+its tests, and `base-devel` and `bubblewrap` for the lock screen's PAM test. A plain
+`./bootstrap.sh` leaves them out and says so.
+
+On a new machine, install them with the rest:
+
 ```bash
-./bootstrap.sh --dev     # or, on a machine that already has the desktop:
-yay -S ruff python-pytest
+./bootstrap.sh --dev
+```
+
+On a machine that already runs the desktop, install the group on its own from the clone,
+without re-running the bootstrap, then arm the gate:
+
+```bash
+yay -S --needed $(python -c 'import tomllib; print(" ".join(tomllib.load(open("setup.toml", "rb"))["packages"]["development"]))')
 helper/hooks/enable
 ```
 
