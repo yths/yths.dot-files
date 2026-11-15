@@ -20,6 +20,12 @@ manually pinned dark theme reverts to automatic switching. Use it for a new mach
 
 An unknown name exits non-zero and lists the bundles it found, before anything is changed.
 
+To make the bundle the default for a fresh install too, set `theme` in
+[setup.toml](../setup.toml). The optional
+[lock feedback package](../configuration/lock/README.md#what-a-wrong-password-looks-like) is
+not part of a switch; install or upgrade it on its own with
+`python helper/patch_lock.py --install-pam`.
+
 Copying a bundle's `config.json` into place does not work, and never did: the installer
 assembles `~/.config/config.json` from several sources — the palette comes from
 `palette.json`, the monitor geometry from the detected hardware, the wallpaper paths from

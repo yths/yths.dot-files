@@ -93,14 +93,9 @@ desktop, the login screen and the boot splash:
 python install.py --migrate --theme <bundle> --system
 ```
 
-It asks for sudo once, before changing anything. Then it relinks the bundle, re-patches every
-application and reloads them, keeping `~/.config/state`, and installs the login screen and
-boot splash under the bundle's name. Leave out `--system` to switch only the running desktop,
-without root. The optional [lock feedback package](configuration/lock/README.md#what-a-wrong-password-looks-like)
-adds wrong-password messages and a patched renderer that removes stale text and the
-"PAM says" heading. Install or upgrade it separately with
-`python helper/patch_lock.py --install-pam`; theme switching does not require it. To make
-the bundle the default for a fresh install too, set `theme` in [setup.toml](setup.toml).
+It asks for sudo once, before changing anything; leave out `--system` to switch only the
+running desktop, without root. [docs/tips.md](docs/tips.md#switch-the-active-theme) has what
+it changes and what it keeps.
 
 ## Documentation
 
