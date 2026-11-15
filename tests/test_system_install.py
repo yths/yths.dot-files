@@ -73,9 +73,9 @@ def test_a_patcher_reporting_failure_is_named(monkeypatch: pytest.MonkeyPatch) -
     assert patch_configurations.install_system({}) == ["boot splash"]
 
 
-def test_both_system_surfaces_are_registered() -> None:
+def test_every_system_surface_is_registered() -> None:
     assert [name for name, _ in patch_configurations.SYSTEM_PATCHERS] == [
-        "login screen", "boot splash",
+        "login screen", "boot splash", "timezone rule",
     ]
 
 

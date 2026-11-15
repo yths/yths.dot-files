@@ -6,6 +6,7 @@ not each carry their own transcription of it.
 """
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 import redis.exceptions
@@ -62,3 +63,32 @@ def read_measurement(r: redis.Redis | None, stream: str) -> dict[str, Any] | Non
     if measurement is None and stream in LEGACY_STREAM_NAMES:
         return _read_one(r, LEGACY_STREAM_NAMES[stream])
     return measurement
+
+
+def read_latest(
+    r: redis.Redis | None,
+    stream: str,
+    accept: Callable[[dict[str, Any]], bool],
+    scan: int = 48,
+) -> dict[str, Any] | None:
+    """The newest ``measurement`` in ``stream`` that ``accept`` takes, or ``None``.
+
+    For a stream where the newest entry may be one to skip -- a location looked up through
+    the VPN is the exit server's -- and an older one is still the right answer. Looks at the
+    newest ``scan`` entries, newest first; the location stream, at one entry an hour, keeps
+    two days of VPN use within that. Fails like ``read_measurement``: ``None``, never raises.
+    """
+    if r is None:
+        return None
+    try:
+        entries = r.xrevrange(stream, count=scan)
+    except redis.exceptions.RedisError:
+        return None
+    for _entry_id, fields in entries:
+        try:
+            measurement = json.loads(fields[b"measurement"].decode("utf-8"))
+        except STREAM_ERRORS:
+            continue
+        if isinstance(measurement, dict) and accept(measurement):
+            return measurement
+    return None

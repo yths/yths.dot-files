@@ -1,8 +1,10 @@
 """Qtile widget: IP-derived geolocation with current sunrise/sunset.
 
-Reads the latest entry from the ``location`` Redis stream (latitude, longitude, timezone,
-sunrise, sunset) and surfaces the day/night transition that drives the automatic theme
-switch. ``InLoopPollText`` based, so ``poll()`` must never raise: ``timer_setup``
+Reads the newest entry of the ``location`` Redis stream that was not looked up through the
+VPN -- behind one, the IP geolocates to the exit server -- and surfaces the day/night
+transition that drives the automatic theme switch. It also moves the system timezone to that
+location's, through ``shared.timezone``; see ``configuration/timezone/README.md``.
+``InLoopPollText`` based, so ``poll()`` must never raise: ``timer_setup``
 reschedules only after ``tick()`` returns, and one escaped exception freezes the cell — and
 with it the automatic theme switch — for the rest of the session.
 """
@@ -17,6 +19,7 @@ import libqtile.widget.base
 import redis
 import shared.state
 import shared.stream
+import shared.timezone
 import symbols as vocabulary
 
 #: Repository root, resolved through the ~/.config/qtile symlink qtile loads this file
@@ -46,6 +49,8 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
             if configuration_file_path is not None
             else shared.state.CONFIGURATION_FILE_PATH
         )
+
+        self.timezone = shared.timezone.TimezoneFollower()
 
         self.notification_color = notification_color
         #: The active vocabulary, passed down from config.py the same way the colours are.
@@ -91,9 +96,13 @@ class WidgetLocation(libqtile.widget.base.InLoopPollText):
         return datetime.datetime.now().astimezone().time()
 
     def poll(self) -> str:
-        measurement = shared.stream.read_measurement(self.r, "location")
+        measurement = shared.stream.read_latest(
+            self.r, "location", lambda entry: not entry.get("vpn")
+        )
         if measurement is None:
             return ""
+        timezone = measurement.get("timezone")
+        self.timezone.follow(timezone if isinstance(timezone, str) else None)
 
         sunrise = measurement.get("sunrise")
         sunset = measurement.get("sunset")

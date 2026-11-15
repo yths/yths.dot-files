@@ -60,7 +60,8 @@ In order, so a failure is easy to place:
    `~/.config/config.json` from the theme bundle, patches every application, then -- as root,
    asked for once -- installs the login screen, points LightDM at `nody-greeter`, enables
    `lightdm.service` *without starting it* (started from the console it would take the console
-   over), and installs the boot splash.
+   over), installs the boot splash, and installs the polkit rule that lets the system timezone
+   follow the machine's location ([configuration/timezone/](../configuration/timezone/README.md)).
 
 The one thing it does not do is make the boot splash draw: that needs two edits to files that
 decide whether the machine boots, and it says so at the end. See [Boot Splash](#boot-splash).
@@ -251,7 +252,7 @@ cp ~/repositories/yths.backend-service/backend.service ~/.local/share/systemd/us
 systemctl --user enable --now backend.service
 ```
 
-**The dot files**, with the login screen and boot splash. Without `--system` they are left
+**The dot files**, with the login screen, the boot splash and the timezone rule. Without `--system` they are left
 alone, which is what `./bootstrap.sh --skip-system` does:
 
 ```bash

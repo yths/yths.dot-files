@@ -16,6 +16,13 @@ Neither directory needs an `__init__.py`.
   object. Use this rather than writing another `xrevrange` block; eight widgets each carried
   their own transcription of that read, in two different error-handling dialects, before it
   was collected here.
+- **`stream.py`**'s `read_latest(r, stream, accept)` is for the one stream whose newest
+  entry may be one to skip: it returns the newest of the last few that `accept` takes. The
+  location cell uses it to pass over positions looked up through the VPN.
+- **`timezone.py`** — `TimezoneFollower` moves the system timezone to the geolocated one with
+  `timedatectl --no-ask-password`, never waiting on the event loop and never retrying a
+  refusal, and calls `time.tzset()` once `/etc/localtime` changes so qtile's own clock follows.
+  The permission comes from [configuration/timezone/](../../timezone/README.md).
 - **`state.py`** — `read_state()` / `update_state(**changes)` for `~/.config/config.json`.
   Writes go to a sibling temporary file and land via `os.replace()`, so the patchers and
   `install.py` — separate processes that read the same file — can never observe a

@@ -25,6 +25,7 @@ from patch_plymouth import install_system as install_boot_splash
 from patch_qutebrowser import patch_qutebrowser
 from patch_rofi import patch_rofi
 from patch_starship import patch_starship
+from patch_timezone import install_system as install_timezone_rule
 from patch_tmux import patch_tmux
 from patch_web_greeter import install_system as install_login_screen
 from patch_web_greeter import patch_web_greeter
@@ -108,6 +109,7 @@ PATCHERS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
 SYSTEM_PATCHERS: tuple[tuple[str, Callable[..., bool]], ...] = (
     ("login screen", install_login_screen),
     ("boot splash", install_boot_splash),
+    ("timezone rule", install_timezone_rule),
 )
 
 

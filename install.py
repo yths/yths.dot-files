@@ -432,8 +432,9 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--system",
         action="store_true",
-        help="also install the login screen and boot splash for the theme, which needs root: "
-             "asked for once, before anything changes",
+        help="also install the login screen and boot splash for the theme, and the rule that "
+             "lets the timezone follow the location; needs root, asked for once, before "
+             "anything changes",
     )
     parser.add_argument(
         "--migrate",
@@ -515,7 +516,7 @@ def run_migration(
 
 
 def install_system_surfaces() -> int:
-    """Install the login screen and boot splash for the configuration just written.
+    """Install the login screen, the boot splash and the timezone rule.
 
     Read back from ``~/.config/config.json`` rather than passed in, so it covers an install
     and a migration alike: both end with that file describing the theme now in place.

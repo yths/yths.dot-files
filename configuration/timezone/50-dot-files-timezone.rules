@@ -1,0 +1,11 @@
+// Installed by yths.dot-files (helper/patch_timezone.py) into /etc/polkit-1/rules.d/.
+//
+// Lets a wheel member in an active local session set the system timezone without a
+// password, so the bar's sunrise/sunset cell can move it to wherever the machine is.
+// Only this one action: the clock, NTP and the hostname keep systemd's own policy.
+polkit.addRule(function (action, subject) {
+    if (action.id == "org.freedesktop.timedate1.set-timezone" &&
+        subject.local && subject.active && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
