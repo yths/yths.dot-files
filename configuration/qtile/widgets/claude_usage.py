@@ -25,11 +25,12 @@ class WidgetClaudeUsage(libqtile.widget.base.BackgroundPoll):
     # forces every space character to a full cell, so the shortfall is made up with a
     # fractionally sized second space — a percentage, so it tracks fontsize per monitor.
     ICON_GAP = ' <span size="34%"> </span>'
-    #: Shown instead of ICON when the backend cannot authenticate at all. The producer
-    #: reads ~/.claude/.credentials.json and deliberately never refreshes it, so an
-    #: expired token is a normal steady state, not a blip -- worth its own glyph.
-    #: ``reason`` values that mean "re-authenticate". Everything else (network_error,
-    #: bad_response, a non-auth http_*) is transient and keeps the live glyph, dimmed.
+    #: ``reason`` values that mean "re-authenticate", drawn with the ``claude.dead`` glyph
+    #: at full opacity because they need acting on. Everything else is transient and keeps
+    #: the live glyph, dimmed. yths.backend-service republishes the usage cache Claude Code
+    #: keeps in ~/.claude.json, so today its reasons are ``no_config``, ``no_cache``,
+    #: ``bad_response`` and ``other_account``, and a reading Claude Code has not refreshed
+    #: lately arrives as ``stale`` rather than unavailable.
     AUTH_FAILURES = frozenset({"no_credentials", "token_expired", "http_401", "http_403"})
     DIM_ALPHA = 24576
 
