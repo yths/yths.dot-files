@@ -61,6 +61,8 @@ def plymouth_script(
         "script_lib_image_destroy": ([pointer], None),
         "script_lib_math_setup": ([pointer], pointer),
         "script_lib_math_destroy": ([pointer], None),
+        "script_lib_string_setup": ([pointer], pointer),
+        "script_lib_string_destroy": ([pointer], None),
         "script_lib_sprite_setup": ([pointer, pointer, pointer, ctypes.c_char_p, ctypes.c_uint32,
                                      ctypes.c_uint32], pointer),
         "script_lib_sprite_destroy": ([pointer], None),
@@ -80,6 +82,7 @@ def plymouth_script(
     buffer = library.ply_buffer_new()
     images = library.script_lib_image_setup(state, os.fsencode(staged))
     math = library.script_lib_math_setup(state)
+    strings = library.script_lib_string_setup(state)
     sprites = library.script_lib_sprite_setup(state, displays, buffer, None, 0, 0)
     operations = []
 
@@ -120,6 +123,7 @@ def plymouth_script(
         library.script_lib_sprite_destroy(sprites)
         library.script_lib_image_destroy(images)
         library.script_lib_math_destroy(math)
+        library.script_lib_string_destroy(strings)
         library.ply_list_free(displays)
         library.ply_buffer_free(buffer)
         for operation in operations:
@@ -164,6 +168,41 @@ def test_password_bullets_are_vertically_centered_with_the_lock(
         local.entry_center = views[0].entry.GetY() + views[0].entry.GetImage().GetHeight() / 2;
         local.lock_center = views[0].lock.GetY() + lock_image.GetHeight() / 2;
         return entry_center - lock_center >= -0.5 && entry_center - lock_center <= 0.5;
+    """)
+
+
+def test_low_battery_warning_uses_an_image_without_changing_the_message(
+    plymouth_script: Callable[[str], bool],
+) -> None:
+    assert plymouth_script("""
+        display_password("Unlock:", 1);
+        local.warning = theme.low_battery_prefix + "Battery level critically low.";
+        display_message(warning);
+        return message_text == warning &&
+               views[0].message.GetImage().GetWidth() == text_image("Battery level critically low.").GetWidth() &&
+               views[0].message_icon.GetOpacity() == 1 &&
+               views[0].message_icon.GetImage().GetWidth() > 0 &&
+               views[0].message.GetX() > views[0].message_icon.GetX();
+    """)
+    assert plymouth_script("""
+        hide_message("unrelated");
+        return views[0].message_icon.GetOpacity() == 1;
+    """)
+    assert plymouth_script("""
+        hide_message(theme.low_battery_prefix + "Battery level critically low.");
+        return message_text == "" && views[0].message_icon.GetOpacity() == 0;
+    """)
+    assert plymouth_script("""
+        display_message(theme.low_battery_prefix + "Battery level critically low.");
+        display_message("A.C. power restored, continuing.");
+        return views[0].message.GetImage().GetWidth() == text_image(message_text).GetWidth() &&
+               views[0].message_icon.GetOpacity() == 0 &&
+               views[0].message.GetX() == views[0].prompt.GetX();
+    """)
+    assert plymouth_script("""
+        display_message(theme.low_battery_prefix + "Battery level critically low.");
+        display_normal();
+        return message_text == "" && views[0].message_icon.GetOpacity() == 0;
     """)
 
 

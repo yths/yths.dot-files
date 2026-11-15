@@ -6,7 +6,7 @@ rebooting, see [../../docs/tips.md](../../docs/tips.md).
 
 This directory holds theme *sources* only — the `.plymouth` INI, the script template, the
 keymap render, and a link to the active wallpaper. Everything else the splash draws is rendered from the palette
-by `helper/patch_plymouth.py` and never written back here: the eight glyph and panel images
+by `helper/patch_plymouth.py` and never written back here: the glyph, icon, and panel images
 would otherwise be rewritten on every theme switch, and they are build artefacts, not
 source. They were tracked once, and the committed copies had been stale since May.
 
@@ -79,6 +79,9 @@ Password masks repeat the theme's pre-rendered `bullet.png`, vertically centered
 the lock icon, so the configured glyph does
 not depend on font availability in the initramfs. The keyboard layout is shown only when
 Plymouth supplies a non-empty name; it updates if that information becomes available later.
+systemd's critical-battery warning uses a drawn battery-with-exclamation icon in place of
+its emoji prefix. The warning text is preserved, and the icon needs no emoji font in the
+initramfs.
 
 ## Silent Boot
 

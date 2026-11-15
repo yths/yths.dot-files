@@ -79,7 +79,7 @@ _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 #: The one boot splash this repository ships. Not one per preset, which is what it used to be:
 #: nothing in the directory is bundle-specific. The patcher rewrites the INI's colours and fonts
-#: and re-renders all eight images from the palette, and ``background-tile.png`` is a symlink to
+#: and re-renders its images from the palette, and ``background-tile.png`` is a symlink to
 #: whichever wallpaper the installed bundle put in place -- so a second copy differed from the
 #: first only by the name of its directory.
 #:
@@ -114,7 +114,7 @@ def theme_source(_configuration: dict[str, Any] | None = None) -> str | None:
 def stage_theme(source: str) -> str:
     """Copy the theme source into a fresh temporary directory and return its path.
 
-    Rendering happens on the copy, never on the source. The eight PNGs and the ``.plymouth``
+    Rendering happens on the copy, never on the source. The PNGs and the ``.plymouth``
     INI are all rewritten on every run, so rendering in place would rewrite tracked files
     twice a day — which is exactly the churn the wallpapers and the web-greeter stylesheets
     are gitignored to avoid.
@@ -292,6 +292,7 @@ def render_configuration(
     script_values: dict[str, str | float] = {
         "font": settings["Font"],
         "bullet": glyphs["plymouth.bullet"],
+        "low_battery_prefix": "\U0001faab ",
     }
     for token in ("background", "foreground"):
         for component, value in zip(("red", "green", "blue"), _rgb(palette[token]), strict=True):
@@ -326,6 +327,19 @@ def render_assets(configuration: dict[str, Any], theme_path: str, theme: str) ->
 
     for filename, size, token in SOLID_ASSETS:
         PIL.Image.new("RGB", size, palette[token]).save(os.path.join(theme_path, filename))
+
+    # systemd's low-battery emoji is not available in early-boot fonts.
+    with cairo.ImageSurface(cairo.FORMAT_ARGB32, 24, 24) as surface:
+        context = cairo.Context(surface)
+        context.set_source_rgb(*_rgb(palette["foreground"]))
+        context.set_line_width(2)
+        context.rectangle(3, 5, 16, 14)
+        context.stroke()
+        context.rectangle(20, 9, 3, 6)
+        context.rectangle(10, 8, 2, 5)
+        context.rectangle(10, 15, 2, 2)
+        context.fill()
+        surface.write_to_png(os.path.join(theme_path, "low-battery.png"))
 
     for filename, size, token, font_size, origin, key in GLYPH_ASSETS:
         glyph = glyphs[key]

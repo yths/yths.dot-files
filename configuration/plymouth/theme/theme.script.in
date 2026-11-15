@@ -8,6 +8,7 @@ throbber[1] = Image("throbber-02.png");
 lock_image = Image("lock.png");
 capslock_image = Image("capslock.png");
 bullet_image = Image("bullet.png");
+low_battery_image = Image("low-battery.png");
 frame = 0;
 dialog_active = 0;
 secret = 0;
@@ -79,6 +80,7 @@ fun layout()
             view.capslock = Sprite(capslock_image);
             view.keyboard = Sprite();
             view.message = Sprite();
+            view.message_icon = Sprite(low_battery_image);
             global.views[index] = view;
         }
         view = views[index];
@@ -138,7 +140,19 @@ fun layout()
             view.capslock.SetPosition(left + available - capslock_image.GetWidth(), keyboard_y, 10);
             message_y = keyboard_y + keyboard_height + gap;
         }
-        place_text(view.message, message_text, left, message_y, available);
+        local.low_battery = message_text.SubString(0, theme.low_battery_prefix.Length()) ==
+                            theme.low_battery_prefix;
+        local.display_text = message_text;
+        local.message_x = left;
+        if (low_battery)
+        {
+            display_text = message_text.SubString(theme.low_battery_prefix.Length(), message_text.Length());
+            message_x += low_battery_image.GetWidth() + gap;
+        }
+        local.message_height = place_text(view.message, display_text, message_x, message_y,
+                                          available - (message_x - left));
+        view.message_icon.SetPosition(left, message_y + (message_height - low_battery_image.GetHeight()) / 2, 10);
+        view.message_icon.SetOpacity(dialog_active && low_battery);
         view.message.SetOpacity(dialog_active);
         view.width = width;
         view.height = height;
