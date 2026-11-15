@@ -115,20 +115,18 @@ Conventions:
 - A patcher writes the app's config file in place, and never reads it back as its own input. `~/.config/<app>` is a symlink into this repository, so a patcher that read and rewrote its own output would rewrite a tracked file at every theme switch. Where the app's config also holds hand-written settings, keep those in a tracked `<name>.template` beside it, read that with `utils.template_path()`, and let `.gitignore` cover the output — `patch_tmux`, `patch_starship` and `patch_dunst` all work this way. Where the config is entirely generated, gitignore it outright, as kitty's and rofi's are.
 - A patcher does not back up; the orchestrator's contract is that `~/.config/config.json` was freshly written by the installer or a previous patcher run.
 - A patcher swallows errors specific to the target app (e.g. a missing theme directory) by skipping rather than raising — one broken app must not block the others.
-- A patcher reports through `logger`, never `print()`. It runs as part of a theme switch, so its output belongs in the same stream as everything else in that run; `print()` is for the tools whose stdout *is* the product (`list_*`, `gendocs`, `preview_audio`). Import it with the two-branch guard below, which resolves whether the module is imported as `helper.<name>` or run as a script:
+- A patcher reports through `logger`, never `print()`. It runs as part of a theme switch, so its output belongs in the same stream as everything else in that run; `print()` is for the tools whose stdout *is* the product (`list_*`, `gendocs`, `preview_audio`).
 
-  ```python
-  try:
-      from helper.utils import logger
-  except ImportError:
-      from utils import logger
-  ```
+## Imports
 
-  The orchestrator's guard is narrower: it imports every patcher inside the `try`, and a
-  patcher's own missing dependency -- `cairo`, say -- is an `ImportError` too. Falling through
-  on that made the second branch fail on its first name and report a missing `patch_dunst`
-  instead of a missing `cairo`, so it re-raises anything whose `.name` is not `helper`. A
-  patcher importing only `utils` and the standard library does not need that.
+`helper/` is a directory of scripts, not a package. A module imports its siblings by bare
+name -- `from utils import logger`, `import symbols` -- which resolves when it is run as
+`python helper/<name>.py`, because Python puts the script's own directory first on the path.
+Code outside the directory that imports from it puts `helper/` on the path once and does the
+same: `install.py`, `bootstrap.sh`'s Plymouth check and the web-greeter preview server each do
+so, and `tests/conftest.py` does it for the tests. Never `from helper.<name> import ...`: a
+module then exists twice, as `helper.utils` and `utils`, with state and monkeypatches that do
+not reach each other.
 
 ## Orchestrator
 
@@ -142,7 +140,7 @@ The orchestrator implements nothing. Six patchers used to live inside it as func
 
 1. Create `helper/patch_<app>.py` with a module docstring (for `gendocs.py`). One application per file — never add a second app's patcher to an existing module.
 2. Implement `def patch_<app>(configuration)`, and give the module an `if __name__` block that loads `~/.config/config.json` and calls it, so the app can be patched on its own.
-3. Add it to `helper/patch_configurations.py`: one import in the guarded block, one row in `PATCHERS`.
+3. Add it to `helper/patch_configurations.py`: one import, one row in `PATCHERS`.
 4. If the patcher accepts CLI args for standalone use, follow the `argparse` pattern in `patch_plymouth.py` — default the configuration file path to `~/.config/config.json`.
 5. Import `logger` with the guard above; do not `import loguru` directly, or the patcher loses the stdlib fallback that `utils.py` provides.
 6. Run `python helper/gendocs.py` so the HELPERS block in this README picks up the new entry.

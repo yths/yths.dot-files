@@ -26,27 +26,14 @@ import sys
 import tempfile
 from typing import Any
 
-try:
-    from helper import symbols
-    from helper.utils import (
-        installed_theme_name,
-        logger,
-        mark_installed,
-        remove_previous_installs,
-        root_prefix,
-    )
-except ImportError:
-    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
-    # repository root, so the package-qualified form cannot resolve. Both branches land on
-    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
-    import symbols
-    from utils import (
-        installed_theme_name,
-        logger,
-        mark_installed,
-        remove_previous_installs,
-        root_prefix,
-    )
+import symbols
+from utils import (
+    installed_theme_name,
+    logger,
+    mark_installed,
+    remove_previous_installs,
+    root_prefix,
+)
 
 #: Where web-greeter looks for themes. Root-owned, which is why installing is its own stage.
 SYSTEM_THEME_ROOT = "/usr/share/web-greeter/themes"

@@ -39,26 +39,14 @@ from typing import Any
 
 import cairo
 import PIL.Image
-
-# Resolves whether this runs as ``helper.patch_plymouth`` or as a script; see helper/README.md.
-try:
-    from helper import symbols
-    from helper.utils import (
-        installed_theme_name,
-        logger,
-        mark_installed,
-        remove_previous_installs,
-        root_prefix,
-    )
-except ImportError:
-    import symbols
-    from utils import (
-        installed_theme_name,
-        logger,
-        mark_installed,
-        remove_previous_installs,
-        root_prefix,
-    )
+import symbols
+from utils import (
+    installed_theme_name,
+    logger,
+    mark_installed,
+    remove_previous_installs,
+    root_prefix,
+)
 
 #: Where plymouth looks for themes. Root-owned, which is the whole reason for the two stages.
 SYSTEM_THEME_ROOT = "/usr/share/plymouth/themes"

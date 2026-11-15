@@ -23,14 +23,10 @@ import sys
 from pathlib import Path
 from typing import Any, NamedTuple
 
-try:
-    from helper import color_match, patch_qutebrowser, patch_vsc
-    from helper.utils import read_setup
-except ImportError:
-    import color_match
-    import patch_qutebrowser
-    import patch_vsc
-    from utils import read_setup
+import color_match
+import patch_qutebrowser
+import patch_vsc
+from utils import read_setup
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

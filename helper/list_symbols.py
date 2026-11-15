@@ -17,10 +17,7 @@ import json
 import re
 from pathlib import Path
 
-try:
-    from helper import symbols
-except ImportError:
-    import symbols
+import symbols
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

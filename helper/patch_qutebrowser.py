@@ -35,13 +35,8 @@ import re
 import sys
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_qutebrowser`` or as a script; see helper/README.md.
-try:
-    from helper import color_match
-    from helper.utils import logger, template_path
-except ImportError:
-    import color_match
-    from utils import logger, template_path
+import color_match
+from utils import logger, template_path
 
 #: A commented setting in the stock dump. The name allows digits because one setting has one
 #: (``qt.workarounds.disable_accelerated_2d_canvas``); dropping them from the class silently

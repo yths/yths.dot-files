@@ -21,13 +21,8 @@ import sys
 from typing import Any
 
 import cairo
-
-try:
-    from helper import symbols
-    from helper.utils import logger, read_setup
-except ImportError:
-    import symbols
-    from utils import logger, read_setup
+import symbols
+from utils import logger, read_setup
 
 #: This file's repository, resolved through any symlink used to invoke it.
 _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

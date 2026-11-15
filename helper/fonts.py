@@ -32,10 +32,7 @@ import subprocess
 import sys
 from typing import Any
 
-try:
-    from helper.utils import REPOSITORY_ROOT, logger, read_setup
-except ImportError:
-    from utils import REPOSITORY_ROOT, logger, read_setup
+from utils import REPOSITORY_ROOT, logger, read_setup
 
 #: The Nerd Font build of a plain family, under the short name fontconfig reports for it.
 #: A bundle naming the left-hand side is installed with the right-hand side.

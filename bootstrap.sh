@@ -221,8 +221,8 @@ if $system; then
     if ! $dry_run; then
         expected_plymouth_theme="$(python - "$REPOSITORY_PATH" "$HOME/.config/config.json" <<'PYEOF'
 import json, sys
-sys.path.insert(0, sys.argv[1])
-from helper.patch_plymouth import plymouth_theme_name
+sys.path.insert(0, sys.argv[1] + "/helper")
+from patch_plymouth import plymouth_theme_name
 with open(sys.argv[2], encoding="utf-8") as handle:
     print(plymouth_theme_name(json.load(handle)))
 PYEOF

@@ -9,13 +9,8 @@ import json
 import os
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_dunst`` or as a script; see helper/README.md.
-try:
-    from helper import symbols
-    from helper.utils import logger, monitor_average, template_path
-except ImportError:
-    import symbols
-    from utils import logger, monitor_average, template_path
+import symbols
+from utils import logger, monitor_average, template_path
 
 
 def patch_dunst(configuration: dict[str, Any]) -> None:

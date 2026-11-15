@@ -79,35 +79,35 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.font` | direct | `helper/patch_dunst.py:40` |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:128` |
-| kitty | `~/.config/kitty/kitty.conf` | `font_family` | direct | `helper/patch_kitty.py:56` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:84` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | direct, always dark | `helper/patch_plymouth.py:259` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.MonospaceFont` | direct, always dark | `helper/patch_plymouth.py:261` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | direct | `helper/patch_rofi.py:57` |
+| dunst | `~/.config/dunst/dunstrc` | `global.font` | direct | `helper/patch_dunst.py:35` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:124` |
+| kitty | `~/.config/kitty/kitty.conf` | `font_family` | direct | `helper/patch_kitty.py:52` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:80` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | direct, always dark | `helper/patch_plymouth.py:247` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.MonospaceFont` | direct, always dark | `helper/patch_plymouth.py:249` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | direct | `helper/patch_rofi.py:52` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--font-family` | direct | `helper/patch_web_greeter.py:68` |
 
 #### `font.size`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.font` | × 0.714 | `helper/patch_dunst.py:40` |
-| dunst | `~/.config/dunst/dunstrc` | `global.offset` | × average_scaling_factor, × 3, embedded | `helper/patch_dunst.py:48` |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:128` |
-| kitty | `~/.config/kitty/kitty.conf` | `font_size` | × 0.714 | `helper/patch_kitty.py:57` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:84` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | × 1.25, always dark | `helper/patch_plymouth.py:259` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:261` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | × 1.214 | `helper/patch_rofi.py:57` |
+| dunst | `~/.config/dunst/dunstrc` | `global.font` | × 0.714 | `helper/patch_dunst.py:35` |
+| dunst | `~/.config/dunst/dunstrc` | `global.offset` | × average_scaling_factor, × 3, embedded | `helper/patch_dunst.py:43` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:124` |
+| kitty | `~/.config/kitty/kitty.conf` | `font_size` | × 0.714 | `helper/patch_kitty.py:53` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:80` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | × 1.25, always dark | `helper/patch_plymouth.py:247` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.MonospaceFont` | × 0.85, always dark | `helper/patch_plymouth.py:249` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `FONT` | × 1.214 | `helper/patch_rofi.py:52` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--font-size` | pinned to 20 | `configuration/web-greeter/themes/standard/theme.json#font_overrides` |
 
 #### `palette.background`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.background` | direct | `helper/patch_dunst.py:33` |
-| dunst | `~/.config/dunst/dunstrc` | `global.separator_color` | direct | `helper/patch_dunst.py:37` |
+| dunst | `~/.config/dunst/dunstrc` | `global.background` | direct | `helper/patch_dunst.py:28` |
+| dunst | `~/.config/dunst/dunstrc` | `global.separator_color` | direct | `helper/patch_dunst.py:32` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `*:selected, *:selected:focus { color }` | via role `on-accent` | `helper/patch_gtk.py:RULES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color on-accent` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color surface` | direct | `helper/patch_gtk.py:ROLES` |
@@ -122,14 +122,14 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `view_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { background-color }` | via role `surface` | `helper/patch_gtk.py:RULES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| kitty | `~/.config/kitty/kitty.conf` | `background` | direct | `helper/patch_kitty.py:58` |
+| kitty | `~/.config/kitty/kitty.conf` | `background` | direct | `helper/patch_kitty.py:54` |
 | kitty | `~/.config/kitty/kitty.conf` | `color7` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
-| kitty | `~/.config/kitty/kitty.conf` | `selection_foreground` | direct | `helper/patch_kitty.py:61` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:80` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:79` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.BackgroundEndColor` | direct, always dark | `helper/patch_plymouth.py:265` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.BackgroundStartColor` | direct, always dark | `helper/patch_plymouth.py:264` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:267` |
+| kitty | `~/.config/kitty/kitty.conf` | `selection_foreground` | direct | `helper/patch_kitty.py:57` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:76` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_BACKGROUND_COLOR` | direct | `helper/patch_lock.py:75` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.BackgroundEndColor` | direct, always dark | `helper/patch_plymouth.py:253` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.BackgroundStartColor` | direct, always dark | `helper/patch_plymouth.py:252` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:255` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `animation-001.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `entry.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:1028` |
@@ -137,8 +137,8 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `shared.task_list.AdaptiveTaskBar(background=)` | direct | `configuration/qtile/config.py:996` |
 | qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(markup_focused=)` | direct | `configuration/qtile/config.py:725` |
 | qtile | `configuration/qtile/config.py` | `shared.task_list.SecondaryTaskBar(background=)` | direct | `configuration/qtile/config.py:1018` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR0` | direct | `helper/patch_rofi.py:58` |
-| tmux | `~/.config/tmux/tmux.conf` | `color0` | direct | `helper/patch_tmux.py:38` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR0` | direct | `helper/patch_rofi.py:53` |
+| tmux | `~/.config/tmux/tmux.conf` | `color0` | direct | `helper/patch_tmux.py:33` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--background` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.blue`
@@ -173,18 +173,18 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `destructive_bg_color` | via role `error` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `destructive_color` | via role `error` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `error_color` | via role `error` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR2` | direct | `helper/patch_rofi.py:60` |
-| starship | `~/.config/starship.toml` | `palettes.theme.color3` | direct | `helper/patch_starship.py:33` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR2` | direct | `helper/patch_rofi.py:55` |
+| starship | `~/.config/starship.toml` | `palettes.theme.color3` | direct | `helper/patch_starship.py:27` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--failure` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.foreground`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.foreground` | direct | `helper/patch_dunst.py:32` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.foreground` | direct | `helper/patch_dunst.py:55` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_low.foreground` | direct | `helper/patch_dunst.py:60` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.foreground` | direct | `helper/patch_dunst.py:50` |
+| dunst | `~/.config/dunst/dunstrc` | `global.foreground` | direct | `helper/patch_dunst.py:27` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.foreground` | direct | `helper/patch_dunst.py:50` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_low.foreground` | direct | `helper/patch_dunst.py:55` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.foreground` | direct | `helper/patch_dunst.py:45` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color on-surface` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `card_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `dialog_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
@@ -197,10 +197,10 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { color }` | via role `on-surface` | `helper/patch_gtk.py:RULES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | kitty | `~/.config/kitty/kitty.conf` | `color8` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
-| kitty | `~/.config/kitty/kitty.conf` | `foreground` | direct | `helper/patch_kitty.py:59` |
-| kitty | `~/.config/kitty/kitty.conf` | `selection_background` | direct | `helper/patch_kitty.py:60` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_FOREGROUND_COLOR` | direct | `helper/patch_lock.py:81` |
-| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:266` |
+| kitty | `~/.config/kitty/kitty.conf` | `foreground` | direct | `helper/patch_kitty.py:55` |
+| kitty | `~/.config/kitty/kitty.conf` | `selection_background` | direct | `helper/patch_kitty.py:56` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_FOREGROUND_COLOR` | direct | `helper/patch_lock.py:77` |
+| plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:254` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `bullet.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-01.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus_stack=)` | direct | `configuration/qtile/config.py:621` |
@@ -208,10 +208,10 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `layout.Max(border_focus=)` | direct | `configuration/qtile/config.py:640` |
 | qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:811` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(active=)` | direct | `configuration/qtile/config.py:786` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR3` | direct | `helper/patch_rofi.py:61` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `MATCH` | embedded | `helper/patch_rofi.py:65` |
-| starship | `~/.config/starship.toml` | `palettes.theme.color0` | direct | `helper/patch_starship.py:30` |
-| tmux | `~/.config/tmux/tmux.conf` | `color3` | direct | `helper/patch_tmux.py:41` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR3` | direct | `helper/patch_rofi.py:56` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `MATCH` | embedded | `helper/patch_rofi.py:60` |
+| starship | `~/.config/starship.toml` | `palettes.theme.color0` | direct | `helper/patch_starship.py:24` |
+| tmux | `~/.config/tmux/tmux.conf` | `color3` | direct | `helper/patch_tmux.py:36` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--foreground` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.foreground_variant`
@@ -219,8 +219,8 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
 | kitty | `~/.config/kitty/kitty.conf` | `color0` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
-| kitty | `~/.config/kitty/kitty.conf` | `cursor` | direct | `helper/patch_kitty.py:62` |
-| starship | `~/.config/starship.toml` | `palettes.theme.color1` | direct | `helper/patch_starship.py:31` |
+| kitty | `~/.config/kitty/kitty.conf` | `cursor` | direct | `helper/patch_kitty.py:58` |
+| starship | `~/.config/starship.toml` | `palettes.theme.color1` | direct | `helper/patch_starship.py:25` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--foreground-variant` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.green`
@@ -250,9 +250,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(this_current_screen_border=)` | direct | `configuration/qtile/config.py:788` |
 | qtile | `configuration/qtile/config.py` | `widgets.location.WidgetLocation(notification_color=)` | direct | `configuration/qtile/config.py:937` |
 | qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(notification_color=)` | direct | `configuration/qtile/config.py:900` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR4` | direct | `helper/patch_rofi.py:62` |
-| starship | `~/.config/starship.toml` | `palettes.theme.color4` | direct | `helper/patch_starship.py:34` |
-| tmux | `~/.config/tmux/tmux.conf` | `color2` | direct | `helper/patch_tmux.py:40` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR4` | direct | `helper/patch_rofi.py:57` |
+| starship | `~/.config/starship.toml` | `palettes.theme.color4` | direct | `helper/patch_starship.py:28` |
+| tmux | `~/.config/tmux/tmux.conf` | `color2` | direct | `helper/patch_tmux.py:35` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--highlight` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.magenta`
@@ -271,7 +271,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_low.format` | embedded | `helper/patch_dunst.py:62` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_low.format` | embedded | `helper/patch_dunst.py:57` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color muted` | direct | `helper/patch_gtk.py:ROLES` |
 | kitty | `~/.config/kitty/kitty.conf` | `color15` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `keyboard.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
@@ -282,15 +282,15 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | qtile | `configuration/qtile/config.py` | `layout.Max(border_normal=)` | direct | `configuration/qtile/config.py:639` |
 | qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(foreground=)` | direct | `configuration/qtile/config.py:726` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(inactive=)` | direct | `configuration/qtile/config.py:787` |
-| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR1` | direct | `helper/patch_rofi.py:59` |
-| tmux | `~/.config/tmux/tmux.conf` | `color1` | direct | `helper/patch_tmux.py:39` |
+| rofi | `~/.config/rofi/theme_config.rasi` | `COLOR1` | direct | `helper/patch_rofi.py:54` |
+| tmux | `~/.config/tmux/tmux.conf` | `color1` | direct | `helper/patch_tmux.py:34` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--neutral` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.notification`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.format` | embedded | `helper/patch_dunst.py:52` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.format` | embedded | `helper/patch_dunst.py:47` |
 | qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(urgent_border=)` | direct | `configuration/qtile/config.py:724` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(urgent_border=)` | direct | `configuration/qtile/config.py:792` |
 | qtile | `configuration/qtile/config.py` | `widget.GroupBox(urgent_text=)` | direct | `configuration/qtile/config.py:791` |
@@ -318,17 +318,17 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | --- | --- | --- | --- | --- |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color success` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `success_color` | via role `success` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| starship | `~/.config/starship.toml` | `palettes.theme.color2` | direct | `helper/patch_starship.py:32` |
+| starship | `~/.config/starship.toml` | `palettes.theme.color2` | direct | `helper/patch_starship.py:26` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--success` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.warning`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.format` | embedded | `helper/patch_dunst.py:57` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.format` | embedded | `helper/patch_dunst.py:52` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color warning` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `warning_color` | via role `warning` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:83` |
+| lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:79` |
 | qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(warning_color=)` | direct | `configuration/qtile/config.py:884` |
 | qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(warning_color=)` | direct | `configuration/qtile/config.py:753` |
 | qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | direct | `configuration/qtile/config.py:850` |
@@ -353,7 +353,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-application-prefer-dark-theme` | selects | `helper/patch_gtk.py:126` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-application-prefer-dark-theme` | selects | `helper/patch_gtk.py:122` |
 
 #### `wallpapers.dark`
 

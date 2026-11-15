@@ -10,11 +10,7 @@ import json
 import os
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_kitty`` or as a script; see helper/README.md.
-try:
-    from helper.utils import logger
-except ImportError:
-    from utils import logger
+from utils import logger
 
 #: kitty re-reads kitty.conf this many seconds after it changes, and that is the whole reload
 #: mechanism: writing the file below is what applies the theme. Written explicitly rather than

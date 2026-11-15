@@ -260,12 +260,12 @@ def test_a_missing_import_is_named_with_its_package(monkeypatch: pytest.MonkeyPa
 
 
 def test_a_missing_dependency_is_not_reported_as_a_missing_patcher() -> None:
-    # The orchestrator's import guard exists for running it as a script. With cairo absent it
-    # used to take that branch too and fail on its first name -- "No module named
-    # 'patch_dunst'" -- leaving the dependency that was actually missing two tracebacks up.
+    # The orchestrator once had an import guard for running as a script, and with cairo
+    # absent it failed on its first name -- "No module named 'patch_dunst'" -- leaving the
+    # dependency that was actually missing two tracebacks up.
     probe = textwrap.dedent(f"""
         import builtins, sys
-        sys.path.insert(0, {str(Path(utils.REPOSITORY_ROOT))!r})
+        sys.path.insert(0, {str(Path(utils.REPOSITORY_ROOT) / 'helper')!r})
         real = builtins.__import__
         def fake(name, *args, **kwargs):
             if name == "cairo":
@@ -273,7 +273,7 @@ def test_a_missing_dependency_is_not_reported_as_a_missing_patcher() -> None:
             return real(name, *args, **kwargs)
         builtins.__import__ = fake
         try:
-            import helper.patch_configurations
+            import patch_configurations
         except ModuleNotFoundError as error:
             print(error.name)
     """)

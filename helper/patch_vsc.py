@@ -11,15 +11,9 @@ import os
 import re
 import sys
 
-try:
-    from helper import color_match
-    from helper.utils import logger, template_path
-except ImportError:
-    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
-    # repository root, so the package-qualified form cannot resolve. Both branches land on
-    # the same loguru-or-stdlib fallback defined once in helper/utils.py.
-    import color_match
-    from utils import logger, template_path
+import color_match
+from utils import logger, template_path
+
 
 def dict_replace_value(d: dict, colors: list, lookup_colors: list | None = None) -> dict:
     if lookup_colors is None:

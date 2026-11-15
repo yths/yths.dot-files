@@ -17,47 +17,22 @@ import sys
 from collections.abc import Callable
 from typing import Any
 
+from patch_dunst import patch_dunst
+from patch_gtk import patch_gtk
+from patch_kitty import patch_kitty
+from patch_lock import patch_lock
+from patch_plymouth import install_system as install_boot_splash
+from patch_qutebrowser import patch_qutebrowser
+from patch_rofi import patch_rofi
+from patch_starship import patch_starship
+from patch_tmux import patch_tmux
+from patch_web_greeter import install_system as install_login_screen
+from patch_web_greeter import patch_web_greeter
+from patch_xorg import patch_xorg
+from utils import logger
+
 #: This file's repository, resolved through any symlink used to invoke it.
 _REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-try:
-    from helper.patch_dunst import patch_dunst
-    from helper.patch_gtk import patch_gtk
-    from helper.patch_kitty import patch_kitty
-    from helper.patch_lock import patch_lock
-    from helper.patch_plymouth import install_system as install_boot_splash
-    from helper.patch_qutebrowser import patch_qutebrowser
-    from helper.patch_rofi import patch_rofi
-    from helper.patch_starship import patch_starship
-    from helper.patch_tmux import patch_tmux
-    from helper.patch_web_greeter import install_system as install_login_screen
-    from helper.patch_web_greeter import patch_web_greeter
-    from helper.patch_xorg import patch_xorg
-    from helper.utils import logger
-except ImportError as error:
-    # Reached when this file runs as a script: sys.path[0] is then helper/, not the
-    # repository root, so the package-qualified form cannot resolve. Both branches land on
-    # the same modules; see helper/README.md.
-    #
-    # Only that case, though. The patchers above import cairo, PIL, numpy; a machine missing
-    # one of those raises ImportError too, and letting it fall through here made the second
-    # branch fail on its first name -- "No module named 'patch_dunst'" -- with the dependency
-    # that was actually missing two tracebacks up. Anything but the package itself re-raises.
-    if error.name != "helper":
-        raise
-    from patch_dunst import patch_dunst
-    from patch_gtk import patch_gtk
-    from patch_kitty import patch_kitty
-    from patch_lock import patch_lock
-    from patch_plymouth import install_system as install_boot_splash
-    from patch_qutebrowser import patch_qutebrowser
-    from patch_rofi import patch_rofi
-    from patch_starship import patch_starship
-    from patch_tmux import patch_tmux
-    from patch_web_greeter import install_system as install_login_screen
-    from patch_web_greeter import patch_web_greeter
-    from patch_xorg import patch_xorg
-    from utils import logger
 
 
 def reload_kitty() -> None:

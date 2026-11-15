@@ -13,13 +13,8 @@ import os
 import re
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_rofi`` or as a script; see helper/README.md.
-try:
-    from helper import symbols
-    from helper.utils import logger, template_path
-except ImportError:
-    import symbols
-    from utils import logger, template_path
+import symbols
+from utils import logger, template_path
 
 
 def patch_rofi_configuration(configuration: dict[str, Any]) -> None:

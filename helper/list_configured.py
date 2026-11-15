@@ -13,10 +13,7 @@ import json
 import pathlib
 import sys
 
-try:
-    from helper.utils import read_setup
-except ImportError:
-    from utils import read_setup
+from utils import read_setup
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 

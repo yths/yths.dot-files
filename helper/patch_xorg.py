@@ -8,11 +8,7 @@ import json
 import os
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_xorg`` or as a script; see helper/README.md.
-try:
-    from helper.utils import logger, monitor_average
-except ImportError:
-    from utils import logger, monitor_average
+from utils import logger, monitor_average
 
 
 def patch_xorg(configuration: dict[str, Any]) -> None:

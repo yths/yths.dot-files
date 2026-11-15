@@ -8,15 +8,9 @@ import json
 import os
 from typing import Any
 
+import symbols
 import toml
-
-# Resolves whether this runs as ``helper.patch_starship`` or as a script; see helper/README.md.
-try:
-    from helper import symbols
-    from helper.utils import logger, template_path
-except ImportError:
-    import symbols
-    from utils import logger, template_path
+from utils import logger, template_path
 
 
 def patch_starship(configuration: dict[str, Any]) -> None:

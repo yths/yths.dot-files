@@ -41,12 +41,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(GREETER_ROOT))
 HELPER_DIR = os.path.join(REPO_ROOT, "helper")
 GLOBAL_CONFIG = os.path.expanduser("~/.config/config.json")
 
-try:
-    from helper.patch_web_greeter import patch_web_greeter
-except ImportError:
-    # This file is run as a script, so the repo root is not on sys.path yet.
-    sys.path.insert(0, REPO_ROOT)
-    from helper.patch_web_greeter import patch_web_greeter
+# helper/ imports its own modules by bare name, so it is what goes on the path.
+sys.path.insert(0, HELPER_DIR)
+from patch_web_greeter import patch_web_greeter  # noqa: E402
 
 MIME = {
     ".html": "text/html; charset=utf-8",

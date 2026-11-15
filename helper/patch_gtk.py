@@ -22,11 +22,7 @@ import os
 import subprocess
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_gtk`` or as a script; see helper/README.md.
-try:
-    from helper.utils import logger
-except ImportError:
-    from utils import logger
+from utils import logger
 
 #: The two toolkit versions installed here, and their configuration directories under
 #: ~/.config. GTK 2 is absent from this machine and so from this list.

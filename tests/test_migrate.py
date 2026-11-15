@@ -235,7 +235,7 @@ def test_migrating_reloads_the_running_programs(
     monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
 
     reloaded = []
-    monkeypatch.setattr(install.helper.patch_configurations, "reload_applications",
+    monkeypatch.setattr(install.patch_configurations, "reload_applications",
                         reloaded.append)
     assert install.run_migration(str(two_bundles), "wanted") == 0
     assert reloaded, "a migration that reloads nothing refreshes nothing you can see"
@@ -252,7 +252,7 @@ def test_no_reload_leaves_the_running_programs_alone(
     monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
 
     reloaded = []
-    monkeypatch.setattr(install.helper.patch_configurations, "reload_applications",
+    monkeypatch.setattr(install.patch_configurations, "reload_applications",
                         reloaded.append)
     assert install.run_migration(str(two_bundles), "wanted", reload_applications=False) == 0
     assert reloaded == []

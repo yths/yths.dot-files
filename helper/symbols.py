@@ -29,11 +29,7 @@ does not need.
 
 from typing import Any
 
-# Resolves whether this runs as ``helper.symbols`` or as a script; see helper/README.md.
-try:
-    from helper.utils import merge_overrides
-except ImportError:
-    from utils import merge_overrides
+from utils import merge_overrides
 
 #: How many rungs each ramp has. A consumer indexes these by a level it computed, so a ramp
 #: of the wrong length fails as an IndexError at draw time -- in qtile's case inside a

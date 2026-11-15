@@ -8,11 +8,11 @@ and one failing patcher not stopping the other.
 
 import subprocess
 
+import patch_configurations
 import pytest
 import utils
 
 import install
-from helper import patch_configurations
 
 # ------------------------------------------------------------------------- authenticate
 

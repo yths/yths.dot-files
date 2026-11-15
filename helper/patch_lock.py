@@ -19,11 +19,7 @@ import sys
 import tempfile
 from typing import Any
 
-# Resolves whether this runs as ``helper.patch_lock`` or as a script; see helper/README.md.
-try:
-    from helper.utils import logger, template_path
-except ImportError:
-    from utils import logger, template_path
+from utils import logger, template_path
 
 #: Where the generated environment lands. install.py symlinks configuration/lock/ here.
 ENVIRONMENT_PATH = os.path.join("~", ".config", "lock", "environment")

@@ -38,12 +38,16 @@ except ImportError:
 
     logger = logging.getLogger(__name__)
 
-import helper.apply_icc
-import helper.fonts
-import helper.patch_configurations
-import helper.screen_configuration
-import helper.symbols
-from helper.utils import (
+# helper/ is a directory of scripts that import each other by bare name, so it goes on the
+# path once, here, rather than every module there guessing how it was reached.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "helper"))
+
+import apply_icc
+import fonts
+import patch_configurations
+import screen_configuration
+import symbols
+from utils import (
     authenticate,
     install_credentials,
     install_link,
@@ -97,8 +101,8 @@ def report_display_calibration() -> None:
     from a display that looks wrong.
     """
     host = platform.node()
-    host_map = helper.apply_icc.read_displays().get(host, {})
-    displays = helper.apply_icc.detect_displays()
+    host_map = apply_icc.read_displays().get(host, {})
+    displays = apply_icc.detect_displays()
 
     if not host_map:
         logger.info(
@@ -110,7 +114,7 @@ def report_display_calibration() -> None:
 
     for index, output in displays or []:
         name = host_map.get(output) or host_map.get(index)
-        if name and helper.apply_icc.profile_path(name):
+        if name and apply_icc.profile_path(name):
             logger.info(f"Display {index} ({output}) will use the {name} profile.")
         elif name:
             logger.info(f"Display {index} ({output}) is mapped to {name}, which is missing.")
@@ -299,7 +303,7 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
         configuration = json.load(handle)
     configuration.pop("colors", None)
 
-    configuration["monitors"] = helper.screen_configuration.get()
+    configuration["monitors"] = screen_configuration.get()
     with open(
         os.path.expanduser(os.path.join("~", ".config", "palette.json")), encoding="utf-8"
     ) as handle:
@@ -308,7 +312,7 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
     configuration["wallpapers"] = wallpapers
     # The bundle's font, if this machine has it; setup.toml's fallback at the bundle's size
     # if not. See helper/fonts.py for why a missing font is a warning and not a failure.
-    configuration["font"] = helper.fonts.resolve(configuration.get("font"), SETUP)
+    configuration["font"] = fonts.resolve(configuration.get("font"), SETUP)
     configuration["state"] = dict(SETUP["state"])
     configuration.update(theme_vocabulary(configuration))
     return configuration
@@ -331,8 +335,8 @@ def theme_vocabulary(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
     and after an update with nothing to say why.
     """
     return {
-        "symbols": merge_overrides(helper.symbols.SYMBOLS, bundle.get("symbols") or {}),
-        "strings": merge_overrides(helper.symbols.STRINGS, bundle.get("strings") or {}),
+        "symbols": merge_overrides(symbols.SYMBOLS, bundle.get("symbols") or {}),
+        "strings": merge_overrides(symbols.STRINGS, bundle.get("strings") or {}),
         "bluetooth_devices": dict(bundle.get("bluetooth_devices") or {}),
     }
 
@@ -366,7 +370,7 @@ def migrate_configuration(
     # valid palettes and nothing downstream can tell which it asked for.
     with open(os.path.join(bundle_path, "palette.json"), encoding="utf-8") as handle:
         migrated["palette"] = json.load(handle)
-    migrated["font"] = helper.fonts.resolve(bundle.get("font"), SETUP)
+    migrated["font"] = fonts.resolve(bundle.get("font"), SETUP)
     migrated.update(theme_vocabulary(bundle))
 
     for field in ("name", "palette", "font", "symbols", "strings", "bluetooth_devices"):
@@ -403,7 +407,7 @@ def generate_application_configuration(configuration: dict[str, Any]) -> None:
     with no colour variables to import and kitty with no configuration at all, until the
     first theme switch happened to generate them.
     """
-    failed = helper.patch_configurations.patch_all(configuration)
+    failed = patch_configurations.patch_all(configuration)
     if failed:
         logger.warning(
             f"These applications were not configured: {', '.join(failed)}. "
@@ -505,7 +509,7 @@ def run_migration(
     # Without this a migration wrote every file and refreshed nothing you could see -- dunst
     # kept its colours, tmux its status line, qtile its bar.
     if reload_applications:
-        helper.patch_configurations.reload_applications(configuration)
+        patch_configurations.reload_applications(configuration)
     else:
         logger.info("Patched only; the running programs still hold the previous theme.")
     return 0
@@ -520,7 +524,7 @@ def install_system_surfaces() -> int:
     path = os.path.expanduser(os.path.join("~", ".config", "config.json"))
     with open(path, encoding="utf-8") as handle:
         configuration = json.load(handle)
-    failed = helper.patch_configurations.install_system(configuration, prompt=True)
+    failed = patch_configurations.install_system(configuration, prompt=True)
     if failed:
         logger.warning(
             f"Not installed: {', '.join(failed)}. The desktop is switched; re-run with "

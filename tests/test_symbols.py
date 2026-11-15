@@ -125,7 +125,7 @@ def test_the_installer_merges_both_blocks_over_the_defaults(
     (bundle / "config.json").write_text(
         json.dumps({"name": "bundle", "symbols": {"vpn.on": "VPN"}})
     )
-    monkeypatch.setattr(install.helper.screen_configuration, "get", dict)
+    monkeypatch.setattr(install.screen_configuration, "get", dict)
     palette = tmp_path / ".config" / "palette.json"
     palette.parent.mkdir(parents=True)
     palette.write_text(json.dumps({"dark": {}, "light": {}}))
