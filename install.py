@@ -483,12 +483,15 @@ def run_migration(
         return 1
 
     bundle_path = theme_paths[selected]
+    # Relinked on every migration, not only on a switch: an install from before the palette
+    # became JSON has a ``palette.pkl`` link and no ``palette.json``, and refreshing is how it
+    # gets one.
+    install_palette(bundle_path)
     if selected != existing.get("name"):
-        # Switching bundles, not just refreshing one. The palette and the four wallpapers are
-        # symlinks into `assets/<name>/`, and a configuration that named a new theme while they
-        # still pointed at the old one is the same silent mismatch as reading the stale palette.
+        # Switching bundles, not just refreshing one. The four wallpapers are symlinks into
+        # `assets/<name>/`, and a configuration that named a new theme while they still pointed
+        # at the old one is the same silent mismatch as reading the stale palette.
         logger.info(f"Switching from {existing.get('name')!r} to {selected!r}.")
-        install_palette(bundle_path)
         existing["wallpapers"] = install_wallpapers(bundle_path)
 
     configuration, changes = migrate_configuration(bundle_path, existing)

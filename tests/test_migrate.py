@@ -266,3 +266,23 @@ def test_reloading_signals_kitty_rather_than_trusting_its_watcher() -> None:
     assert "signal.SIGUSR1" in source
     body = source[source.index("def reload_applications("):source.index("def main(")]
     assert "reload_kitty()" in body
+
+
+# An install from before the palette became JSON has a `palette.pkl` link and no
+# `palette.json`, and `--migrate` on the same theme is how such a machine catches up.
+def test_migrating_in_place_replaces_the_legacy_palette_link(
+    two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    installed["name"] = "wanted"
+    (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
+    legacy = tmp_path / ".config" / "palette.pkl"
+    legacy.symlink_to(two_bundles / "wanted" / "config.json")
+    (tmp_path / ".config" / "palette.json").unlink()
+    monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
+
+    assert install.run_migration(str(two_bundles), "wanted") == 0
+
+    assert not legacy.is_symlink()
+    palette = tmp_path / ".config" / "palette.json"
+    assert palette.resolve() == (two_bundles / "wanted" / "palette.json").resolve()
