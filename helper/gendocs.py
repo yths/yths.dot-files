@@ -52,12 +52,13 @@ def module_summary(path: Path) -> str:
 
 
 def is_qtile_widget(path: Path) -> bool:
-    """A module is a widget only if it builds on one of qtile's widget base classes."""
+    """A module is a widget only if it builds on one of qtile's widget classes: a base class,
+    or a stock widget it extends, such as ``libqtile.widget.clock.Clock``."""
     try:
         text = path.read_text()
     except OSError:
         return False
-    return "libqtile.widget.base" in text
+    return re.search(r"libqtile\.widget\.\w+", text) is not None
 
 
 def stray_widget_modules() -> list[Path]:
