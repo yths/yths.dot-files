@@ -9,8 +9,8 @@ ways round.
 
 Four views, emitted as markdown:
 
-1. **Palette** -- the active ``token -> hex`` table (light/dark) read from
-   ``~/.config/config.json``.
+1. **Palette** -- the ``token -> hex`` table (light/dark) of the bundle ``setup.toml``
+   configures.
 2. **Theme value -> usage** -- for each value a theme sets, every field that carries it.
    Answers "if I change ``highlight``, what moves?"
 3. **Configuration file -> theme values** -- for each generated file, what it carries and
@@ -31,8 +31,9 @@ map against what the patchers actually write:
 
 ``generate_markdown`` returns the body that ``gendocs.py`` injects into
 ``docs/palette-reference.md``; running the module prints the same body, and ``--value`` /
-``--app`` / ``--file`` narrow it to one lookup. The usage map is repo-derived and identical
-on every machine; the hex values and ΔE distances reflect the active install.
+``--app`` / ``--file`` narrow it to one lookup. Everything is repo-derived -- the usage map
+from the patcher sources, the hex values and ΔE distances from the configured bundle -- so the
+output is identical on every clone, whichever theme that machine is running.
 """
 
 import argparse
