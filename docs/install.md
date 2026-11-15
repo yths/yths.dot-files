@@ -151,8 +151,10 @@ with them the automatic light/dark switch. Declined at install, it is collected 
 python install.py --credentials
 ```
 
-That writes the file and touches nothing else; a plain `python install.py` would also reset
-the machine's `state`.
+That writes the named keys and touches nothing else — not the other keys in the file, which
+it shares with the backend service's `OBS_PASSWORD`, and not the machine's `state`, which a
+plain `python install.py` would reset. A plain install asks only for keys the file does not
+hold yet.
 
 ### Fonts
 

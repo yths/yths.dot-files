@@ -216,19 +216,42 @@ def install_link(source_path: str, destination_path: str, name: str | None = Non
         logger.info(f"Installed {name} configuration.")
 
 
+CREDENTIALS_PATH = os.path.join("~", ".config", "credentials.json")
+
+
+def read_credentials(path: str | None = None) -> dict[str, Any]:
+    """The credentials file as a dict; empty when it is absent or is not a JSON object."""
+    try:
+        with open(os.path.expanduser(path or CREDENTIALS_PATH), encoding="utf-8") as handle:
+            credentials = json.load(handle)
+    except (OSError, ValueError):
+        return {}
+    return credentials if isinstance(credentials, dict) else {}
+
+
+def missing_credentials(credentials: list[str], path: str | None = None) -> list[str]:
+    """The names in ``credentials`` that the credentials file does not hold yet."""
+    present = read_credentials(path)
+    return [name for name in credentials if name not in present]
+
+
 def install_credentials(
     credentials: list[str],
     destination_path: str | None = None,
 ) -> None:
-    if destination_path is None:
-        destination_path = os.path.join("~", ".config", "credentials.json")
-    secrets = {}
+    """Prompt for each of ``credentials`` and merge them into the credentials file.
+
+    Merged, not written afresh: the file is shared with yths.backend-service, whose
+    installer stores keys this one never asks for (``OBS_PASSWORD``), and rewriting it with
+    only the names asked for here dropped those.
+    """
+    destination_path = os.path.expanduser(destination_path or CREDENTIALS_PATH)
+    secrets = read_credentials(destination_path)
     logger.info("Installing credentials...")
     for credential in credentials:
         # getpass rather than input: a token typed at an echoing prompt stays in the
         # terminal's scrollback long after the file holding it is chmod 0600.
         secrets[credential] = getpass.getpass(f"Enter the value for {credential}: ")
-    destination_path = os.path.expanduser(destination_path)
     if os.path.exists(destination_path):
         logger.info(f"Credentials file {destination_path} already exists.")
         # One backup is enough to undo a mistyped re-run; every older one is a stale copy

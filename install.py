@@ -52,6 +52,7 @@ from utils import (
     install_credentials,
     install_link,
     merge_overrides,
+    missing_credentials,
     read_setup,
 )
 
@@ -586,7 +587,9 @@ def main(argv: list[str] | None = None) -> int:
     install_static_configuration(configuration_folder_path)
     report_display_calibration()
 
-    wanted = SETUP["credentials"]["prompt"]
+    # Only what the file lacks: a re-run, or yths.backend-service's installer having asked
+    # first, must not prompt again for a token that is already there.
+    wanted = missing_credentials(SETUP["credentials"]["prompt"])
     if wanted and input(f"Collect credentials ({', '.join(wanted)})? (y/n): ").lower() == "y":
         install_credentials(wanted)
 

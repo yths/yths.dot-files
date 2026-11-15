@@ -1,5 +1,6 @@
 """The pure helpers: monitor geometry, dependency bookkeeping, calibration decisions."""
 
+import json
 import os
 import pathlib
 import platform
@@ -184,6 +185,30 @@ def test_credentials_are_read_without_echo_and_only_one_backup_is_kept(
     assert len(backups) == 1
     assert backups[0].stat().st_mode & 0o777 == 0o600
 
+
+
+# The file is shared with yths.backend-service. Rewriting it with only the names asked for
+# here moved its OBS_PASSWORD into a backup, where nothing reads it.
+def test_credentials_are_merged_into_the_file_not_written_afresh(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(utils.getpass, "getpass", lambda _prompt: "new")
+    destination = tmp_path / "credentials.json"
+    destination.write_text(json.dumps({"IPINFO_TOKEN": "old", "OBS_PASSWORD": "kept"}))
+
+    utils.install_credentials(["IPINFO_TOKEN"], str(destination))
+
+    assert json.loads(destination.read_text()) == {"IPINFO_TOKEN": "new", "OBS_PASSWORD": "kept"}
+    assert destination.stat().st_mode & 0o777 == 0o600
+
+
+def test_only_absent_credentials_are_missing(tmp_path: Path) -> None:
+    destination = tmp_path / "credentials.json"
+    assert utils.missing_credentials(["A", "B"], str(destination)) == ["A", "B"]
+    destination.write_text(json.dumps({"A": ""}))
+    assert utils.missing_credentials(["A", "B"], str(destination)) == ["B"]
+    destination.write_text("{ torn")
+    assert utils.missing_credentials(["A"], str(destination)) == ["A"]
 
 # install_folder tested `exists`, which is False for a dangling link, so a directory link left
 # behind by a moved clone fell through to os.symlink and raised FileExistsError.

@@ -151,7 +151,7 @@ The orchestrator implements nothing. Six patchers used to live inside it as func
 `utils.py` exposes:
 
 - `install_link(src, dst, name)` — symlink a file or a directory into place, log status.
-- `install_credentials([names...])` — prompt (without echo) for each secret and write `~/.config/credentials.json`, mode 0600, keeping one backup of the previous file.
+- `install_credentials([names...])` — prompt (without echo) for each secret and merge it into `~/.config/credentials.json`, mode 0600, keeping every other key and one backup of the previous file. `missing_credentials([names...])` says which of them the file lacks.
 
 None of them copy: every path ends in `os.symlink`, and anything already at the destination is renamed to `*.<timestamp>.bak` first. The installed configuration is therefore the repository, live — see [../docs/architecture.md](../docs/architecture.md#installer-flow-installpy).
 
