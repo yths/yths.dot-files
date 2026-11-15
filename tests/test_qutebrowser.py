@@ -268,7 +268,7 @@ def test_config_py_keeps_what_is_not_declarative() -> None:
     config = pathlib.Path("configuration/qutebrowser/config.py").read_text()
     assert "c.tabs.padding" in config
     assert "c.colors.webpage.darkmode.enabled" in config
-    assert "config.bind('td'" in config
+    assert 'config.bind("td"' in config
 
 
 def test_the_darkmode_switch_is_not_also_set_by_the_generated_theme(source: str) -> None:
