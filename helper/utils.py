@@ -1,9 +1,8 @@
 """Common helpers shared by ``install.py`` and the patchers.
 
-Exports the install helpers -- ``install_file``, ``install_folder``, ``install_files``,
-``install_folders``, ``install_credentials`` -- plus ``monitor_average`` for the patchers
-that scale to the display, and the ``logger`` every one of them reports through. Each
-install helper logs a one-line status via loguru, or stdlib logging if loguru is absent.
+Exports the install helpers -- ``install_link`` and ``install_credentials`` -- plus
+``monitor_average`` for the patchers that scale to the display, and the ``logger`` every one
+of them reports through. Each install helper logs a one-line status via loguru, or stdlib logging if loguru is absent.
 
 Nothing here copies. Every install path ends in ``os.symlink``, so an installed file *is*
 the repository file -- which is what lets a theme switch and a hand edit under
@@ -193,84 +192,26 @@ def monitor_average(configuration: dict[str, Any], key: str) -> float | None:
     return sum(values) / len(values)
 
 
-def install_folders(folders_paths: dict[str, str], name: str | None = None) -> None:
-    logger.info(f"Installing {name if name is not None else 'folders'}...")
-    for source_folder_path, destination_folder_path in folders_paths.items():
-        install_folder(source_folder_path, destination_folder_path, name)
+def install_link(source_path: str, destination_path: str, name: str | None = None) -> None:
+    """Symlink ``destination_path`` to ``source_path``, a file or a directory alike.
 
-
-def install_files(files_paths: dict[str, str], name: str | None = None) -> None:
-    logger.info(f"Installing {name if name is not None else 'files'}...")
-    for source_file_path, destination_file_path in files_paths.items():
-        install_file(source_file_path, destination_file_path, name)
-
-
-def install_file(source_path: str, destination_path: str, name: str | None = None) -> None:
+    An existing link is replaced -- dangling or not, which is what a link left by a moved
+    repository is. Anything else at the destination is renamed to ``<path>.<timestamp>.bak``
+    first, so nothing a user had there is lost.
+    """
     source_path = os.path.expanduser(source_path)
     destination_path = os.path.expanduser(destination_path)
-    # check if file exists
-    if os.path.exists(destination_path) or os.path.islink(destination_path):
-        logger.info(f"File {destination_path} already exists.")
-        # check if it is a symlink
-        if os.path.islink(destination_path):
-            logger.info(f"File {destination_path} is already linked.")
-            os.unlink(destination_path)
-            os.symlink(source_path, destination_path)
-        else:
-            logger.info(f"Backing up existing file {destination_path}.")
-            timestamp = int(time.time())
-            os.rename(
-                destination_path,
-                f"{destination_path}.{timestamp}.bak",
-            )
-            logger.info(
-                f"Backed up existing file to {destination_path}.{timestamp}.bak."
-            )
-            logger.info(f"Linking {source_path} to {destination_path}.")
-            os.symlink(source_path, destination_path)
+    if os.path.islink(destination_path):
+        logger.info(f"{destination_path} is already linked; relinking.")
+        os.unlink(destination_path)
+    elif os.path.exists(destination_path):
+        backup_path = f"{destination_path}.{int(time.time())}.bak"
+        os.rename(destination_path, backup_path)
+        logger.info(f"Backed up existing {destination_path} to {backup_path}.")
     else:
-        # check if parent folder exists
-        parent_destination_folder = os.path.dirname(destination_path)
-        if not os.path.exists(parent_destination_folder):
-            logger.info(f"Creating parent folder {parent_destination_folder}.")
-            os.makedirs(parent_destination_folder, exist_ok=True)
-        logger.info(f"Linking {source_path} to {destination_path}.")
-        os.symlink(source_path, destination_path)
-    if name is not None:
-        logger.info(f"Installed {name} configuration.")
-
-
-def install_folder(source_path: str, destination_path: str, name: str | None = None) -> None:
-    source_path = os.path.expanduser(source_path)
-    destination_path = os.path.expanduser(destination_path)
-    # check if folder exists
-    if os.path.exists(destination_path):
-        logger.info(f"Folder {destination_path} already exists.")
-        # check if it is a symlink
-        if os.path.islink(destination_path):
-            logger.info(f"Folder {destination_path} is already linked.")
-            os.unlink(destination_path)
-            os.symlink(source_path, destination_path, target_is_directory=True)
-        else:
-            logger.info(f"Backing up existing folder {destination_path}.")
-            timestamp = int(time.time())
-            os.rename(
-                destination_path,
-                f"{destination_path}.{timestamp}.bak",
-            )
-            logger.info(
-                f"Backed up existing folder to {destination_path}.{timestamp}.bak."
-            )
-            logger.info(f"Linking {source_path} to {destination_path}.")
-            os.symlink(source_path, destination_path, target_is_directory=True)
-    else:
-        # check if parent folder exists
-        parent_destination_folder = os.path.dirname(destination_path)
-        if not os.path.exists(parent_destination_folder):
-            logger.info(f"Creating parent folder {parent_destination_folder}.")
-            os.makedirs(parent_destination_folder, exist_ok=True)
-        logger.info(f"Linking {source_path} to {destination_path}.")
-        os.symlink(source_path, destination_path, target_is_directory=True)
+        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+    logger.info(f"Linking {source_path} to {destination_path}.")
+    os.symlink(source_path, destination_path, target_is_directory=os.path.isdir(source_path))
     if name is not None:
         logger.info(f"Installed {name} configuration.")
 
@@ -306,7 +247,3 @@ def install_credentials(
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         json.dump(secrets, handle, indent=4)
     logger.info(f"Installed credentials to {destination_path}.")
-
-
-if __name__ == "__main__":
-    pass

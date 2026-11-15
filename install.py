@@ -46,8 +46,7 @@ import helper.symbols
 from helper.utils import (
     authenticate,
     install_credentials,
-    install_file,
-    install_folder,
+    install_link,
     merge_overrides,
     read_setup,
 )
@@ -244,8 +243,7 @@ def install_static_configuration(configuration_folder_path: str) -> None:
     """Link every per-app configuration into place. Nothing here depends on the theme."""
     for relative_path, destination, label in STATIC_INSTALLS:
         source = os.path.join(configuration_folder_path, relative_path)
-        install = install_folder if os.path.isdir(source) else install_file
-        install(source, os.path.expanduser(destination), label)
+        install_link(source, os.path.expanduser(destination), label)
 
 
 def install_palette(bundle_path: str) -> None:
@@ -261,7 +259,7 @@ def install_palette(bundle_path: str) -> None:
             f"{bundle_path} has no palette.json. Convert an older bundle once with "
             f"`python helper/convert_palette.py {bundle_path}`."
         )
-    install_file(
+    install_link(
         palette_path,
         os.path.expanduser(os.path.join("~", ".config", "palette.json")),
         "palette",
@@ -277,7 +275,7 @@ def install_wallpapers(bundle_path: str) -> dict[str, str]:
     wallpapers = {}
     for key, filename in WALLPAPERS:
         destination = f"~/.config/qtile/{filename}"
-        install_file(
+        install_link(
             os.path.join(bundle_path, "wallpapers", filename),
             os.path.expanduser(destination),
             f"wallpaper {key}",

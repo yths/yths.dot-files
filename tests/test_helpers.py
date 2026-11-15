@@ -183,3 +183,28 @@ def test_credentials_are_read_without_echo_and_only_one_backup_is_kept(
     backups = list(tmp_path.glob("credentials.json.*.bak"))
     assert len(backups) == 1
     assert backups[0].stat().st_mode & 0o777 == 0o600
+
+
+# install_folder tested `exists`, which is False for a dangling link, so a directory link left
+# behind by a moved clone fell through to os.symlink and raised FileExistsError.
+def test_a_dangling_link_to_a_directory_is_replaced(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    destination = tmp_path / "home" / "app"
+    destination.parent.mkdir()
+    destination.symlink_to(tmp_path / "gone", target_is_directory=True)
+    utils.install_link(str(source), str(destination))
+    assert destination.resolve() == source.resolve()
+
+
+def test_anything_else_at_the_destination_is_backed_up_not_lost(tmp_path: Path) -> None:
+    source = tmp_path / "source.conf"
+    source.write_text("ours")
+    destination = tmp_path / "home" / "deep" / "app.conf"
+    utils.install_link(str(source), str(destination))
+    assert destination.is_symlink()
+    destination.unlink()
+    destination.write_text("theirs")
+    utils.install_link(str(source), str(destination))
+    assert destination.resolve() == source.resolve()
+    assert [p.read_text() for p in destination.parent.glob("app.conf.*.bak")] == ["theirs"]
