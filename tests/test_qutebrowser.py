@@ -111,6 +111,61 @@ def test_every_emitted_value_is_a_palette_colour(configuration: dict) -> None:
             assert entry in palette, f"{name} = {entry!r} is not in the palette"
 
 
+# ------------------------------------------------------------------------- legibility
+#
+# Each colour is matched on its own, so a text colour and the surface under it can land on
+# one token. This palette reproduces the defect as reported: the even tabs' stock `white`
+# (fg) and `darkgrey` (bg) are both nearest the light background grey, which drew the
+# inactive even tabs' titles invisible.
+
+LIGHT_PALETTE = {
+    "light": {"background": "#e3e3e3", "foreground": "#0f0f0f", "neutral": "#717171",
+              "highlight": "#007c9a", "warning": "#a25e39", "failure": "#9f5972",
+              "success": "#567e3f", "notification": "#886f1b",
+              "foreground_variant": "#000000"},
+}
+LIGHT_PALETTE["dark"] = LIGHT_PALETTE["light"]
+
+
+@pytest.fixture
+def light_configuration() -> dict:
+    return {"state": {"theme": "light"}, "palette": LIGHT_PALETTE}
+
+
+def test_the_light_palette_would_collapse_the_even_tabs_without_the_second_look() -> None:
+    """The defect this guards against: both halves of the pair map to one token."""
+    candidates = color_match.build_palette_map(LIGHT_PALETTE)["light"]
+    assert color_match.nearest("white", candidates).hex == "#e3e3e3"
+    assert color_match.nearest("darkgrey", candidates).hex == "#e3e3e3"
+
+
+def test_a_tab_title_reads_on_the_tab_under_it(light_configuration: dict) -> None:
+    settings = patch_qutebrowser.theme_settings(light_configuration, "light")
+    ratio = color_match.contrast(
+        settings["c.colors.tabs.even.fg"], settings["c.colors.tabs.even.bg"]
+    )
+    assert ratio >= color_match.MIN_TEXT_CONTRAST
+
+
+def test_no_fg_lands_on_its_own_bg(light_configuration: dict) -> None:
+    settings = patch_qutebrowser.theme_settings(light_configuration, "light")
+    for name, value in settings.items():
+        if not name.endswith(".fg") or not isinstance(value, str):
+            continue
+        surface = settings.get(name[: -len(".fg")] + ".bg")
+        if isinstance(surface, str):
+            assert value != surface, f"{name} vanished into its surface {value!r}"
+
+
+def test_a_fg_whose_bg_stayed_stock_is_left_to_the_plain_match(
+    light_configuration: dict,
+) -> None:
+    """hints.bg is a gradient qutebrowser keeps, so hints.fg has nothing to be checked against."""
+    settings = patch_qutebrowser.theme_settings(light_configuration, "light")
+    assert "c.colors.hints.bg" not in settings
+    assert settings["c.colors.hints.fg"] in LIGHT_PALETTE["light"].values()
+
+
 # ------------------------------------------------------------------------ the output
 
 

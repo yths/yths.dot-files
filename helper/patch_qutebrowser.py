@@ -10,7 +10,9 @@ Instead the stock defaults are read out of ``template_config.py`` -- the dump
 ``qutebrowser --config-py`` writes, where every setting appears commented out with the value
 qutebrowser would use -- and each one is replaced by the palette token nearest it in
 CAM16-UCS. The same idea as ``helper/patch_vsc.py``, on a file that happens to be Python
-rather than JSON, and through the same matcher.
+rather than JSON, and through the same matcher -- including its second look: a ``.fg``
+matched onto the same token as its sibling ``.bg`` is re-picked for contrast, so an inactive
+tab's title cannot vanish into the tab drawn under it.
 
 Not everything under ``c.colors`` is a colour. Two gradients, an ``rgba()``, eight ``None``s
 meaning "let Qt decide", and eleven enums, booleans and numbers are left exactly as
@@ -88,12 +90,43 @@ def theme_settings(configuration: dict[str, Any], mode: str) -> dict[str, str]:
     """``c.colors.*`` name -> the colour this theme gives it."""
     source = stock_source()
     candidates = color_match.build_palette_map(configuration["palette"])[mode]
+    defaults = stock_defaults(source)
     settings = {}
-    for name, value in stock_defaults(source).items():
+    for name, value in defaults.items():
         replacement = mapped(value, color_match.filter_candidates(name, candidates))
         if replacement is not None:
             settings[name] = replacement
-    return settings
+    return with_legible_text(settings, defaults, candidates)
+
+
+def with_legible_text(
+    settings: dict[str, Any], defaults: dict[str, Any], candidates: list
+) -> dict[str, Any]:
+    """``settings`` with every ``.fg`` that vanished into its own ``.bg`` re-picked.
+
+    Each colour is matched on its own, so a text colour and the surface under it can land on
+    one token: against the light palette, the inactive even tabs' stock ``white`` on
+    ``darkgrey`` both became the background grey, which drew their titles invisible. The same
+    second look as ``patch_vsc.with_legible_text`` -- qutebrowser names its pairs ``.fg`` and
+    ``.bg`` where VSCode says ``Foreground`` and ``Background``: a ``.fg`` that no longer
+    reads on its sibling ``.bg`` is re-picked by ``color_match.legible``, starting from the
+    colour qutebrowser meant. List values (the completion columns) and pairs whose ``.bg``
+    stayed stock (a gradient) are left to the plain match.
+    """
+    legible = dict(settings)
+    for name, value in settings.items():
+        if not name.endswith(".fg") or not isinstance(value, str):
+            continue
+        surface = settings.get(name[: -len(".fg")] + ".bg")
+        if not isinstance(surface, str):
+            continue
+        ratio = color_match.contrast(value, surface)
+        if ratio is None or ratio >= color_match.MIN_TEXT_CONTRAST:
+            continue
+        replacement = color_match.legible(defaults.get(name, value), surface, candidates)
+        if replacement is not None:
+            legible[name] = replacement
+    return legible
 
 
 def unmapped(source: str) -> dict[str, Any]:

@@ -263,6 +263,13 @@
     - (2026-09-20) 62 of the stock defaults are CSS colour names rather than hex, which is why
       this could not simply reuse the VSCode path: `colour.notation.CSS_COLOR_3` resolves them,
       so no table is written down here.
+- [x] qutebrowser's inactive even tabs render their title in their own background colour
+    - (2026-11-15) each colour is matched on its own, so the even tabs' stock `white` (fg) and
+      `darkgrey` (bg) both landed on the light palette's background grey -- the same collapse
+      the VSCode selection fix addressed. `helper/patch_qutebrowser.py` now takes the same
+      second look as `patch_vsc.with_legible_text`: a `.fg` that no longer reads on its
+      sibling `.bg` is re-picked by `color_match.legible`, starting from the colour
+      qutebrowser meant.
 - [x] Handle monitor plug/unplug events gracefully in `qtile`
     - (2026-08-30) `config.py` subscribes to `screen_change`. The geometry every scaled size derives from was read once by `install.py` and never again, so a new display got the old one's scaling factor until qtile was restarted by hand.
     - (2026-08-30) detection moved to `configuration/qtile/shared/monitors.py`, which qtile reaches natively and `helper/screen_configuration.py` reaches the way `helper/preview_audio.py` reaches `shared.spectrum` — one definition of what a monitor's geometry is, rather than one for the installer and one for the bar.
