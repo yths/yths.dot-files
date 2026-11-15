@@ -44,7 +44,7 @@ working without them; this table says what each group's less obvious members are
 
 | Arch package | Role |
 |---|---|
-| `valkey` | Redis-compatible server; the backend service publishes to it and the bar reads from it |
+| `valkey`, and the backend service's packages | the Redis-compatible server the bar reads from, and what writes into it. Not in this `setup.toml`: `./bootstrap.sh` runs [yths.backend-service](https://github.com/yths/yths.backend-service)'s own `./install.sh`, which installs them from that repository's `setup.toml` |
 | `xorg-server`, `xorg-xinit` | X11 |
 | `qtile` | window manager (also provides `libqtile`) |
 | `ttf-iosevka-nerd` | `Iosevka NF`, the fallback font `[desktop] fallback_font_package` names in `setup.toml`. The theme's own font is installed from the bundle's `font.family` through `FONT_PACKAGES` in [../helper/fonts.py](../helper/fonts.py), and is not in `[packages]` at all |
@@ -52,9 +52,7 @@ working without them; this table says what each group's less obvious members are
 | `nody-greeter` | the web-greeter runtime LightDM renders the login screen with. Not a `[packages]` entry: `./bootstrap.sh` builds it from [../packages/nody-greeter/](../packages/nody-greeter/), since the AUR package no longer builds |
 | `python-colour-science`, `openimageio` | perceptual colour matching, and the image library `colour` imports when it is present. Also built from [../packages/](../packages/README.md): the AUR PKGBUILD leaves `openimageio` out of `depends` and has a test that fails against the current one |
 | `plymouth` | boot splash |
-| `pacman-contrib`, `yay` | required by the backend service's pacman post-transaction hook |
-| `python-schedule`, `python-requests`, `python-gobject`, `python-obsws` | what yths.backend-service imports; without any one of them `backend.service` exits at start and the bar stays empty |
-| `ruff`, `python-pytest`, `python-rich`, `base-devel`, `bubblewrap` | the `development` group: the pre-commit gate, yths.backend-service's live stream viewer and its tests, and the lock screen's PAM test. Not installed by default; see [../CONTRIBUTING.md](../CONTRIBUTING.md#setup) |
+| `ruff`, `python-pytest`, `base-devel`, `bubblewrap` | the `development` group: the pre-commit gate and the lock screen's PAM test. Not installed by default; see [../CONTRIBUTING.md](../CONTRIBUTING.md#setup) |
 | `tlp` | **optional** — laptop power management and charge thresholds. The backend runs `tlp-stat -s` once a minute for the active profile, which the battery cell shows on hover; without it the profile is left out and the rest of the cell is unchanged. Battery health, cycles and thresholds are read from `/sys/class/power_supply` either way, since `tlp-stat -b` needs root |
 | `displaycal` | **optional** — provides `dispwin`, which `~/.xinitrc` uses to load display colour profiles. Without it the desktop runs uncalibrated and nothing fails |
 

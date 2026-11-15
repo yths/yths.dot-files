@@ -80,18 +80,15 @@ core = [
 # these are in place. Anything under packages/ is installed that way and belongs in no group.
 boot = ["lightdm", "plymouth"]
 
-# The metrics service the bar reads from, and its pacman hook. The python-* packages are
-# what yths.backend-service's monitor.py imports; without any one of them the service exits
-# at start and every bar cell stays empty.
-backend = [
-    "valkey", "python-redis", "pacman-contrib",
-    "python-schedule", "python-requests", "python-gobject", "python-obsws",
-]
-
-# Imported by the helper scripts. helper/list_dependencies.py checks this list against what
-# the code actually imports, and the pre-commit gate fails if they disagree.
+# Imported by the helper scripts and the bar. helper/list_dependencies.py checks this list
+# against what the code actually imports, and the pre-commit gate fails if they disagree.
 # python-colour-science is under packages/, not here: see there.
+#
+# The metrics service the bar reads from -- valkey, yths.backend-service and its pacman hook
+# -- is not here either: ./bootstrap.sh runs that repository's own ./install.sh, which
+# installs from its own setup.toml. Only the bar's Redis client is this repository's.
 python = [
+    "python-redis",
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
     "python-pillow", "python-cairo", "python-websockets",
 ]
@@ -113,12 +110,11 @@ optional = [
 # Needed only to change this repository, not to run it. ./bootstrap.sh --dev installs them;
 # CONTRIBUTING.md has the command for a machine that already runs the desktop.
 development = [
-    # The pre-commit gate: ruff lints, pytest runs the tests.
+    # The pre-commit gate: ruff lints, pytest runs the tests. yths.backend-service's own
+    # development packages come from its ./install.sh, which ./bootstrap.sh --dev runs with
+    # --dev.
     "ruff",
     "python-pytest",
-    # yths.backend-service's redis_debug.py, the live viewer for its streams, and the tests
-    # that import it. The service itself runs without it.
-    "python-rich",
     # tests/test_lock_pam.py exercises the lock screen's PAM stack by compiling a small client
     # against libpam and running it in a sandbox with a fake /etc/pam.d -- which is how the
     # success path gets checked without a real password, and without touching the stack the

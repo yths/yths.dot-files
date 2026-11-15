@@ -82,7 +82,7 @@ fi
 # --- packages, read from setup.toml so this script holds no list of its own --------------
 # The fallback font goes in with them: it has to be on the machine before the theme's own
 # font is attempted below, so that attempt failing leaves a desktop that still renders.
-groups="core boot backend python optional"
+groups="core boot python optional"
 $development && groups="$groups development"
 packages="$(python - "$REPOSITORY_PATH/setup.toml" $groups <<'PYEOF'
 import sys, tomllib
@@ -172,12 +172,12 @@ run pactl info \
     || printf 'Could not contact the audio server; check PipeWire after logging in.\n' >&2
 
 # --- the services the bar reads from -------------------------------------------------------
-# valkey is the store; the backend service, its own repository, is what writes into it. Both
-# are enabled now so the bar has numbers at the first login. The backend is a user unit, so no
-# root; a failure here costs the bar its metrics and nothing else, hence not fatal.
-say "Enabling valkey"
-run sudo systemctl enable --now valkey.service
-
+# valkey is the store and yths.backend-service, its own repository, is what writes into it.
+# Its ./install.sh installs both, the service's packages, its credentials and its pacman hook,
+# from that repository's setup.toml, so none of it is repeated here. It runs now so the bar
+# has numbers at the first login; a failure costs the bar its metrics and nothing else, hence
+# not fatal. It asks for the credentials the backend needs first, and install.py below only
+# for what is still missing.
 backend_path="$(dirname "$REPOSITORY_PATH")/yths.backend-service"
 if [ -d "$backend_path/.git" ]; then
     say "Updating the backend service in $backend_path"
@@ -186,32 +186,17 @@ else
     say "Cloning the backend service into $backend_path"
     run git clone "$BACKEND_URL" "$backend_path" || true
 fi
-if [ -f "$backend_path/backend.service" ]; then
-    run mkdir -p "$HOME/.local/share/systemd/user"
-    run cp "$backend_path/backend.service" "$HOME/.local/share/systemd/user/"
-    run systemctl --user daemon-reload || true
-    run systemctl --user enable --now backend.service \
-        || printf 'Could not enable the backend service; the bar runs without its metrics.\n' >&2
+backend_flags=()
+$dry_run && backend_flags+=(--dry-run)
+$development && backend_flags+=(--dev)
+if [ -x "$backend_path/install.sh" ]; then
+    say "Installing the backend service with its own installer"
+    "$backend_path/install.sh" "${backend_flags[@]}" \
+        || printf 'The backend service did not install; the bar runs without its metrics.\n' >&2
+elif $dry_run; then
+    printf '    would run: %s/install.sh %s\n' "$backend_path" "${backend_flags[*]}"
 else
-    printf 'No backend.service in %s; the bar runs without its metrics.\n' "$backend_path" >&2
-fi
-
-if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py" &&
-    -f "$backend_path/update_count.py" && -f "$backend_path/subprocess_safe.py" &&
-    -f "$backend_path/redis-updates.hook" ]]; then
-    say "Installing the package-update hook"
-    run sudo install -d -m 755 /usr/local/bin /etc/pacman.d/hooks &&
-        run sudo install -m 755 "$backend_path/pacman_post_transaction.py" \
-            /usr/local/bin/pacman-redis-updates &&
-        run sudo install -m 644 "$backend_path/update_count.py" \
-            /usr/local/bin/update_count.py &&
-        run sudo install -m 644 "$backend_path/subprocess_safe.py" \
-            /usr/local/bin/subprocess_safe.py &&
-        run sudo install -m 644 "$backend_path/redis-updates.hook" \
-            /etc/pacman.d/hooks/redis-updates.hook \
-        || printf 'Could not install the package-update hook; updates refresh hourly.\n' >&2
-else
-    printf 'Backend hook files are missing in %s; updates refresh hourly.\n' "$backend_path" >&2
+    printf 'No install.sh in %s; update that clone. The bar runs without its metrics.\n' "$backend_path" >&2
 fi
 
 # --- the dot files, and with --system the two that write outside $HOME ---------------------

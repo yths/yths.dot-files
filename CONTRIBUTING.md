@@ -6,9 +6,10 @@ checks.
 ## Setup
 
 The development packages are the `development` group in [setup.toml](setup.toml): `ruff`
-and `python-pytest` for the gate, `python-rich` for the backend service's stream viewer and
-its tests, and `base-devel` and `bubblewrap` for the lock screen's PAM test. A plain
-`./bootstrap.sh` leaves them out and says so.
+and `python-pytest` for the gate, and `base-devel` and `bubblewrap` for the lock screen's PAM
+test. A plain `./bootstrap.sh` leaves them out and says so. `--dev` also passes `--dev` to
+the backend service's installer, which installs that repository's own development packages
+and arms its gate.
 
 On a new machine, install them with the rest:
 

@@ -99,11 +99,18 @@ def test_the_linter_is_a_development_package(setup: dict) -> None:
     assert "ruff" not in setup["packages"]["optional"]
 
 
-def test_the_backend_service_can_start_from_a_bootstrap(setup: dict) -> None:
-    # monitor.py's imports. Missing any one, backend.service exits and the bar stays empty.
-    assert set(setup["packages"]["backend"]) >= {
-        "python-redis", "python-schedule", "python-requests", "python-gobject", "python-obsws",
-    }
+def test_the_backend_service_is_installed_by_its_own_installer() -> None:
+    # bootstrap.sh copied the unit and the hook files and listed the service's packages
+    # itself, a second copy of yths.backend-service's install that drifted from the first.
+    script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
+    assert '"$backend_path/install.sh"' in script
+    for duplicated in ("backend.service", "redis-updates.hook", "pacman_post_transaction.py"):
+        assert duplicated not in script, f"bootstrap.sh still installs {duplicated} itself"
+
+
+def test_the_bar_installs_its_own_redis_client(setup: dict) -> None:
+    # Every cell reads Redis; that client is this repository's dependency, not the backend's.
+    assert "python-redis" in setup["packages"]["python"]
 
 
 @pytest.mark.parametrize(
@@ -135,7 +142,7 @@ def test_bootstrap_derives_only_missing_x11_layouts(
 def test_bootstrap_reads_the_same_file() -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
     assert "setup.toml" in script, "the script must not carry a package list of its own"
-    for group in ("core", "boot", "backend", "python", "optional"):
+    for group in ("core", "boot", "python", "optional"):
         assert group in script, f"bootstrap.sh installs no {group} group"
 
 
@@ -181,49 +188,47 @@ def test_bootstrap_verifies_the_configured_plymouth_theme(
         assert "helper/patch_plymouth.py" in repair_log.read_text()
 
 
-@pytest.mark.parametrize("mode", ["install", "dry-run", "missing", "failure"])
-def test_bootstrap_installs_the_package_update_hook(tmp_path: Path, mode: str) -> None:
+@pytest.mark.parametrize(
+    ("mode", "development", "expected_stdout", "expected_stderr"),
+    [
+        # The backend's installer is run with the bootstrap's own flags passed through.
+        ("install", False, "installer \n", ""),
+        ("install", True, "installer --dev\n", ""),
+        ("dry-run", True, "installer --dry-run --dev\n", ""),
+        # A failure costs the bar its metrics, not the rest of the bootstrap.
+        ("failure", False, "installer \n", "did not install"),
+        # A clone older than its installer is reported rather than half-installed by hand.
+        ("missing", False, "", "No install.sh"),
+        ("missing-dry-run", False, "would run:", ""),
+    ],
+)
+def test_bootstrap_runs_the_backend_installer(
+    tmp_path: Path, mode: str, development: bool, expected_stdout: str, expected_stderr: str,
+) -> None:
     script = (Path(utils.REPOSITORY_ROOT) / "bootstrap.sh").read_text()
-    block = script.split('if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py"', 1)
-    hook_install = 'if $dry_run || [[ -f "$backend_path/pacman_post_transaction.py"' + block[1].split(
-        "# --- the dot files", 1,
-    )[0]
-    if mode in {"install", "failure"}:
-        for name in (
-            "pacman_post_transaction.py", "update_count.py",
-            "subprocess_safe.py", "redis-updates.hook",
-        ):
-            (tmp_path / name).touch()
+    block = "backend_flags=()" + script.split("backend_flags=()", 1)[1].split("# --- the dot files", 1)[0]
+    if not mode.startswith("missing"):
+        installer = tmp_path / "install.sh"
+        status = 1 if mode == "failure" else 0
+        installer.write_text(f'#!/bin/sh\nprintf "installer %s\\n" "$*"\nexit {status}\n')
+        installer.chmod(0o755)
     probe = textwrap.dedent("""
         set -euo pipefail
         backend_path="$1"
         dry_run="$2"
-        fail="$3"
+        development="$3"
         say() { :; }
-        run() { printf '%s\n' "$*"; ! "$fail"; }
-    """) + hook_install + '\nprintf "finished\\n"\n'
+    """) + block + '\nprintf "finished\\n"\n'
     result = subprocess.run(
         ["bash", "-c", probe, "_", str(tmp_path),
-         str(mode == "dry-run").lower(), str(mode == "failure").lower()],
+         str(mode.endswith("dry-run")).lower(), str(development).lower()],
         capture_output=True, text=True, check=True,
     )
     assert result.stdout.endswith("finished\n")
-    if mode in {"install", "dry-run"}:
+    assert expected_stdout in result.stdout.removesuffix("finished\n")
+    assert expected_stderr in result.stderr
+    if not expected_stderr:
         assert result.stderr == ""
-        assert result.stdout.splitlines()[:-1] == [
-            "sudo install -d -m 755 /usr/local/bin /etc/pacman.d/hooks",
-            f"sudo install -m 755 {tmp_path}/pacman_post_transaction.py "
-            "/usr/local/bin/pacman-redis-updates",
-            f"sudo install -m 644 {tmp_path}/update_count.py /usr/local/bin/update_count.py",
-            f"sudo install -m 644 {tmp_path}/subprocess_safe.py "
-            "/usr/local/bin/subprocess_safe.py",
-            f"sudo install -m 644 {tmp_path}/redis-updates.hook "
-            "/etc/pacman.d/hooks/redis-updates.hook",
-        ]
-    else:
-        assert "updates refresh hourly" in result.stderr
-        if mode == "missing":
-            assert result.stdout == "finished\n"
 
 
 def test_bootstrap_installs_pipewire_packages(setup: dict) -> None:

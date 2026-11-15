@@ -50,12 +50,12 @@ In order, so a failure is easy to place:
    `python-colour-science` (with its hidden `openimageio` dependency). Each is skipped when
    already installed.
 5. Enables the PipeWire and PulseAudio-compatible sockets and WirePlumber user service,
-   then checks the audio server with `pactl info`. Enables `valkey`, clones
-   [yths.backend-service](https://github.com/yths/yths.backend-service)
-   beside this repository and enables it as a user service. Installs its pacman hook and
-   helper scripts so the update count refreshes after transactions from `pacman` or `yay`.
-   Re-running bootstrap refreshes these root-owned copies. Backend setup failures are not fatal;
-   without the hook, the backend refreshes the count hourly.
+   then checks the audio server with `pactl info`. Clones
+   [yths.backend-service](https://github.com/yths/yths.backend-service) beside this
+   repository, or updates that clone, and runs its `./install.sh`: valkey, the service's
+   packages, the credentials it needs, the user service and its pacman hook. Re-running
+   bootstrap re-runs it, which is how the backend is updated. Backend setup failures are not
+   fatal; the bar runs without its metrics.
 6. Runs `python install.py --system`: symlinks the configuration into `~/.config`, writes
    `~/.config/config.json` from the theme bundle, patches every application, then -- as root,
    asked for once -- installs the login screen, points LightDM at `nody-greeter`, enables
@@ -247,11 +247,8 @@ done
 **The services.**
 
 ```bash
-sudo systemctl enable --now valkey.service
 git clone https://github.com/yths/yths.backend-service.git ~/repositories/yths.backend-service
-mkdir -p ~/.local/share/systemd/user
-cp ~/repositories/yths.backend-service/backend.service ~/.local/share/systemd/user/
-systemctl --user enable --now backend.service
+~/repositories/yths.backend-service/install.sh
 ```
 
 **The dot files**, with the login screen, the boot splash and the timezone rule. Without `--system` they are left
