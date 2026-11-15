@@ -166,6 +166,48 @@ def test_a_fg_whose_bg_stayed_stock_is_left_to_the_plain_match(
     assert settings["c.colors.hints.fg"] in LIGHT_PALETTE["light"].values()
 
 
+# ----------------------------------------------------------------------- the reference match
+#
+# qutebrowser's stock chrome is a dark one: black statusbar, dark completion popup. Matching
+# it against the light palette preserves that lightness -- stock `black` lands on the light
+# *foreground* -- so light mode shipped a dark browser. The defaults are therefore matched
+# against the dark palette to decide the token, and written in the active mode's colours.
+
+TWO_MODE_PALETTE = {
+    "dark": {"background": "#0f0f0f", "foreground": "#e3e3e3", "neutral": "#717171",
+             "highlight": "#007c9a", "warning": "#a25e39", "failure": "#9f5972",
+             "success": "#567e3f", "notification": "#886f1b",
+             "foreground_variant": "#ffffff"},
+    "light": {"background": "#e3e3e3", "foreground": "#0f0f0f", "neutral": "#717171",
+              "highlight": "#007c9a", "warning": "#a25e39", "failure": "#9f5972",
+              "success": "#567e3f", "notification": "#886f1b",
+              "foreground_variant": "#000000"},
+}
+
+
+def test_light_mode_inverts_the_stock_dark_chrome() -> None:
+    """Stock `black` is the *background* token, so light mode paints the statusbar light."""
+    configuration = {"state": {"theme": "light"}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, "light")
+    assert settings["c.colors.statusbar.normal.bg"] == "#e3e3e3"
+    assert settings["c.colors.statusbar.normal.fg"] in ("#0f0f0f", "#000000")
+
+
+def test_dark_mode_keeps_the_dark_chrome() -> None:
+    configuration = {"state": {"theme": "dark"}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, "dark")
+    assert settings["c.colors.statusbar.normal.bg"] == "#0f0f0f"
+
+
+def test_every_light_value_comes_from_the_light_palette() -> None:
+    """A dark hex in a light theme is the token lookup failing, not a theme choice."""
+    configuration = {"state": {"theme": "light"}, "palette": TWO_MODE_PALETTE}
+    palette = set(TWO_MODE_PALETTE["light"].values())
+    for name, value in patch_qutebrowser.theme_settings(configuration, "light").items():
+        for entry in value if isinstance(value, list) else [value]:
+            assert entry in palette, f"{name} = {entry!r} is not in the light palette"
+
+
 # ------------------------------------------------------------------------ the output
 
 

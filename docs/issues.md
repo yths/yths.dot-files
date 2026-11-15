@@ -270,6 +270,16 @@
       second look as `patch_vsc.with_legible_text`: a `.fg` that no longer reads on its
       sibling `.bg` is re-picked by `color_match.legible`, starting from the colour
       qutebrowser meant.
+- [x] qutebrowser's chrome stays dark when the light theme is active
+    - (2026-11-15) qutebrowser's stock UI is a dark one -- black statusbar, dark completion
+      popup -- and nearest-neighbour matching preserves lightness, so stock `black` landed on
+      the light palette's *foreground* and light mode shipped a dark browser. VSCode escapes
+      this by having a light template per mode; qutebrowser has only the one stock dump.
+    - (2026-11-15) fixed with `patch_vsc`'s `reference` method: each default is matched
+      against the dark palette, which the stock theme resembles, to decide which *token* it
+      is -- black is the background, white the foreground -- and the hex written is the
+      active mode's entry for that token. Dark mode is unchanged; light mode is now its
+      inversion rather than its copy.
 - [x] Handle monitor plug/unplug events gracefully in `qtile`
     - (2026-08-30) `config.py` subscribes to `screen_change`. The geometry every scaled size derives from was read once by `install.py` and never again, so a new display got the old one's scaling factor until qtile was restarted by hand.
     - (2026-08-30) detection moved to `configuration/qtile/shared/monitors.py`, which qtile reaches natively and `helper/screen_configuration.py` reaches the way `helper/preview_audio.py` reaches `shared.spectrum` — one definition of what a monitor's geometry is, rather than one for the installer and one for the bar.
