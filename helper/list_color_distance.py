@@ -18,7 +18,6 @@ block is the same on every machine and changes only when the bundle does.
 
 import argparse
 import json
-import pickle
 import statistics
 import sys
 from pathlib import Path
@@ -51,10 +50,9 @@ class Replacement(NamedTuple):
 
 def _bundle_palette() -> dict[str, dict[str, str]] | None:
     setup = read_setup()
-    path = REPO_ROOT / "assets" / setup["desktop"]["theme"] / "palette.pkl"
+    path = REPO_ROOT / "assets" / setup["desktop"]["theme"] / "palette.json"
     try:
-        with path.open("rb") as handle:
-            return pickle.load(handle)
+        return json.loads(path.read_text(encoding="utf-8"))
     except OSError:
         return None
 

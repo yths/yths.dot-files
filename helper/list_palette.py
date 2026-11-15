@@ -39,7 +39,6 @@ import argparse
 import ast
 import json
 import os
-import pickle
 import re
 import sys
 from pathlib import Path
@@ -77,9 +76,9 @@ def _load_active_config() -> dict | None:
     """
     try:
         setup = read_setup()
-        path = REPO_ROOT / "assets" / setup["desktop"]["theme"] / "palette.pkl"
-        with path.open("rb") as handle:
-            return {"palette": pickle.load(handle), "state": {"theme": "dark"}}
+        path = REPO_ROOT / "assets" / setup["desktop"]["theme"] / "palette.json"
+        palette = json.loads(path.read_text(encoding="utf-8"))
+        return {"palette": palette, "state": {"theme": "dark"}}
     except (OSError, KeyError):
         return None
 

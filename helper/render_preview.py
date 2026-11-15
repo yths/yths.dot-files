@@ -17,7 +17,6 @@ import argparse
 import hashlib
 import json
 import os
-import pickle
 import sys
 from typing import Any
 
@@ -260,8 +259,8 @@ def main() -> int:
 
     setup = read_setup()
     bundle = os.path.join(_REPOSITORY_ROOT, "assets", setup["desktop"]["theme"])
-    with open(os.path.join(bundle, "palette.pkl"), "rb") as handle:
-        palette: dict[str, Any] = pickle.load(handle)
+    with open(os.path.join(bundle, "palette.json"), encoding="utf-8") as handle:
+        palette: dict[str, Any] = json.load(handle)
     with open(os.path.join(bundle, "config.json")) as handle:
         manifest = json.load(handle)
     glyphs, _ = symbols.resolve(manifest)

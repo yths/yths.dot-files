@@ -1,13 +1,12 @@
 """List every theme bundle under ``assets/``.
 
-Prints each bundle's path, its ``config.json``, and its unpickled ``palette.pkl`` to stdout.
+Prints each bundle's path, its ``config.json``, and its ``palette.json`` to stdout.
 Useful for inspecting what ``install.py`` would offer at install time. Honours the
 ``DOTFILES_REPOSITORY_PATH`` environment variable.
 """
 
 import json
 import os
-import pickle
 import sys
 
 
@@ -23,12 +22,12 @@ def assets_folder() -> str:
 
 
 def describe_theme(theme_path: str) -> str:
-    """One bundle's path, manifest and unpickled palette, as printable text."""
+    """One bundle's path, manifest and palette, as printable text."""
     lines = [theme_path]
     with open(os.path.join(theme_path, "config.json"), encoding="utf-8") as handle:
         lines.append(json.dumps(json.load(handle), indent=4))
-    with open(os.path.join(theme_path, "palette.pkl"), "rb") as handle:
-        lines.append(json.dumps(pickle.load(handle), indent=4))
+    with open(os.path.join(theme_path, "palette.json"), encoding="utf-8") as handle:
+        lines.append(json.dumps(json.load(handle), indent=4))
     return "\n".join(lines)
 
 

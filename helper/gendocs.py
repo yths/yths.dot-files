@@ -17,7 +17,6 @@ import argparse
 import ast
 import datetime
 import json
-import pickle
 import re
 import sys
 from pathlib import Path
@@ -184,8 +183,7 @@ def stale_preview() -> list[str]:
     digest_path = REPO_ROOT / "docs" / "preview" / "rendered-from.txt"
     if not digest_path.is_file():
         return ["docs/preview/ has never been rendered"]
-    with (bundle / "palette.pkl").open("rb") as handle:
-        palette = pickle.load(handle)
+    palette = json.loads((bundle / "palette.json").read_text(encoding="utf-8"))
     # The bundle's symbols are part of the picture too: the bar in the preview draws them,
     # so a bundle that changes a glyph changes the image the README serves. So is its font.
     manifest = json.loads((bundle / "config.json").read_text())

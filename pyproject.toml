@@ -41,7 +41,6 @@ select = [
 ignore = [
     "PLR2004",  # thresholds such as `>= 90` read better inline than as constants
     "G004",     # f-strings in logging are the repo-wide idiom
-    "S301",     # palette.pkl is a trusted local artifact
     "S603",     # see the note below
     "S607",     # notify-send/python are invoked by name, not absolute path
     "RUF001",   # the bar deliberately uses nerd-font and block-element glyphs

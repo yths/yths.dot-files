@@ -13,7 +13,6 @@ font size without also naming the family.
 
 import json
 import pathlib
-import pickle
 
 import pytest
 import symbols
@@ -127,9 +126,9 @@ def test_the_installer_merges_both_blocks_over_the_defaults(
         json.dumps({"name": "bundle", "symbols": {"vpn.on": "VPN"}})
     )
     monkeypatch.setattr(install.helper.screen_configuration, "get", dict)
-    palette = tmp_path / ".config" / "palette.pkl"
+    palette = tmp_path / ".config" / "palette.json"
     palette.parent.mkdir(parents=True)
-    palette.write_bytes(pickle.dumps({"dark": {}, "light": {}}))
+    palette.write_text(json.dumps({"dark": {}, "light": {}}))
     monkeypatch.setenv("HOME", str(tmp_path))
 
     configuration = install.assemble_configuration(str(bundle), {})

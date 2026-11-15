@@ -8,7 +8,6 @@ light and dark variants from the active theme bundle.
 import argparse
 import json
 import os
-import pickle
 import re
 import sys
 
@@ -338,10 +337,10 @@ def write_themes(themes: dict[str, dict], output_path: str) -> None:
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
-        "--theme-pickle-path",
+        "--palette-path",
         type=str,
-        default=os.path.join("~", ".config", "palette.pkl"),
-        help="Path to the theme pickle file.",
+        default=os.path.join("~", ".config", "palette.json"),
+        help="Path to the theme's palette.json.",
     )
     parser.add_argument(
         "--mode",
@@ -390,8 +389,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     arguments = parse_arguments(argv)
 
-    with open(os.path.expanduser(arguments.theme_pickle_path), "rb") as handle:
-        palette = pickle.load(handle)
+    with open(os.path.expanduser(arguments.palette_path), encoding="utf-8") as handle:
+        palette = json.load(handle)
 
     palette_map = build_palette_map(palette)
     bases = {mode: base_theme(mode) for mode in MODES}

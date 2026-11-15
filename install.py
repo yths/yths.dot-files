@@ -1,7 +1,7 @@
 """Install the dot files.
 
 Discovers theme bundles under ``assets/``, picks the one setup.toml names, writes its
-``config.json`` (merged with detected monitor geometry, font, and the unpickled palette) to
+``config.json`` (merged with detected monitor geometry, font, and the bundle's palette) to
 ``~/.config/config.json``, and symlinks each per-app configuration tree from
 ``configuration/`` into ``~/.config/``. Nothing is copied, so the installed configuration is
 this repository. See docs/architecture.md for the full theme-bundle lifecycle.
@@ -23,7 +23,6 @@ run the installer again.
 import argparse
 import json
 import os
-import pickle
 import platform
 import subprocess
 import sys
@@ -249,6 +248,30 @@ def install_static_configuration(configuration_folder_path: str) -> None:
         install(source, os.path.expanduser(destination), label)
 
 
+def install_palette(bundle_path: str) -> None:
+    """Link the bundle's ``palette.json`` to ``~/.config/palette.json``.
+
+    Bundles used to carry ``palette.pkl``, and unpickling a file dropped into ``assets/`` by
+    another tool runs whatever code it holds. The palette is plain data, so it is JSON now; a
+    leftover ``~/.config/palette.pkl`` symlink from before is removed so nothing finds it.
+    """
+    palette_path = os.path.join(bundle_path, "palette.json")
+    if not os.path.isfile(palette_path):
+        sys.exit(
+            f"{bundle_path} has no palette.json. Convert an older bundle once with "
+            f"`python helper/convert_palette.py {bundle_path}`."
+        )
+    install_file(
+        palette_path,
+        os.path.expanduser(os.path.join("~", ".config", "palette.json")),
+        "palette",
+    )
+    legacy = os.path.expanduser(os.path.join("~", ".config", "palette.pkl"))
+    if os.path.islink(legacy):
+        os.unlink(legacy)
+        logger.info(f"Removed the obsolete {legacy} link.")
+
+
 def install_wallpapers(bundle_path: str) -> dict[str, str]:
     """Link the bundle's wallpapers into place and return the `wallpapers` block for them."""
     wallpapers = {}
@@ -270,7 +293,7 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
     ``strings`` -- but as overrides rather than as values: they are merged over the ASCII
     vocabulary in ``helper/symbols.py``, so a bundle carrying neither still produces a
     desktop that renders without a Nerd Font. Monitors come from the detected hardware, the
-    palette from the installed ``palette.pkl``, and the wallpaper paths from wherever the
+    palette from the installed ``palette.json``, and the wallpaper paths from wherever the
     installer just put them -- which is why a bundle's copy of any of *those* can rot without
     anything failing. See docs/architecture.md for the contract.
     """
@@ -280,9 +303,9 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
 
     configuration["monitors"] = helper.screen_configuration.get()
     with open(
-        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")), "rb"
+        os.path.expanduser(os.path.join("~", ".config", "palette.json")), encoding="utf-8"
     ) as handle:
-        configuration["palette"] = pickle.load(handle)
+        configuration["palette"] = json.load(handle)
 
     configuration["wallpapers"] = wallpapers
     # The bundle's font, if this machine has it; setup.toml's fallback at the bundle's size
@@ -339,12 +362,12 @@ def migrate_configuration(
     # Re-derived: the bundle names it, fonts it and colours it. Each is a copy taken at
     # install time, and each goes stale when the repository moves under it.
     migrated["name"] = bundle.get("name", existing.get("name"))
-    # From the bundle, not from ``~/.config/palette.pkl``. That symlink points at whichever
+    # From the bundle, not from ``~/.config/palette.json``. That symlink points at whichever
     # bundle was installed last, so reading it made ``--migrate --theme other`` produce a
     # configuration named for one theme wearing another's colours -- silently, because both are
     # valid palettes and nothing downstream can tell which it asked for.
-    with open(os.path.join(bundle_path, "palette.pkl"), "rb") as handle:
-        migrated["palette"] = pickle.load(handle)
+    with open(os.path.join(bundle_path, "palette.json"), encoding="utf-8") as handle:
+        migrated["palette"] = json.load(handle)
     migrated["font"] = helper.fonts.resolve(bundle.get("font"), SETUP)
     migrated.update(theme_vocabulary(bundle))
 
@@ -465,11 +488,7 @@ def run_migration(
         # symlinks into `assets/<name>/`, and a configuration that named a new theme while they
         # still pointed at the old one is the same silent mismatch as reading the stale palette.
         logger.info(f"Switching from {existing.get('name')!r} to {selected!r}.")
-        install_file(
-            os.path.join(bundle_path, "palette.pkl"),
-            os.path.expanduser(os.path.join("~", ".config", "palette.pkl")),
-            "palette",
-        )
+        install_palette(bundle_path)
         existing["wallpapers"] = install_wallpapers(bundle_path)
 
     configuration, changes = migrate_configuration(bundle_path, existing)
@@ -566,11 +585,7 @@ def main(argv: list[str] | None = None) -> int:
     if wanted and input(f"Collect credentials ({', '.join(wanted)})? (y/n): ").lower() == "y":
         install_credentials(wanted)
 
-    install_file(
-        os.path.join(bundle_path, "palette.pkl"),
-        os.path.expanduser(os.path.join("~", ".config", "palette.pkl")),
-        "palette",
-    )
+    install_palette(bundle_path)
     wallpapers = install_wallpapers(bundle_path)
     configuration = assemble_configuration(bundle_path, wallpapers)
     write_configuration(configuration)

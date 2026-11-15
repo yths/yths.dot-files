@@ -95,6 +95,14 @@
     - (2026-09-13) `patch_plymouth.py` renders the splash from `configuration/plymouth/themes/<name>/` and `patch_web_greeter.py` fills the login theme's variables from its own role map, both from the palette alone. The two entries described output of the generator's plymouth and web-greeter steps, which had no reader on this side and are gone over there (its ADR-0004). `docs/notes.md` lists what a bundle is now: the manifest, `palette.pkl`, four wallpapers and, optionally, `wallpapers.json`.
     - (2026-09-13) the generator's manifest also stops carrying a `schema_version` this repository never documented or read, and its `state` block gained `audio_mode` to match `config-schema.md`. `assets/default/` is unchanged: it already satisfied the contract as it now stands.
 
+- [ ] `yths.themes` still writes `palette.pkl`
+    - (2026-11-15) bundles here now carry `palette.json`: unpickling a file another tool drops
+      into `assets/` runs whatever code it holds, so the pickle was a trust boundary rather
+      than the trusted local artifact the `S301` suppression claimed. The generator's export
+      and its contract test have to switch to `palette.json` too; until then, each fresh export
+      converts with `python helper/convert_palette.py assets/<name>`, which refuses any pickle
+      holding more than plain data.
+
 - [ ] `yths.themes` does not emit the `symbols` and `strings` blocks
     - (2026-09-19) the bundle manifest gained two optional keys, and the generator writes
       neither, so every exported bundle currently falls back to the ASCII vocabulary. That is

@@ -22,13 +22,13 @@ An unknown name exits non-zero and lists the bundles it found, before anything i
 
 Copying a bundle's `config.json` into place does not work, and never did: the installer
 assembles `~/.config/config.json` from several sources — the palette comes from
-`palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from
+`palette.json`, the monitor geometry from the detected hardware, the wallpaper paths from
 where it installed them -- and a bundle manifest carries none of that. Only `name` is
 taken from it.
 
 ## List Available Themes
 
-`helper/list_themes.py` dumps the `config.json` and pickled palette of every bundle discovered under `assets/`. Useful when scripting against the installed themes or when verifying that a fresh export from `yths.themes` landed correctly.
+`helper/list_themes.py` dumps the `config.json` and `palette.json` of every bundle discovered under `assets/`. Useful when scripting against the installed themes or when verifying that a fresh export from `yths.themes` landed correctly.
 
 ```bash
 DOTFILES_REPOSITORY_PATH=$(pwd) python helper/list_themes.py

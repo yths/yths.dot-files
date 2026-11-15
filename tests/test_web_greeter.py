@@ -11,7 +11,6 @@ patcher knowing anything about it.
 
 import json
 import pathlib
-import pickle
 import shutil
 import subprocess
 
@@ -85,8 +84,8 @@ def test_the_stylesheet_is_a_root_block() -> None:
 def test_the_shipped_theme_maps_only_tokens_the_palette_has(configuration: dict) -> None:
     """A role mapped to a token no bundle carries is a KeyError at the login screen, where
     there is nothing to read the traceback."""
-    with open("assets/default/palette.pkl", "rb") as handle:
-        palette = pickle.load(handle)
+    with open("assets/default/palette.json", encoding="utf-8") as handle:
+        palette = json.load(handle)
     for name in patch_web_greeter.available_themes():
         path = pathlib.Path(patch_web_greeter.THEME_SOURCE_ROOT) / name / "theme.json"
         for role, token in json.loads(path.read_text())["role_map"].items():

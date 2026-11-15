@@ -46,7 +46,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 | `name` | string | bundle `config.json#name` | nothing functional; informational |
 | `monitors` | object | `helper/screen_configuration.py` | qtile (bar geometry, per-monitor scaling) |
 | `font` | object | bundle `config.json#font`, or `setup.toml`'s `[desktop] fallback_font_family` at the bundle's size when fontconfig lacks the family (`helper/fonts.py`) | qtile, web-greeter (via `font_overrides`) |
-| `palette` | object | bundle `palette.pkl` | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
+| `palette` | object | bundle `palette.json` | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
 | `wallpapers` | object | rewritten by `install.py` to installed paths | qtile, web-greeter (via `wallpaper_key`) |
 | `state` | object | initialised by `install.py`; mutated at runtime | qtile, patchers — drives the active light/dark variant |
 | `symbols` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#symbols` merged over them | qtile widgets, plymouth, dunst, rofi, starship, web-greeter — see [symbols.md](symbols.md) |

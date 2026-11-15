@@ -3,7 +3,6 @@
 import ast
 import json
 import pathlib
-import pickle
 
 import list_configured
 import render_preview
@@ -51,7 +50,7 @@ def test_the_renderer_reads_only_the_theme_bundle() -> None:
     # It is still `assets/<name>/`, which is the whole point -- what must stay out is the
     # *session's* config.json under ~, and `expanduser` below is what keeps it out.
     assert all(
-        "palette.pkl" in path or "config.json" in path or "DIGEST" in path
+        "palette.json" in path or "config.json" in path or "DIGEST" in path
         for path in opened
     ), opened
     assert all("bundle" in path or "DIGEST" in path for path in opened), (
@@ -80,8 +79,7 @@ def test_the_committed_preview_matches_the_committed_palette() -> None:
     # The images are tracked, which is only defensible while they cannot fall behind.
     setup = utils.read_setup()
     bundle = REPO / "assets" / setup["desktop"]["theme"]
-    with (bundle / "palette.pkl").open("rb") as handle:
-        palette = pickle.load(handle)
+    palette = json.loads((bundle / "palette.json").read_text())
     manifest = json.loads((bundle / "config.json").read_text())
     glyphs, _ = symbols.resolve(manifest)
     expected = render_preview.palette_digest(palette, manifest["font"]["family"], glyphs)

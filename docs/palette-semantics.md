@@ -1,6 +1,6 @@
 # Palette Semantics
 
-A reference for theme authors: what the palette is, which tokens consumers in this repo expect, and how to add to it. Concrete colour values live in each preset's `palette.pkl`; this document is about contract, not hex codes.
+A reference for theme authors: what the palette is, which tokens consumers in this repo expect, and how to add to it. Concrete colour values live in each preset's `palette.json`; this document is about contract, not hex codes.
 
 > Three documents cover the palette, and they answer different questions. **What a token means** is this file. **What it looks like** in each preset is [palettes/](palettes/). **Where it is used** is [palette-reference.md](palette-reference.md).
 
@@ -51,7 +51,7 @@ The six above are what qtile needs before it draws. The patchers need more, and 
 | `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` | `patch_kitty`, ANSI slots 1–6 |
 | `red_variant`, `green_variant`, `yellow_variant`, `blue_variant`, `magenta_variant`, `cyan_variant` | `patch_kitty`, ANSI slots 9–14 |
 
-Twenty-one tokens in total, and the set is closed rather than a floor: [yths.themes](https://github.com/yths/yths.themes) holds the same list as an enum and has a contract test that reads this repository's tracked `assets/default/palette.pkl` and fails if the two ever disagree. That test exists because they did — the generator emitted a thirty-token vocabulary from a preset that no longer ships, and every bundle it produced would have raised `KeyError` in `patch_kitty`.
+Twenty-one tokens in total, and the set is closed rather than a floor: [yths.themes](https://github.com/yths/yths.themes) holds the same list as an enum and has a contract test that reads this repository's tracked `assets/default/palette.json` and fails if the two ever disagree. That test exists because they did — the generator emitted a thirty-token vocabulary from a preset that no longer ships, and every bundle it produced would have raised `KeyError` in `patch_kitty`.
 
 A hue and its `_variant` are a pair: `patch_kitty` builds ANSI slot *i* from the base and slot *i + 8* from the variant, so a hue shipped without its partner is half a terminal palette.
 
@@ -81,6 +81,6 @@ When a new consumer (widget, patcher) reads a palette token the minimum set does
 
 1. Add the token to the table above, with a one-line description of what the consumer uses it for.
 2. Add it to `ColorToken` in `yths.themes`, and give the seeding there a rule for choosing its colour. Its contract test fails until this repository's tracked bundle carries it too, which is the point: the two halves land together or not at all.
-3. Regenerate `assets/default/palette.pkl` by exporting in `default` mode, and commit it.
+3. Regenerate `assets/default/palette.json` by exporting in `default` mode, and commit it.
 
 Avoid adding required tokens lightly — each one is a constraint every preset must honour.

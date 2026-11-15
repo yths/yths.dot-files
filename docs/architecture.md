@@ -12,16 +12,16 @@ yths.themes (external)
        ▼  emits a self-contained bundle
 assets/<name>/
   ├── config.json           # name, font, wallpapers, state, symbols, strings
-  ├── palette.pkl           # {mode: {token: hex}}, consumed by qtile + patchers
+  ├── palette.json          # {mode: {token: hex}}, consumed by qtile + patchers
   └── wallpapers/*.png      # 4 wallpapers (light/dark, plain/highlight)
        │
        ▼  user picks one at install time
 install.py
        │
        ├── prompts for a bundle, or takes --theme <name>
-       ├── reads the bundle's palette.pkl and its config.json `name`
+       ├── reads the bundle's palette.json and its config.json `name`
        ├── detects monitor geometry (helper/screen_configuration.py)
-       └── writes ~/.config/config.json + ~/.config/palette.pkl + wallpapers
+       └── writes ~/.config/config.json + ~/.config/palette.json + wallpapers
        │
        ▼  per-app patchers run from helper/patch_configurations.py
 plymouth · web-greeter · vscode
@@ -100,7 +100,7 @@ the patcher to fall back to `system-auth`. Upstream's README gives the same reco
 `install.py` runs the desktop install in two phases, each a named step in the file rather than a stretch of script — `discover_themes`, `select_theme`, `install_static_configuration`, `install_wallpapers`, `assemble_configuration`, `write_configuration`:
 
 1. **Static configuration**: every per-app config tree under `configuration/` is *symlinked* into its standard location under `~/.config/`, `~/.bashrc`, `~/.xinitrc`, etc., with anything already there renamed to `*.<timestamp>.bak` first. No palette is involved, and nothing is copied. That last part is worth stating plainly, because everything downstream depends on it: the installed configuration **is** this repository. Editing `~/.config/qtile/config.py` edits tracked source, and anything written into an installed path lands on a tracked file — which is why the theme wallpapers are gitignored rather than committed.
-2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.pkl`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Carried over from the bundle's own manifest: `name`, and the optional `symbols` and `strings` blocks, which are merged over the ASCII vocabulary in `helper/symbols.py` rather than read as values. See the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes) and [symbols.md](symbols.md).
+2. **Theme materialisation**: the user picks a bundle, and `~/.config/config.json` is assembled — the palette from the bundle's `palette.json`, the monitor geometry from the detected hardware, the wallpaper paths from where the installer put them. Carried over from the bundle's own manifest: `name`, and the optional `symbols` and `strings` blocks, which are merged over the ASCII vocabulary in `helper/symbols.py` rather than read as values. See the contract in [notes.md](notes.md#theme-bundle-contract-with-ythsthemes) and [symbols.md](symbols.md).
 
 3. **Generation**: `patch_all` runs, producing the palette- and symbol-derived half of each app's configuration — kitty's and rofi's theme variables outright, and the generated fields of tmux, starship, dunst and rofi's own settings from their tracked templates. These outputs are gitignored, so a fresh clone does not have them and an install that stopped at phase 2 would leave rofi with no colour variables to import.
 

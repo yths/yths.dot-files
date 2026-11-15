@@ -8,7 +8,6 @@ the mapping lives in the bundle next to the glyphs it refers to.
 
 import json
 import pathlib
-import pickle
 
 import pytest
 import shared.stream
@@ -86,8 +85,7 @@ def test_migrating_takes_the_mapping_from_the_bundle(tmp_path: pathlib.Path) -> 
     (directory / "config.json").write_text(json.dumps({
         "name": "abundle", "bluetooth_devices": {HEADPHONES: "bluetooth.headphones"},
     }))
-    with (directory / "palette.pkl").open("wb") as handle:
-        pickle.dump({"light": {}, "dark": {}}, handle)
+    (directory / "palette.json").write_text(json.dumps({"light": {}, "dark": {}}))
 
     migrated, changes = install.migrate_configuration(
         str(directory), {"bluetooth_devices": {UNKNOWN: "stale"}},

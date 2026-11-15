@@ -19,7 +19,6 @@ import ast
 import configparser
 import json
 import pathlib
-import pickle
 import re
 import shutil
 
@@ -348,8 +347,9 @@ def test_nothing_in_the_block_reads_the_active_install(
 def test_the_palette_shown_is_the_configured_bundles() -> None:
     """Named rather than inferred: the document says which bundle it is describing."""
     configured = read_setup()["desktop"]["theme"]
-    with (list_palette.REPO_ROOT / "assets" / configured / "palette.pkl").open("rb") as handle:
-        shipped = pickle.load(handle)
+    shipped = json.loads(
+        (list_palette.REPO_ROOT / "assets" / configured / "palette.json").read_text()
+    )
     config = list_palette._load_active_config()
     assert config["palette"] == shipped
 

@@ -14,7 +14,6 @@ the theme on a machine that was deliberately pinned.
 
 import json
 import pathlib
-import pickle
 
 import pytest
 import symbols
@@ -35,8 +34,7 @@ def bundle(tmp_path: pathlib.Path) -> str:
     )
     # The bundle carries its own palette, because that is where a migration reads it from --
     # reading the installed symlink instead is what made switching bundles silently wrong.
-    with (directory / "palette.pkl").open("wb") as handle:
-        pickle.dump(PALETTE, handle)
+    (directory / "palette.json").write_text(json.dumps(PALETTE))
     return str(directory)
 
 
@@ -44,9 +42,9 @@ def bundle(tmp_path: pathlib.Path) -> str:
 def installed(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> dict:
     """A configuration as an older install left it: no vocabulary, and a state to protect."""
     monkeypatch.setenv("HOME", str(tmp_path))
-    palette = tmp_path / ".config" / "palette.pkl"
+    palette = tmp_path / ".config" / "palette.json"
     palette.parent.mkdir(parents=True, exist_ok=True)
-    palette.write_bytes(pickle.dumps(PALETTE))
+    palette.write_text(json.dumps(PALETTE))
     return {
         "name": "abundle",
         "palette": {"dark": {}, "light": {}},
@@ -146,8 +144,7 @@ def test_the_installed_theme_is_migrated_when_none_is_named(
     (assets / "abundle" / "config.json").write_text(
         json.dumps({"name": "abundle", "font": BUNDLE_FONT, "symbols": {"vpn.off": "GONE"}})
     )
-    with (assets / "abundle" / "palette.pkl").open("wb") as handle:
-        pickle.dump(PALETTE, handle)
+    (assets / "abundle" / "palette.json").write_text(json.dumps(PALETTE))
     (tmp_path / ".config" / "config.json").write_text(json.dumps(installed))
     monkeypatch.setattr(install, "generate_application_configuration", lambda _c: None)
 
@@ -162,7 +159,7 @@ def test_the_installed_theme_is_migrated_when_none_is_named(
 #
 # `--migrate --theme other` is how a personal bundle gets applied without resetting the state a
 # full install would. It shipped broken: `migrate_configuration` read the palette from
-# `~/.config/palette.pkl`, which points at whichever bundle was installed *last*, so the result
+# `~/.config/palette.json`, which points at whichever bundle was installed *last*, so the result
 # was a configuration named for the new theme wearing the old one's colours. Silently, because
 # both are valid palettes and nothing downstream can tell which was asked for.
 
@@ -175,8 +172,9 @@ def two_bundles(tmp_path: pathlib.Path) -> pathlib.Path:
         directory = assets / name
         (directory / "wallpapers").mkdir(parents=True)
         (directory / "config.json").write_text(json.dumps({"name": name}))
-        with (directory / "palette.pkl").open("wb") as handle:
-            pickle.dump({"dark": {"background": colour}, "light": {"background": colour}}, handle)
+        (directory / "palette.json").write_text(
+            json.dumps({"dark": {"background": colour}, "light": {"background": colour}})
+        )
         for filename in ("wallpaper-dark.png", "wallpaper-light.png",
                          "wallpaper-dark-highlight.png", "wallpaper-light-highlight.png"):
             (directory / "wallpapers" / filename).write_bytes(b"png")
@@ -197,9 +195,8 @@ def test_the_palette_is_read_from_the_bundle_not_the_installed_symlink(
     two_bundles: pathlib.Path, installed: dict, tmp_path: pathlib.Path
 ) -> None:
     """The symlink points at whichever bundle went in last; the bundle is the truth."""
-    stale = tmp_path / ".config" / "palette.pkl"
-    with stale.open("wb") as handle:
-        pickle.dump({"dark": {"background": "#deadbe"}, "light": {}}, handle)
+    stale = tmp_path / ".config" / "palette.json"
+    stale.write_text(json.dumps({"dark": {"background": "#deadbe"}, "light": {}}))
     migrated, _ = install.migrate_configuration(str(two_bundles / "wanted"), installed)
     assert migrated["palette"]["dark"]["background"] != "#deadbe"
 
@@ -216,9 +213,9 @@ def test_switching_relinks_the_palette_and_the_wallpapers(
 
     assert install.run_migration(str(two_bundles), "wanted") == 0
 
-    palette = tmp_path / ".config" / "palette.pkl"
+    palette = tmp_path / ".config" / "palette.json"
     assert palette.is_symlink()
-    assert palette.resolve() == (two_bundles / "wanted" / "palette.pkl").resolve()
+    assert palette.resolve() == (two_bundles / "wanted" / "palette.json").resolve()
     wallpaper = tmp_path / ".config" / "qtile" / "wallpaper-dark.png"
     assert wallpaper.resolve() == (two_bundles / "wanted" / "wallpapers"
                                    / "wallpaper-dark.png").resolve()

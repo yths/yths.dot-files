@@ -4,7 +4,7 @@ Long-lived concepts. For the whole-system picture, start with [architecture.md](
 
 ## Theme System
 
-A theme is a bundle under `assets/<name>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.pkl`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
+A theme is a bundle under `assets/<name>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.json`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
 
 One bundle is tracked: `assets/default/`, which ships with this repository. Every other one is somebody's own — exported beside it and gitignored, so `git status` stays clean while `install.py --theme <name>` treats it exactly like the tracked one. Discovery is by the presence of a `config.json`, not by the directory being committed.
 
@@ -21,7 +21,7 @@ layout is the contract `install.py` reads:
 assets/<name>/
   config.json                       # name, font, wallpapers, state, and optionally
                                     # symbols, strings and bluetooth_devices
-  palette.pkl                       # {mode: {token: hex}} — the colours everything downstream reads
+  palette.json                      # {mode: {token: hex}} — the colours everything downstream reads
   wallpapers/
     wallpaper-light.png
     wallpaper-light-highlight.png
@@ -38,10 +38,13 @@ every theme switch — so neither needs anything from the generator beyond the p
 
 Any change to this schema needs to land in both repositories at once.
 
-`palette.pkl` is a plain dict — `{"light": {token: hex}, "dark": {token: hex}}` — and nothing
-else. `install.py` unpickles it straight into `~/.config/config.json` under `palette`, on a
+`palette.json` is a plain object — `{"light": {token: hex}, "dark": {token: hex}}` — and
+nothing else. `install.py` loads it straight into `~/.config/config.json` under `palette`, on a
 machine that has no theme generator installed, so anything needing a library to load is
-unreadable here. The token vocabulary is in
+unreadable here. It is JSON rather than the pickle it once was because bundles arrive from
+another tool, and unpickling a file runs whatever code it holds; a bundle exported before the
+change converts once with `python helper/convert_palette.py assets/<name>`, which refuses any
+pickle that is more than plain data. The token vocabulary is in
 [palette-semantics.md](palette-semantics.md); `yths.themes` holds the same list as an enum and
 has a contract test asserting the two agree against this repository's tracked bundle.
 
@@ -56,7 +59,7 @@ address to the icon the bar draws for it, is copied as it is; see
 addresses belong to somebody's devices. These four are the only load-bearing keys.
 
 Everything else it derives. It detects `monitors` from the hardware,
-loads `palette` from `palette.pkl`, links `wallpapers` from the bundle's own `wallpapers/`
+loads `palette` from `palette.json`, links `wallpapers` from the bundle's own `wallpapers/`
 directory, and takes `font` and `state` from [setup.toml](../setup.toml), so those remaining
 keys are descriptive rather than load-bearing —
 they record what the bundle was generated for. Keep them consistent with

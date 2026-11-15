@@ -4,7 +4,7 @@ The detailed colour reference for the theme this repository ships. Each PNG in t
 directory is a flat colour swatch named after its hex code, used by the table below for
 visual reference.
 
-Generated from `assets/default/palette.pkl`, which is the same file qtile and the patchers
+Generated from `assets/default/palette.json`, which is the same file qtile and the patchers
 read, so the table cannot drift from what the desktop actually renders without the bundle
 itself changing.
 
