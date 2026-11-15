@@ -6,6 +6,11 @@ offset -- covered the focused screen's 5-pixel side edges and the bottom four ro
 66-pixel bar.
 """
 
+import pathlib
+import shutil
+import subprocess
+
+import pytest
 import shared.launcher
 from shared.launcher import Clearance
 
@@ -51,3 +56,24 @@ def test_a_script_mode_is_declared_for_rofi() -> None:
     command = shared.launcher.rofi_command("power", "HDMI-1", Clearance(1000, 10), "/x/power.sh")
     assert command[command.index("-modi") + 1] == "power:/x/power.sh"
     assert command[:3] == ["rofi", "-show", "power"]
+
+
+# `rofi -theme theme.rasi` is the obvious way to preview the theme, and once reported
+# "unexpected invalid property name" though the @theme path through config.rasi parsed. The
+# generated colours are stubbed so this runs on a clone that was never patched.
+@pytest.mark.skipif(shutil.which("rofi") is None, reason="rofi is not installed")
+def test_the_theme_parses_on_its_own(tmp_path: pathlib.Path) -> None:
+    theme = pathlib.Path(__file__).resolve().parent.parent / "configuration/rofi/theme.rasi"
+    shutil.copy(theme, tmp_path / "theme.rasi")
+    (tmp_path / "theme_config.rasi").write_text(
+        '* { FONT: "monospace 12"; COLOR0: #000000; COLOR1: #111111; COLOR2: #222222;'
+        " COLOR3: #333333; COLOR4: #444444; MATCH: bold #555555; }\n"
+    )
+    result = subprocess.run(
+        ["rofi", "-dump-theme", "-theme", "theme.rasi"],
+        cwd=tmp_path, capture_output=True, text=True, check=False, timeout=30,
+    )
+    # rofi exits 0 on a theme it cannot parse and dumps its built-in one instead, so the
+    # warning and the theme's own widget are what tell the two apart.
+    assert "Failed to parse" not in result.stderr, result.stderr
+    assert "horibox {" in result.stdout, result.stdout + result.stderr

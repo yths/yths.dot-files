@@ -64,9 +64,3 @@ Open work only. An item is deleted when it is done; the commit that closes it sa
       around by letting the base theme decide `activityBar.*`. Re-exporting both templates
       from the Modern themes — with this repository's colour customisations switched off,
       or they end up in the export — would remove the workaround and the vintage mismatch.
-- [ ] The rofi theme fails to parse when loaded on its own
-    - (2026-10-04) `rofi -dump-theme -theme configuration/rofi/theme.rasi` reports "unexpected
-      invalid property name, expecting end of file". Loaded through `config.rasi`'s
-      `@theme`, the normal path, it parses, so nothing visible breaks — but `rofi -theme`
-      is the obvious way to preview it.
-
