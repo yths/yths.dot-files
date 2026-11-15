@@ -98,6 +98,7 @@ optional = [
     "qutebrowser",  # the browser the palette is mapped for
     "tmux",
     "starship",
+    "rate-mirrors-bin",  # ranks the mirrors for the `yay-update-all` alias in ~/.bashrc
     "vim",
     "ruff",
     "nordvpn-bin",

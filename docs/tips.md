@@ -42,20 +42,15 @@ DOTFILES_REPOSITORY_PATH=$(pwd) python helper/list_themes.py
 
 ## Speed Up `yay` with `rate-mirrors`
 
-Auto-rank Arch mirrors before updates so package downloads pick the fastest endpoint. Install `rate-mirrors-bin` from AUR, then add the following aliases to `~/.bashrc`:
+`yay-update-all`, defined in the installed `~/.bashrc`, ranks the Arch mirrors before
+updating, so package downloads pick the fastest endpoint. It then drops old package caches
+(`yay-drop-caches`) and runs `yay -Syyu`. `rate-mirrors-bin` is in setup.toml's `optional`
+group, so the bootstrap installs it; on a machine set up before that, install it with
+`yay -S rate-mirrors-bin`.
 
-```bash
-alias yay-drop-caches='sudo paccache -rk3; yay -Sc --aur --noconfirm'
-alias yay-update-all='export TMPFILE="$(mktemp)"; \
-  sudo true; \
-  rate-mirrors --entry-country=<country-code> --save=$TMPFILE arch --max-delay=21600 \
-  && sudo mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist-backup \
-  && sudo mv $TMPFILE /etc/pacman.d/mirrorlist \
-  && yay-drop-caches \
-  && yay -Syyu --noconfirm'
-```
-
-Replace `<country-code>` with your ISO country code (e.g. `DE`, `US`, `GB`).
+The alias ranks from `--entry-country=DE`. Change that in
+[configuration/bash/.bashrc](../configuration/bash/.bashrc) to your own ISO country code
+(e.g. `US`, `GB`).
 
 ## Prevent Monitor Energy Saving in Videos
 
