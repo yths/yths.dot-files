@@ -102,7 +102,6 @@ import widgets.audio
 import widgets.bluetooth
 import widgets.broadcast
 import widgets.claude_usage
-import widgets.clock
 import widgets.location
 import widgets.power_supply
 import widgets.service_state
@@ -966,8 +965,7 @@ screens = [
                         * configuration["font"]["size"]
                     )
                 ),
-                widgets.clock.WidgetClock(
-                    r=r,
+                widget.Clock(
                     format="%Y-%m-%d %a %H:%M:%S",
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
