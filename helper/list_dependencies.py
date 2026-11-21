@@ -35,6 +35,7 @@ EXCLUDED_DIRECTORIES = ("tests/",)
 ARCH_PACKAGES: dict[str, tuple[str, str]] = {
     "PIL": ("python-pillow", "renders the boot background"),
     "cairo": ("python-cairo", "draws the boot background and the README preview"),
+    "cairocffi": ("python-cairocffi", "measures an icon's ink off screen; qtile already requires it"),
     "colour": (
         "python-colour-science",
         "perceptual nearest-colour matching, sRGB → XYZ → ΔE",

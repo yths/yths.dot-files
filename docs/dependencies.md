@@ -22,8 +22,9 @@ entry there and running `python helper/gendocs.py`; nothing else needs editing.
 |---|---|---|---|
 | `PIL` | `python-pillow` | `helper/patch_plymouth.py` | renders the boot background |
 | `cairo` | `python-cairo` | `helper/patch_plymouth.py`, `helper/render_preview.py` | draws the boot background and the README preview |
+| `cairocffi` | `python-cairocffi` | `configuration/qtile/shared/glyph_gap.py` | measures an icon's ink off screen; qtile already requires it |
 | `colour` | `python-colour-science` **(AUR)** | `helper/color_match.py` | perceptual nearest-colour matching, sRGB → XYZ → ΔE |
-| `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/shared/` (3 files), `configuration/qtile/widgets/` (9 files) | the window manager package provides the library |
+| `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/shared/` (4 files), `configuration/qtile/widgets/` (9 files) | the window manager package provides the library |
 | `loguru` | `python-loguru` | `helper/utils.py`, `install.py` | optional; `helper/utils.py` falls back to stdlib `logging` |
 | `numpy` | `python-numpy` | `configuration/qtile/shared/` (2 files), `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | level-meter maths |
 | `redis` | `python-redis` | `configuration/qtile/config.py`, `configuration/qtile/shared/stream.py`, `configuration/qtile/widgets/` (8 files) | optional at run time; cells render empty if Redis is unreachable |

@@ -90,7 +90,7 @@ boot = ["lightdm", "plymouth"]
 python = [
     "python-redis",
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
-    "python-pillow", "python-cairo", "python-websockets",
+    "python-pillow", "python-cairo", "python-cairocffi", "python-websockets",
 ]
 
 # Everything still works without these; each one buys a specific thing.

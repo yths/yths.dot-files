@@ -10,6 +10,7 @@ from typing import Any
 
 import libqtile.widget.base
 import redis
+import shared.glyph_gap
 import shared.stream
 import symbols as vocabulary
 
@@ -58,7 +59,9 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
             if not isinstance(device_state, dict):
                 continue
             icon = self.devices.get(str(device).upper(), self.symbols["bluetooth.device"])
-            output += f"{icon} "
+            # Not a plain space: icons overhang their cell by different amounts, so the
+            # same space left the meter a different distance from each one.
+            output += icon + shared.glyph_gap.after(icon, self.font, self.fontsize)
             capacity = device_state.get("capacity")
             if capacity == "Unknown":
                 continue

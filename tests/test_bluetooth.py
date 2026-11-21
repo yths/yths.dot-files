@@ -6,13 +6,17 @@ drawn -- as `bluetooth.device` unless the theme's `bluetooth_devices` block name
 the mapping lives in the bundle next to the glyphs it refers to.
 """
 
+import itertools
 import json
 import pathlib
 
 import bluetooth_icon
+import cairocffi
 import pytest
+import shared.glyph_gap
 import shared.stream
 import symbols
+from libqtile import pangocffi
 from widgets.bluetooth import WidgetBluetooth
 
 import install
@@ -151,3 +155,61 @@ def test_writing_updates_the_bundle_and_the_installed_configuration(
             UNKNOWN: "\U000f037d",
         }
     assert bundle.read_text(encoding="utf-8").endswith("}\n")
+
+
+# ----------------------------------------------------------------- the gap after an icon
+#
+# A Nerd Font icon overhangs its cell by an amount that differs per icon, so one space left
+# the battery meter a different distance from each. The space is sized from where the icon's
+# ink actually ends.
+
+BAR_FONT = "Atkinson Mono NF"
+
+
+def _clear_run(markup: str, size: int) -> int:
+    """The widest blank run of columns inside what ``markup`` draws, in pixels."""
+    surface = cairocffi.ImageSurface(cairocffi.FORMAT_A8, size * 8, size * 3)
+    context = cairocffi.Context(surface)
+    layout = pangocffi.create_layout(context)
+    layout.set_font_description(pangocffi.FontDescription.from_string(f"{BAR_FONT} {size}px"))
+    attributes, text, _ = pangocffi.parse_markup(markup)
+    layout.set_attributes(attributes)
+    layout.set_text(text if isinstance(text, str) else text.decode())
+    pangocffi.show_layout(context, layout)
+    surface.flush()
+    data, stride = bytes(surface.get_data()), surface.get_stride()
+    inked = [
+        column for column in range(surface.get_width())
+        if any(data[row * stride + column] > 127 for row in range(surface.get_height()))
+    ]
+    return max(after - before - 1 for before, after in itertools.pairwise(inked))
+
+
+@pytest.mark.parametrize("size", [14, 21, 28])
+def test_the_meter_sits_the_same_distance_from_every_icon(size: int) -> None:
+    if shared.glyph_gap.overhang("\U000f037d", BAR_FONT, size) is None:
+        pytest.skip(f"{BAR_FONT} is not installed")
+    icons = ["\U000f00af", "\U000f02ce", "\U000f037d", "\U000f030c", "\U000f0297"]
+    plain = {_clear_run(f"{icon} █", size) for icon in icons}
+    sized = {
+        _clear_run(f"{icon}{shared.glyph_gap.after(icon, BAR_FONT, size)}█", size)
+        for icon in icons
+    }
+    assert max(plain) - min(plain) > 2, "the defect: one space, a different gap per icon"
+    assert max(sized) - min(sized) <= 1
+    assert max(sized) < max(plain)
+
+
+# Nothing to measure means the plain space the widget always drew.
+def test_the_gap_falls_back_to_a_space() -> None:
+    assert shared.glyph_gap.after("bt", BAR_FONT, 14) == " "
+    assert shared.glyph_gap.after("\U000f037d", None, 14) == " "
+    assert shared.glyph_gap.after("\U000f037d", BAR_FONT, None) == " "
+
+
+def test_the_widget_sizes_the_gap_once_it_has_a_font(monkeypatch: pytest.MonkeyPatch) -> None:
+    vocabulary, _ = symbols.resolve({})
+    widget = WidgetBluetooth(r=None, symbols=vocabulary, font="Some Face", fontsize=20)
+    monkeypatch.setattr(shared.glyph_gap, "after", lambda icon, font, size: f"<{font}/{size}>")
+    output = _poll(monkeypatch, widget, {UNKNOWN: {"capacity": "Unknown"}})
+    assert output == f"{vocabulary['bluetooth.device']}<Some Face/20>"

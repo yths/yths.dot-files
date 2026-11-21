@@ -38,6 +38,11 @@ Neither directory needs an `__init__.py`.
   a widget is on *both* sides of the move. One crossing of that strip left a cell expanded
   with the pointer elsewhere. `HoverBar` bounds the hit test to where widgets are actually
   drawn and dispatches on every change, including to and from nothing.
+- **`glyph_gap.py`** — the space after an icon, sized per icon. Nerd Font icons overhang
+  their cell by different amounts, so one space character left whatever followed a
+  different distance from each. This lays the icon out off screen with the bar's own Pango,
+  reads where its ink ends, and scales the space so the clear distance is half a cell for
+  every icon. The bluetooth widget uses it between a device's icon and its battery meter.
 - **`task_list.py`** — `CentredTaskList`, the window-title cell. qtile's `TaskList` draws
   its text at a fixed padding from the top of the bar instead of centring it like every
   other cell, which left the titles seven pixels above the icons beside them. This derives
