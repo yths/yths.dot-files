@@ -13,6 +13,7 @@ import types
 from pathlib import Path
 from unittest.mock import Mock
 
+import color_match
 import pytest
 import shared.task_list
 from libqtile import bar, widget
@@ -239,3 +240,30 @@ for screen in config['screens']:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def _bundle_palettes() -> list[tuple[str, dict[str, str]]]:
+    assets = Path(__file__).resolve().parent.parent / "assets"
+    found = []
+    for path in sorted(assets.glob("*/palette.json")):
+        palette = json.loads(path.read_text(encoding="utf-8"))
+        found += [(f"{path.parent.name}-{variant}", palette[variant]) for variant in ("dark", "light")]
+    return found
+
+
+# The inactive block has to be told apart from the bar without competing with the focused
+# window, and the title on it has to stay readable -- in both variants of every bundle.
+@pytest.mark.parametrize(("name", "palette"), _bundle_palettes(), ids=lambda value: str(value)[:24])
+def test_inactive_tasks_are_distinct_from_the_bar_and_legible(
+    name: str, palette: dict[str, str]
+) -> None:
+    block = shared.task_list.inactive_task_colour(palette["background"], palette["neutral"])
+    assert block != palette["background"], name
+    separation = color_match.contrast(block, palette["background"])
+    assert 1.2 <= separation <= 2, f"{name}: the block is {separation:.2f}:1 against the bar"
+    assert color_match.contrast(palette["foreground"], block) >= 4.5, name
+
+
+def test_the_inactive_colour_is_a_weighted_mix() -> None:
+    assert shared.task_list.inactive_task_colour("#000000", "#ffffff", 0.5) == "#808080"
+    assert shared.task_list.inactive_task_colour("#102030", "#102030") == "#102030"

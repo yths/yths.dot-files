@@ -197,3 +197,18 @@ def legible(value: str, background: str, candidates: list) -> str | None:
         found = nearest(value, readable)
         return found.hex if found else None
     return max(candidates, key=lambda candidate: contrast(candidate["hex"], background) or 0)["hex"]
+
+
+def mix(first: str, second: str, weight: float) -> str:
+    """``first`` moved ``weight`` of the way to ``second``, channel by channel, as a hex.
+
+    For the surfaces a palette implies but does not name: a block a step off the bar's
+    colour, for a cell that should be visible without being a colour.
+    """
+    start, end = (
+        [int(colour.lstrip("#")[index : index + 2], 16) for index in (0, 2, 4)]
+        for colour in (first, second)
+    )
+    return "#" + "".join(
+        f"{round(a + (b - a) * weight):02x}" for a, b in zip(start, end, strict=True)
+    )

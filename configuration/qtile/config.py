@@ -723,7 +723,13 @@ def task_list_for_monitor(monitor: str) -> shared.task_list.CentredTaskList:
         border=configuration["palette"][theme]["highlight"],
         urgent_border=configuration["palette"][theme]["notification"],
         markup_focused="<span foreground='" + configuration["palette"][theme]["background"] + "'>{}</span>",
-        foreground=configuration["palette"][theme]["neutral"],
+        # Inactive windows get a block of their own, a step off the bar's colour, so each
+        # one's extent is visible; their text is `foreground` because `neutral` -- legible
+        # on the bar itself -- drops under 3:1 on that block.
+        unfocused_border=shared.task_list.inactive_task_colour(
+            configuration["palette"][theme]["background"], configuration["palette"][theme]["neutral"]
+        ),
+        foreground=configuration["palette"][theme]["foreground"],
         fontsize=round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]),
         padding_x=round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]),
     )
