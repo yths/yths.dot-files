@@ -57,6 +57,8 @@ config.set("content.media.audio_capture", True)
 
 c.tabs.favicons.show = "never"
 c.tabs.focus_stack_size = -1
+# Closing a tab returns to the one focused before it, not to its right-hand neighbour.
+c.tabs.select_on_remove = "last-used"
 
 # A third of the scaled font size, averaged across monitors. With no monitors recorded --
 # installed without a display, or before detection ran -- the font size is used unscaled:
