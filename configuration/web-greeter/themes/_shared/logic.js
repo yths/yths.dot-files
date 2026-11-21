@@ -117,19 +117,40 @@
         if (bar) bar.style.visibility = "hidden";
     }
 
+    // The entry accepts typing only while LightDM is waiting on a prompt. Between an answer
+    // and the next prompt -- PAM's delay after a wrong password is seconds long -- anything
+    // typed used to land in a field nobody was reading, and Enter answered a question that
+    // had not been asked.
+    function set_input_enabled(enabled) {
+        const input = $("user_input");
+        if (input) input.disabled = !enabled;
+        const submit = $("auth_submit");
+        if (submit) submit.disabled = !enabled;
+    }
+
     function show_prompt(text, type) {
         const input = $("user_input");
         if (!input) return;
         input.placeholder = text || "";
         input.value = "";
         input.type = (type === 1 || type === "password") ? "password" : "text";
+        set_input_enabled(true);
         input.focus();
     }
 
     function handle_input() {
         const input = $("user_input");
-        if (!input) return;
-        window.lightdm.respond(input.value);
+        if (!input || input.disabled) return;
+        const response = input.value;
+        set_input_enabled(false);
+        input.value = "";
+        window.lightdm.respond(response);
+    }
+
+    // Every (re)start of a conversation closes the entry until its prompt arrives.
+    function begin_authentication(username) {
+        set_input_enabled(false);
+        window.lightdm.authenticate(username);
     }
 
     function authenticate() {
@@ -138,7 +159,7 @@
             window.lightdm.start_session(session);
         } else {
             show_message(strings().auth_failed || "authentication failed", "error");
-            window.lightdm.authenticate(state.selected_user);
+            begin_authentication(state.selected_user);
         }
     }
 
@@ -195,7 +216,7 @@
             }
         }
         if (window.lightdm.in_authentication) window.lightdm.cancel_authentication();
-        window.lightdm.authenticate(username);
+        begin_authentication(username);
     }
 
     // lightdm.default_session is the system-wide fallback; the per-user last
@@ -423,7 +444,8 @@
             window.lightdm.authentication_complete.connect(authenticate);
         }
 
-        if (state.selected_user) window.lightdm.authenticate(state.selected_user);
+        set_input_enabled(false);
+        if (state.selected_user) begin_authentication(state.selected_user);
     }
 
     async function bootstrap() {

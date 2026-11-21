@@ -151,6 +151,9 @@ input#user_input::placeholder {
     opacity: 1;
 }
 
+/* Closed between an answer and the next prompt; see set_input_enabled in logic.js. */
+button#auth_submit:disabled { opacity: 0.4; }
+
 button#auth_submit {
     flex: 0 0 auto;
     border: 0;
