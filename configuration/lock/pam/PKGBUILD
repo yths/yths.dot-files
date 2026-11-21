@@ -8,10 +8,10 @@
 # makepkg refuses to run as root and calls pacman for the install step itself, so run it as
 # your own user and let it prompt.
 pkgname=xsecurelock-pam-feedback
-pkgver=1.1.0
-pkgrel=2
+pkgver=1.2.0
+pkgrel=1
 _upstream=1.9.0
-pkgdesc="PAM feedback and clean message rendering for xsecurelock"
+pkgdesc="PAM feedback, clean message rendering and prompt-only input for xsecurelock"
 arch=('x86_64' 'aarch64')
 url='https://github.com/yths/yths.dot-files'
 license=('MIT' 'Apache-2.0')
@@ -26,8 +26,8 @@ source=('xsecurelock.pam'
         'auth_x11.patch' 'render-test.c' 'render-test.mk')
 sha256sums=('d85ef276394304530163bfcbe6d6640d6a45c5835a7b860d34d20a4c6713461b'
             '22aca05799326681bf296a288182d7b28066ff2d4db26d09bd7b2dfe8405269e'
-            '4f4aec943ea6dc071d32f7f4adedd382f0d84d7b0cfde4408ef75d36b0371132'
-            'cac799f4606065e6670485e82d9f7cab5eb30136fa6a768cd571a15bb3654d0d'
+            '28f8bf03654a578b51f0e01ab45bec9f397a2c2c171a792601675edba0959f5a'
+            '3396007b4f26bdbcc6661cef24facd78433a6301639d92ec93fdb6ce5e024751'
             '071dc5d6d0470f970c7e4f843dc999d9323ace2951e001430e6381567eeb26c5')
 
 prepare() {

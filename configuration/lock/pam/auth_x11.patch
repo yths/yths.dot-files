@@ -1,14 +1,18 @@
 diff --git a/helpers/auth_x11.c b/helpers/auth_x11.c
 --- a/helpers/auth_x11.c
 +++ b/helpers/auth_x11.c
-@@ -549,4 +549,6 @@ void DestroyPerMonitorWindows(size_t keep_windows) {
+@@ -547,6 +547,8 @@
+ 
+ void DestroyPerMonitorWindows(size_t keep_windows) {
    for (size_t i = keep_windows; i < num_windows; ++i) {
 +    // Erase before exposing the parent, which may not repaint this area.
 +    XClearWindow(display, windows[i]);
  #ifdef HAVE_XFT_EXT
      XftDrawDestroy(xft_draws[i]);
  #endif
-@@ -590,4 +592,7 @@ void CreateOrUpdatePerMonitorWindow(size_t i, const Monitor *monitor,
+@@ -588,6 +590,9 @@
+   }
+ 
    if (i < num_windows) {
 +    // Clear the old bounds, not just the smaller window after a resize.
 +    XClearWindow(display, windows[i]);
@@ -16,7 +20,91 @@ diff --git a/helpers/auth_x11.c b/helpers/auth_x11.c
      // Move the existing window.
      XMoveResizeWindow(display, windows[i], x, y, w, h);
      return;
-@@ -1450,7 +1455,7 @@ int Authenticate(void) {
+@@ -981,6 +986,73 @@
+   select(1, &set, NULL, NULL, &timeout);
+ }
+ 
++/*! \brief Read and forget whatever is waiting on stdin, without blocking.
++ *
++ * Keys pressed while no prompt is on screen - during "Processing...", or under
++ * a message - still arrive on the pipe, and would otherwise open the next
++ * prompt as the start of its answer.
++ */
++void DiscardPendingInput(void) {
++  char discarded[64];
++  for (;;) {
++    struct timeval timeout = {0, 0};
++    fd_set set;
++    memset(&set, 0, sizeof(set));  // For clang-analyzer.
++    FD_ZERO(&set);
++    FD_SET(0, &set);
++    if (select(1, &set, NULL, NULL, &timeout) <= 0) {
++      break;
++    }
++    ssize_t nread = read(0, discarded, sizeof(discarded));
++    explicit_bzero(discarded, sizeof(discarded));
++    if (nread <= 0) {
++      break;
++    }
++  }
++}
++
++/*! \brief Keep a message on screen for its full time, ignoring the keyboard.
++ *
++ * Unlike WaitForKeypress, a key neither dismisses the message nor survives it.
++ */
++void HoldMessage(int seconds) {
++  struct timeval now;
++  gettimeofday(&now, NULL);
++  long long deadline =
++      (now.tv_sec + seconds) * 1000000LL + (long long)now.tv_usec;
++  int open = 1;  // Whether stdin can still deliver anything.
++  for (;;) {
++    gettimeofday(&now, NULL);
++    long long left =
++        deadline - (now.tv_sec * 1000000LL + (long long)now.tv_usec);
++    if (left <= 0) {
++      break;
++    }
++    struct timeval timeout;
++    timeout.tv_sec = left / 1000000;
++    timeout.tv_usec = left % 1000000;
++    fd_set set;
++    memset(&set, 0, sizeof(set));  // For clang-analyzer.
++    FD_ZERO(&set);
++    if (open) {
++      FD_SET(0, &set);
++    }
++    int nfds = select(open ? 1 : 0, open ? &set : NULL, NULL, NULL, &timeout);
++    if (nfds < 0) {
++      break;
++    }
++    if (nfds > 0) {
++      char discarded[64];
++      ssize_t nread = read(0, discarded, sizeof(discarded));
++      explicit_bzero(discarded, sizeof(discarded));
++      if (nread <= 0) {
++        // EOF or error: stop watching it, but still sit out the rest.
++        open = 0;
++      }
++    }
++  }
++}
++
+ /*! \brief Bump the position for the password "cursor".
+  *
+  * If pwlen > 0:
+@@ -1444,26 +1516,34 @@
+   // Otherwise, we're in the parent process.
+   close(requestfd[1]);
+   close(responsefd[0]);
++  // Input counts only while a prompt is visible. The very first prompt keeps
++  // what is already waiting: with XSECURELOCK_DISCARD_FIRST_KEYPRESS=0 that
++  // is the key that woke the dialog.
++  int prompt_shown = 0;
+   for (;;) {
+     char *message;
+     char *response;
      char type = ReadPacket(requestfd[0], &message, 1);
      switch (type) {
        case PTYPE_INFO_MESSAGE:
@@ -25,3 +113,31 @@ diff --git a/helpers/auth_x11.c b/helpers/auth_x11.c
          explicit_bzero(message, strlen(message));
          free(message);
          PlaySound(SOUND_INFO);
+-        WaitForKeypress(1);
++        HoldMessage(1);
++        prompt_shown = 1;
+         break;
+       case PTYPE_ERROR_MESSAGE:
+         DisplayMessage("Error", message, 1);
+         explicit_bzero(message, strlen(message));
+         free(message);
+         PlaySound(SOUND_ERROR);
+-        WaitForKeypress(1);
++        HoldMessage(1);
++        prompt_shown = 1;
+         break;
+       case PTYPE_PROMPT_LIKE_USERNAME:
++        if (prompt_shown) DiscardPendingInput();
++        prompt_shown = 1;
+         if (Prompt(message, &response, 1)) {
+           WritePacket(responsefd[1], PTYPE_RESPONSE_LIKE_USERNAME, response);
+           explicit_bzero(response, strlen(response));
+@@ -1476,6 +1556,8 @@
+         DisplayMessage("Processing...", "", 0);
+         break;
+       case PTYPE_PROMPT_LIKE_PASSWORD:
++        if (prompt_shown) DiscardPendingInput();
++        prompt_shown = 1;
+         if (Prompt(message, &response, 0)) {
+           WritePacket(responsefd[1], PTYPE_RESPONSE_LIKE_PASSWORD, response);
+           explicit_bzero(response, strlen(response));

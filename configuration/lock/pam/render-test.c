@@ -52,9 +52,55 @@ static void closed_dialog(void) {
   XDestroyImage(image);
 }
 
+static int input_waiting(void) {
+  struct timeval timeout = {0, 0};
+  fd_set set;
+  FD_ZERO(&set);
+  FD_SET(0, &set);
+  return select(1, &set, NULL, NULL, &timeout) > 0;
+}
+
+static long long held_microseconds(void) {
+  struct timeval before, after;
+  gettimeofday(&before, NULL);
+  HoldMessage(1);
+  gettimeofday(&after, NULL);
+  return (after.tv_sec - before.tv_sec) * 1000000LL +
+         (after.tv_usec - before.tv_usec);
+}
+
+// Keys typed while no prompt is visible must not reach the next prompt.
+static void input_outside_a_prompt_is_dropped(void) {
+  int keys[2];
+  assert(pipe(keys) == 0);
+  assert(dup2(keys[0], 0) == 0);
+  close(keys[0]);
+
+  assert(write(keys[1], "typed under the message", 23) == 23);
+  // A key no longer dismisses the message early.
+  assert(held_microseconds() >= 1000000);
+  assert(!input_waiting());
+
+  assert(write(keys[1], "typed while processing", 22) == 22);
+  DiscardPendingInput();
+  assert(!input_waiting());
+
+  // With nothing waiting it returns instead of blocking, and later keys survive.
+  DiscardPendingInput();
+  assert(write(keys[1], "x", 1) == 1);
+  assert(input_waiting());
+
+  // A closed pipe must not turn the hold into a busy loop or an early exit.
+  DiscardPendingInput();
+  close(keys[1]);
+  assert(held_microseconds() >= 1000000);
+  printf("input outside a prompt: dropped\n");
+}
+
 int main(int argc_local, char **argv_local) {
   argc = argc_local;
   argv = argv_local;
+  input_outside_a_prompt_is_dropped();
   display = XOpenDisplay(NULL);
   assert(display);
   int screen = DefaultScreen(display);
