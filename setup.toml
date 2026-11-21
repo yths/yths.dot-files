@@ -91,6 +91,7 @@ python = [
     "python-redis",
     "python-numpy", "python-screeninfo", "python-loguru", "python-toml",
     "python-pillow", "python-cairo", "python-cairocffi", "python-websockets",
+    "python-xcffib",
 ]
 
 # Everything still works without these; each one buys a specific thing.
@@ -122,4 +123,7 @@ development = [
     # configuration/lock/pam/. Absent, that one test skips rather than fails.
     "base-devel",
     "bubblewrap",
+    # helper/capture_tour.py takes the README's screenshots from the real programs, on a
+    # virtual display inside that same sandbox.
+    "xorg-server-xvfb",
 ]

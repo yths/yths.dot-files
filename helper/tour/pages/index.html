@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Field notes: one palette</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><a href="index.html">Notes</a><a href="palette.html">Palette</a><a href="#patchers">Patchers</a><a href="#switch">Switching</a></nav>
+<h1>One palette, every surface</h1>
+<p class="lead">A staged page: what the browser shows in the repository's screenshots.</p>
+<p>A desktop is a dozen programs that each want their colours in a format of their own. The
+usual answer is a dozen themes that drift apart. This one keeps a single
+<a href="palette.html">palette</a> and derives the rest: the bar, the terminal, the launcher,
+the notifications, the login screen and the boot splash all read the same nine tokens.</p>
+<h2 id="patchers">Patchers</h2>
+<p>Each application has <a href="#patchers">one patcher</a> that writes the palette into that
+application's own configuration format. A patcher holds no colours; it knows only where its
+application wants them. <a href="#matching">Two applications</a> ship far more colours than
+anyone would name by hand, so theirs are matched instead: every stock colour is replaced by
+the nearest token in a perceptual colour space.</p>
+<h2 id="switch">Switching</h2>
+<p>At <a href="#switch">sunrise and sunset</a> the palette's other half is applied and the
+running programs are told. Nothing restarts that a person would notice, apart from the
+<a href="#bar">bar</a> redrawing.</p>
+<h2 id="matching">Matching</h2>
+<p>The distance each match landed at is <a href="#matching">published</a>, not assumed.</p>
+</body>
+</html>

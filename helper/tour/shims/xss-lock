@@ -1,0 +1,4 @@
+#!/bin/sh
+# The idle locker, which the staged session has no use for: nothing is left idle in it, and
+# a lock firing mid-capture would be a screenshot of a lock screen.
+exec sleep infinity

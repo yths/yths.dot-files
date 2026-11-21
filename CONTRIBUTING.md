@@ -44,7 +44,9 @@ python helper/gendocs.py --check   # ...or just fail if they are stale
 `gendocs.py` does more than regenerate: it refuses to run while a structural rule is
 broken — a non-widget under `configuration/qtile/widgets/`, a module named in
 `docs/dependencies.md` that does not resolve, an import with no Arch package recorded. The
-error names the offending file and what to do about it.
+error names the offending file and what to do about it. It also warns, without refusing,
+about what a commit cannot fix from where it stands: a procedure past its verification
+date, and README screenshots taken from a palette that has since changed.
 
 Both run against the working tree rather than the staged snapshot, because qtile loads its
 configuration live from this tree: a clean tree is the property worth defending, not a clean
@@ -88,3 +90,4 @@ Each component documents its own, next to the code it governs:
 | qtile widget | [configuration/qtile/widgets/README.md](configuration/qtile/widgets/README.md) |
 | per-app patcher | [helper/README.md](helper/README.md) |
 | document | [docs/style.md](docs/style.md) |
+| screenshot | [docs/tips.md](docs/tips.md#retake-the-screenshots) |

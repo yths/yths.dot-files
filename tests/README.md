@@ -28,6 +28,11 @@ that compared old and new output and were then thrown away. Bringing them here m
 fixtures for a home directory, a Redis and a palette — worth doing, and a larger job than
 this.
 
+Taking the README's screenshots is not run here either — it starts a desktop. What
+`test_tour.py` holds to account is everything around the capture: that each image is the
+one captured and small enough to serve, and that the staged session cannot reach the real
+one.
+
 The lock renderer is checked separately by the
 [feedback package](../configuration/lock/pam/PKGBUILD), not by pytest. `makepkg` runs
 pixel-comparison tests in Xvfb with Xft and core fonts: old password or lockout text must

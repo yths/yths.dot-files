@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stands in for xsecurelock's authentication helper, so the lock prompt can be drawn without
+# PAM being asked anything. It speaks one message of the helper protocol -- "prompt for a
+# hidden answer", then its length and text -- and waits, the way PAM waits for a password.
+printf 'P 9\nPassword:\n'
+exec sleep infinity

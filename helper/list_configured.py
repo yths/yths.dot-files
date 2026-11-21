@@ -68,8 +68,8 @@ def generate_markdown() -> str:
     font = manifest["font"]["family"]
 
     lines = [
-        f"The bar, the terminal, the launcher and the notifications above are drawn from the "
-        f"`{theme}` theme in `{font}` — the same palette every application below receives.",
+        f"What the installer links into place, and where. The screenshots on this page show "
+        f"the `{theme}` theme in `{font}`, which is what `setup.toml` installs.",
         "",
         "| Application | Installed to | For |",
         "|---|---|---|",

@@ -69,6 +69,27 @@ hints for that:
 
 The web-greeter preview server under `configuration/web-greeter/preview/` serves a theme directory as the greeter would render it, so iteration doesn't require restarting LightDM.
 
+## Retake the Screenshots
+
+The images in the README are captured, not drawn. After changing the shipped theme, or
+anything a screenshot shows:
+
+```bash
+python helper/capture_tour.py              # all of them, about three minutes
+python helper/capture_tour.py --only dark  # one capture; --help lists them
+python helper/gendocs.py                   # if the table in helper/list_tour.py changed
+```
+
+It needs no root and does not touch the running desktop: a copy of the repository is
+installed into a scratch home, and the real programs run there on a virtual display, inside
+a sandbox, with staged content. Look at every image before committing it. `--keep` leaves
+the scratch home behind, with each program's log under `logs/`, for when one comes out
+wrong.
+
+The boot splash is included: the sandbox runs the real `plymouthd` against the virtual
+display, so it is also the quickest way to see a change to the splash — no install, no
+`mkinitcpio`, no reboot.
+
 ## Debug Plymouth Boot Splash
 
 Render and install the current palette first — the splash reads its theme from the initramfs, so nothing changes until `mkinitcpio` runs:

@@ -9,6 +9,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 
 - **apply_icc** — Apply, inspect and import display colour profiles.
 - **bluetooth_icon** — Give a connected bluetooth device its icon in the bar, picked from a previewed list.
+- **capture_tour** — Capture the README's screenshots from the real programs, in a session of their own.
 - **color_match** — Match an arbitrary colour to the nearest palette token, perceptually.
 - **convert_palette** — Convert a theme bundle's legacy ``palette.pkl`` into the ``palette.json`` it now ships.
 - **fonts** — The theme's font: which Arch package provides it, and whether this machine has it.
@@ -19,6 +20,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **list_palette** — Summarise what a theme sets and where every one of those values is used.
 - **list_symbols** — List the symbol and string vocabulary, what falls back to what, and who reads each entry.
 - **list_themes** — List every theme bundle under ``assets/``.
+- **list_tour** — List the screenshots the README shows, in the order a boot shows them.
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
 - **patch_gtk** — Patch GTK: what GTK 3 and GTK 4 applications draw with, and how their file chooser opens.
@@ -34,7 +36,6 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **patch_web_greeter** — Patch and install the web-greeter themes LightDM renders at the login screen.
 - **patch_xorg** — Patch xorg: the X server's DPI, averaged across the detected monitors.
 - **preview_audio** — Preview the qtile audio meter in a terminal and pick an output device.
-- **render_preview** — Render a preview of the configured desktop from the palette, not from a screen.
 - **screen_configuration** — Detect connected monitors via ``screeninfo``.
 - **symbols** — The symbols and strings every surface draws, in ASCII, for a theme to override.
 - **utils** — Common helpers shared by ``install.py`` and the patchers.
@@ -59,6 +60,10 @@ while a structural rule is broken.
 `hooks/` holds shell rather than Python, so the generated inventory above does not list it.
 `hooks/pre-commit` is the gate and `hooks/enable` arms it — see
 [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+`tour/` holds no helpers either: it is what `capture_tour.py` stages for the README's
+screenshots — a sample project, two pages, and stand-ins for the few programs that would
+reach past a staged session.
 
 ## Module Shape
 

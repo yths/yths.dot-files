@@ -27,7 +27,7 @@ import list_dependencies
 import list_keybindings
 import list_palette
 import list_symbols
-import render_preview
+import list_tour
 import symbols
 from utils import read_setup, tracked_bundles
 
@@ -170,27 +170,23 @@ def broken_documentation_links() -> list[str]:
     return sorted(problems)
 
 
-def stale_preview() -> list[str]:
-    """Whether docs/preview/ was rendered from the palette that ships today.
+def stale_tour() -> list[str]:
+    """Whether the README's screenshots were taken from the palette that ships today.
 
     The images are tracked, unlike everything else generated here, because GitHub has to
-    serve them from the README. That is only defensible while they change when the theme
-    does and at no other time -- so the digest they were drawn from is compared, and a
-    forgotten re-render fails the commit instead of leaving the README showing an old theme.
+    serve them from the README. They are captured from the running programs, which takes a
+    display and half a minute, so this cannot re-take them and does not refuse a commit over
+    them: it says so, the way ``stale_verification_markers`` does and for its reason -- a gate
+    that fails on something the committer cannot fix from where they are teaches people to
+    bypass the gate. A screenshot that is *missing* is different, and is refused: the README
+    links it, and ``broken_documentation_links`` finds the dead link.
     """
-    setup = read_setup()
-    bundle = REPO_ROOT / "assets" / setup["desktop"]["theme"]
-    digest_path = REPO_ROOT / "docs" / "preview" / "rendered-from.txt"
-    if not digest_path.is_file():
-        return ["docs/preview/ has never been rendered"]
-    palette = json.loads((bundle / "palette.json").read_text(encoding="utf-8"))
-    # The bundle's symbols are part of the picture too: the bar in the preview draws them,
-    # so a bundle that changes a glyph changes the image the README serves. So is its font.
-    manifest = json.loads((bundle / "config.json").read_text())
-    glyphs, _ = symbols.resolve(manifest)
-    expected = render_preview.palette_digest(palette, manifest["font"]["family"], glyphs)
-    if digest_path.read_text().strip() != expected:
-        return [f"rendered from a different palette than assets/{setup['desktop']['theme']}/"]
+    manifest = list_tour.read_manifest()
+    if not manifest:
+        return ["docs/preview/ has never been captured"]
+    if manifest.get("inputs") != list_tour.inputs_digest():
+        theme = read_setup()["desktop"]["theme"]
+        return [f"captured from a different palette than assets/{theme}/ now holds"]
     return []
 
 
@@ -255,11 +251,6 @@ def invariants() -> list[tuple[str, list[str], str]]:
             list_dependencies.mismatches(list_dependencies.third_party_imports()),
             "Record the package in ARCH_PACKAGES (helper/list_dependencies.py), and list it\n"
             "under [packages] in setup.toml so a fresh machine installs it.",
-        ),
-        (
-            "The rendered preview no longer matches the palette it shows:",
-            stale_preview(),
-            "Run `python helper/render_preview.py` and commit the images.",
         ),
         (
             "Documentation links that do not resolve:",
@@ -365,6 +356,10 @@ GENERATORS = {
     "KEYBINDINGS": (
         "docs/keybindings.md",
         list_keybindings.generate_markdown,
+    ),
+    "TOUR": (
+        "README.md",
+        list_tour.generate_markdown,
     ),
     "CONFIGURED": (
         "README.md",
@@ -494,6 +489,13 @@ def main() -> int:
         for warning in warnings:
             print(f"  {warning}", file=sys.stderr)
         print("  re-check it and bump the date, or drop the claim.", file=sys.stderr)
+
+    outdated = stale_tour()
+    if outdated:
+        print("The README's screenshots are out of date:", file=sys.stderr)
+        for warning in outdated:
+            print(f"  {warning}", file=sys.stderr)
+        print("  run `python helper/capture_tour.py` and commit the images.", file=sys.stderr)
 
     if args.check:
         stale = stale_blocks()

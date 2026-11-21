@@ -1,0 +1,53 @@
+{
+    "inputs": "688eff674d8bb8e05e11a059197a51465a1cbd3ac49add0b5ea121235129dfc4",
+    "files": {
+        "boot-passphrase.webp": {
+            "sha256": "5353b0e976ffe09d779a2cd867e860b6600c4c38fb609d3db21bad4e18535fe9",
+            "bytes": 240530
+        },
+        "boot-splash.webp": {
+            "sha256": "8de200bc9ee563ac87fca0e042da8b5c7b8e5672b343f93ee184ad3a49fb5191",
+            "bytes": 241592
+        },
+        "browser.webp": {
+            "sha256": "2eff891fac1dfa805eda3f714c52d440cb50b63446b4d504d5cf13a71d23dcdb",
+            "bytes": 57380
+        },
+        "desktop-dark.webp": {
+            "sha256": "4c723f35e7c86c95ed1608b934e922f497577a2588fbfb536eb26649901490ce",
+            "bytes": 129748
+        },
+        "desktop-dual.webp": {
+            "sha256": "c23c8d2ab3099db75f51f7b800fcd93f98b795bfd930efc960351ec2222c26d1",
+            "bytes": 91404
+        },
+        "desktop-light.webp": {
+            "sha256": "13d54c84c16831fe9c06cb138d1ef972849c49eda215397b2b093aba93f5a3de",
+            "bytes": 136302
+        },
+        "editor.webp": {
+            "sha256": "92c9e556bdb2bd920e3d31e8827eb0abf0896bef1313a90885a46c45118c4212",
+            "bytes": 68186
+        },
+        "launcher.webp": {
+            "sha256": "c73dddf56a07b2d0b15d30854da48abaf0280bc25988b46a8caabd294f7dd05b",
+            "bytes": 70786
+        },
+        "lock.webp": {
+            "sha256": "d0b624bf34708a4e0c4ddd72de284ac9613cfde484fb3e820f8d4ea4638dffc2",
+            "bytes": 2892
+        },
+        "login.webp": {
+            "sha256": "dbd8517cd02eda64580131f1aa5d391638640d9f842e228a079aab54611db77d",
+            "bytes": 84884
+        },
+        "notification.webp": {
+            "sha256": "b23deda63c84eae323a175c8efa5f52d9743d13a130890d9f0257bcb56a724ae",
+            "bytes": 31580
+        },
+        "terminal.webp": {
+            "sha256": "72ec9b687f3f2234939210978e09e09bc1c10194620054e0d722dd54504bd3e9",
+            "bytes": 42318
+        }
+    }
+}

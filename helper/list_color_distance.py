@@ -12,7 +12,7 @@ it would be this repository having an opinion about a theme it did not write. Th
 evidence to read when something looks wrong.
 
 The palette is read from the bundle under ``assets/`` rather than from
-``~/.config/config.json``, the way ``helper/render_preview.py`` already does, so the generated
+``~/.config/config.json``, the way ``helper/list_tour.py`` does, so the generated
 block is the same on every machine and changes only when the bundle does.
 """
 

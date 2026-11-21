@@ -1,0 +1,3 @@
+#!/bin/sh
+# Carries screensaver inhibits to logind, and the sandbox has no logind to carry them to.
+exec sleep infinity

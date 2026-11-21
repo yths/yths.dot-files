@@ -102,25 +102,25 @@ Every default is ASCII, so a machine whose font has no private use area still dr
 | --- | --- | --- | --- |
 | `bar.monitor` | `[]` | U+F0379 | `configuration/qtile/config.py` |
 | `bar.group` | `#` | U+EEA8 | `configuration/qtile/config.py` |
-| `meter.ramp` | `.`, `:`, `-`, `=`, `+`, `*`, `#`, `@` | U+2581, U+2582, U+2583, U+2584, U+2585, U+2586, U+2587, U+2588 | `configuration/qtile/shared/spectrum.py`, `configuration/qtile/widgets/audio.py`, `configuration/qtile/widgets/bluetooth.py`, `configuration/qtile/widgets/claude_usage.py`, `helper/render_preview.py` |
+| `meter.ramp` | `.`, `:`, `-`, `=`, `+`, `*`, `#`, `@` | U+2581, U+2582, U+2583, U+2584, U+2585, U+2586, U+2587, U+2588 | `configuration/qtile/shared/spectrum.py`, `configuration/qtile/widgets/audio.py`, `configuration/qtile/widgets/bluetooth.py`, `configuration/qtile/widgets/claude_usage.py` |
 | `meter.silence` | `&nbsp;` | _the default_ | `configuration/qtile/shared/spectrum.py` |
 | `battery.discharging` | `_`, `_`, `.`, `:`, `-`, `=`, `+`, `*`, `#`, `%`, `@` | U+F007A, U+F007A, U+F007B, U+F007C, U+F007D, U+F007E, U+F007F, U+F0080, U+F0081, U+F0082, U+F0079 | `configuration/qtile/widgets/power_supply.py` |
 | `battery.charging` | `_`, `_`, `.`, `:`, `-`, `=`, `+`, `*`, `#`, `%`, `@` | U+F089C, U+F089C, U+F0086, U+F0087, U+F0088, U+F089D, U+F0089, U+F089E, U+F008A, U+F008B, U+F0085 | `configuration/qtile/widgets/power_supply.py` |
-| `battery.grid` | `AC` | U+F06A5 | `configuration/qtile/widgets/power_supply.py`, `helper/render_preview.py` |
+| `battery.grid` | `AC` | U+F06A5 | `configuration/qtile/widgets/power_supply.py` |
 | `bluetooth.device` | `bt` | U+F00AF | `configuration/qtile/widgets/bluetooth.py`, `helper/bluetooth_icon.py` |
-| `bluetooth.headphones` | `hp` | U+F02CE | `helper/bluetooth_icon.py`, `helper/render_preview.py` |
+| `bluetooth.headphones` | `hp` | U+F02CE | `helper/bluetooth_icon.py` |
 | `broadcast.on` | `rec` | U+F15DD | `configuration/qtile/widgets/broadcast.py` |
 | `broadcast.off` | `off` | U+F0158 | `configuration/qtile/widgets/broadcast.py` |
 | `claude.icon` | `AI` | U+F06A9 | `configuration/qtile/widgets/claude_usage.py` |
 | `claude.dead` | `--` | U+F16A1 | `configuration/qtile/widgets/claude_usage.py` |
-| `location.sunrise` | `^` | U+E34D | `configuration/qtile/widgets/location.py`, `helper/render_preview.py` |
-| `location.sunset` | `v` | U+E34C | `configuration/qtile/widgets/location.py`, `helper/render_preview.py` |
+| `location.sunrise` | `^` | U+E34D | `configuration/qtile/widgets/location.py` |
+| `location.sunset` | `v` | U+E34C | `configuration/qtile/widgets/location.py` |
 | `location.manual` | `=` | U+F456 | `configuration/qtile/widgets/location.py` |
 | `service.down` | `zzz` | U+F04B2 | `configuration/qtile/widgets/service_state.py` |
 | `service.tick` | `.` | U+00B7 | `configuration/qtile/widgets/service_state.py` |
-| `updates.available` | `upd` | U+F06B0 | `configuration/qtile/widgets/updates.py`, `helper/render_preview.py` |
+| `updates.available` | `upd` | U+F06B0 | `configuration/qtile/widgets/updates.py` |
 | `vpn.on` | `vpn` | U+F06F3 | `configuration/qtile/widgets/vpn.py` |
-| `vpn.off` | `!vpn` | U+F0C9D | `configuration/qtile/widgets/vpn.py`, `helper/render_preview.py` |
+| `vpn.off` | `!vpn` | U+F0C9D | `configuration/qtile/widgets/vpn.py` |
 | `notification.prefix` | `>` | U+EB10 | `helper/patch_dunst.py` |
 | `rofi.run` | `>` | U+EA85 | `helper/patch_rofi.py` |
 | `rofi.window` | `#` | U+EEA8 | `helper/patch_rofi.py` |
@@ -143,7 +143,7 @@ Every default is ASCII, so a machine whose font has no private use area still dr
 | `greeter.brightness` | `*` | U+F00DE | `helper/patch_web_greeter.py` |
 | `greeter.battery_charging` | `+` | U+F0084 | `helper/patch_web_greeter.py` |
 | `greeter.battery_discharging` | `=` | U+F0079 | `helper/patch_web_greeter.py` |
-| `greeter.updates` | `upd` | U+F06B0 | `configuration/qtile/widgets/updates.py`, `helper/patch_web_greeter.py` |
+| `greeter.updates` | `upd` | U+F06B0 | `configuration/qtile/widgets/updates.py`, `helper/capture_tour.py`, `helper/patch_web_greeter.py` |
 | `greeter.vpn_on` | `vpn` | U+F06F3 | `helper/patch_web_greeter.py` |
 | `greeter.vpn_off` | `!vpn` | U+F0C9D | `helper/patch_web_greeter.py` |
 | `greeter.summary_prefix` | `>` | U+EB10 | `helper/patch_web_greeter.py` |
@@ -173,7 +173,7 @@ The boot splash's messages are the ones worth knowing about: they were the only 
 | `plymouth.system_reset.title` | `Restarting System...` | _the default_ | `helper/patch_plymouth.py` |
 | `plymouth.system_reset.subtitle` | `If you are going through hell, keep going.` | _the default_ | `helper/patch_plymouth.py` |
 | `greeter.welcome` | `username` | _the default_ | `helper/patch_web_greeter.py` |
-| `greeter.session` | `session` | _the default_ | `configuration/qtile/widgets/claude_usage.py`, `helper/patch_web_greeter.py` |
+| `greeter.session` | `session` | _the default_ | `configuration/qtile/widgets/claude_usage.py`, `helper/capture_tour.py`, `helper/patch_web_greeter.py` |
 | `greeter.auth_failed` | `authentication failed` | _the default_ | `helper/patch_web_greeter.py` |
 | `greeter.shutdown_title` | `shutdown` | _the default_ | `helper/patch_web_greeter.py` |
 | `greeter.restart_title` | `restart` | _the default_ | `helper/patch_web_greeter.py` |

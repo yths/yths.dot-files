@@ -33,8 +33,8 @@ EXCLUDED_DIRECTORIES = ("tests/",)
 #: The only thing here that the code cannot tell us: which Arch package provides an import,
 #: and anything a reader needs to know before installing it. Everything else is derived.
 ARCH_PACKAGES: dict[str, tuple[str, str]] = {
-    "PIL": ("python-pillow", "renders the boot background"),
-    "cairo": ("python-cairo", "draws the boot background and the README preview"),
+    "PIL": ("python-pillow", "renders the boot background; encodes the README's screenshots"),
+    "cairo": ("python-cairo", "draws the boot background"),
     "cairocffi": ("python-cairocffi", "measures an icon's ink off screen; qtile already requires it"),
     "colour": (
         "python-colour-science",
@@ -47,6 +47,10 @@ ARCH_PACKAGES: dict[str, tuple[str, str]] = {
     "screeninfo": ("python-screeninfo", "detects monitor geometry, at install and on hotplug"),
     "toml": ("python-toml", "reads and rewrites `~/.config/starship.toml`"),
     "websockets": ("python-websockets", "live theme editing and reload broadcast"),
+    "xcffib": (
+        "python-xcffib",
+        "types keys and makes windows for the README's screenshots; qtile already requires it",
+    ),
 }
 
 #: Packages that live in the AUR rather than the main repositories, so `yay -S` is required

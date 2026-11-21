@@ -1,0 +1,4 @@
+#!/bin/sh
+# Nothing staged may set the clock. The sandbox already has no system bus to ask; this is
+# the same refusal, said sooner.
+exit 1
