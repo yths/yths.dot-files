@@ -26,6 +26,14 @@ PALETTE = {
 PALETTE["light"] = PALETTE["dark"]
 
 
+#: What the theme derives from the palette rather than takes from it: the inactive tabs'
+#: blocks, mixed between two tokens, and the selected tab's font, which is not a colour.
+DERIVED = {
+    *(f"c.colors.tabs.{kind}.bg" for kind in patch_qutebrowser.INACTIVE_TABS),
+    "c.fonts.tabs.selected",
+}
+
+
 @pytest.fixture
 def configuration() -> dict:
     return {"state": {"theme": "dark"}, "palette": PALETTE}
@@ -106,7 +114,11 @@ def test_named_colours_are_mapped_not_skipped(configuration: dict) -> None:
 
 def test_every_emitted_value_is_a_palette_colour(configuration: dict) -> None:
     palette = set(PALETTE["dark"].values())
-    for name, value in patch_qutebrowser.theme_settings(configuration, "dark").items():
+    settings = patch_qutebrowser.theme_settings(configuration, "dark")
+    assert settings.pop("c.hints.border").split()[-1] in palette
+    for name, value in settings.items():
+        if name in DERIVED:
+            continue
         for entry in value if isinstance(value, list) else [value]:
             assert entry in palette, f"{name} = {entry!r} is not in the palette"
 
@@ -157,22 +169,7 @@ def test_no_fg_lands_on_its_own_bg(light_configuration: dict) -> None:
             assert value != surface, f"{name} vanished into its surface {value!r}"
 
 
-def test_a_fg_whose_bg_stayed_stock_is_left_to_the_plain_match(
-    light_configuration: dict,
-) -> None:
-    """hints.bg is a gradient qutebrowser keeps, so hints.fg has nothing to be checked against."""
-    settings = patch_qutebrowser.theme_settings(light_configuration, "light")
-    assert "c.colors.hints.bg" not in settings
-    assert settings["c.colors.hints.fg"] in LIGHT_PALETTE["light"].values()
-
-
-# ----------------------------------------------------------------------- the reference match
-#
-# qutebrowser's stock chrome is a dark one: black statusbar, dark completion popup. Matching
-# it against the light palette preserves that lightness -- stock `black` lands on the light
-# *foreground* -- so light mode shipped a dark browser. The defaults are therefore matched
-# against the dark palette to decide the token, and written in the active mode's colours.
-
+#: Both modes of one palette: what the hints, the tabs and the reference match are tried on.
 TWO_MODE_PALETTE = {
     "dark": {"background": "#0f0f0f", "foreground": "#e3e3e3", "neutral": "#717171",
              "highlight": "#007c9a", "warning": "#a25e39", "failure": "#9f5972",
@@ -183,6 +180,139 @@ TWO_MODE_PALETTE = {
               "success": "#567e3f", "notification": "#886f1b",
               "foreground_variant": "#000000"},
 }
+
+
+# --------------------------------------------------------------------------- the hints
+#
+# hints.bg is a gradient, so it used to stay qutebrowser's yellow while hints.fg followed the
+# palette: stock `black` is the *background* token, which in light mode is a light grey, on
+# yellow. The three hint colours are now declared together.
+
+
+def hint_contrast(settings: dict, name: str = "c.colors.hints.fg") -> float:
+    return color_match.contrast(settings[name], settings["c.colors.hints.bg"])
+
+
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_a_hint_reads_on_its_own_plate(mode: str) -> None:
+    configuration = {"state": {"theme": mode}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, mode)
+    assert settings["c.colors.hints.bg"] in TWO_MODE_PALETTE[mode].values()
+    assert hint_contrast(settings) >= color_match.MIN_TEXT_CONTRAST
+    assert hint_contrast(settings, "c.colors.hints.match.fg") >= patch_qutebrowser.MIN_BOLD_CONTRAST
+
+
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_the_typed_part_of_a_hint_stays_distinct(mode: str) -> None:
+    configuration = {"state": {"theme": mode}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, mode)
+    matched = settings["c.colors.hints.match.fg"]
+    assert matched not in (settings["c.colors.hints.fg"], settings["c.colors.hints.bg"])
+
+
+def test_the_hint_border_is_drawn_in_the_hint_text_colour() -> None:
+    """A white plate on a white page is otherwise only its letters."""
+    configuration = {"state": {"theme": "dark"}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, "dark")
+    assert settings["c.hints.border"] == f"1px solid {settings['c.colors.hints.fg']}"
+
+
+# ---------------------------------------------------------------------------- the tabs
+#
+# The tabs are the qtile task list one level down, so they are drawn by its scheme rather
+# than matched from qutebrowser's stock greys and greens: the bar is `background`, the
+# selected tab a `highlight` block with `background` text, and every other tab `foreground`
+# text on a block between `background` and `neutral`.
+
+
+def tabs(mode: str, palette: dict = TWO_MODE_PALETTE) -> dict:
+    settings = patch_qutebrowser.theme_settings({"state": {"theme": mode}, "palette": palette}, mode)
+    return {
+        name.removeprefix("c.colors.tabs."): value
+        for name, value in settings.items() if name.startswith("c.colors.tabs.")
+    }
+
+
+def _saturation(colour: str) -> int:
+    channels = [int(colour[index : index + 2], 16) for index in (1, 3, 5)]
+    return max(channels) - min(channels)
+
+
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_the_selected_tab_and_the_bar_are_the_task_lists(mode: str) -> None:
+    palette, drawn = TWO_MODE_PALETTE[mode], tabs(mode)
+    assert drawn["bar.bg"] == palette["background"]
+    for kind in patch_qutebrowser.ACTIVE_TABS:
+        assert drawn[f"{kind}.bg"] == palette["highlight"]
+        assert drawn[f"{kind}.fg"] == palette["background"]
+
+
+# Neutral means on the line between two greys: with this palette, no hue at all.
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_an_inactive_tab_is_never_a_colour(mode: str) -> None:
+    drawn = tabs(mode)
+    for kind in patch_qutebrowser.INACTIVE_TABS:
+        assert _saturation(drawn[f"{kind}.bg"]) == 0, kind
+        assert drawn[f"{kind}.fg"] == TWO_MODE_PALETTE[mode]["foreground"]
+
+
+# There is no gap between tabs, so the four kinds have to differ -- from each other and from
+# the bar -- and each steps further from the bar than the one before it.
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_the_inactive_tabs_step_away_from_the_bar_and_stay_legible(mode: str) -> None:
+    palette, drawn = TWO_MODE_PALETTE[mode], tabs(mode)
+    surfaces = [drawn[f"{kind}.bg"] for kind in patch_qutebrowser.INACTIVE_TABS]
+    from_bar = [color_match.contrast(surface, palette["background"]) for surface in surfaces]
+    assert from_bar == sorted(from_bar)
+    assert from_bar[0] > 1
+    assert len(set(surfaces)) == len(surfaces)
+    for surface in surfaces:
+        assert color_match.contrast(palette["foreground"], surface) >= color_match.MIN_TEXT_CONTRAST
+
+
+# The furthest tab sits where the title is about to stop reading; a step past it does not.
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_the_reach_is_the_last_weight_at_which_the_title_reads(mode: str) -> None:
+    palette = TWO_MODE_PALETTE[mode]
+    reach = patch_qutebrowser.legible_reach(
+        palette["background"], palette["neutral"], palette["foreground"]
+    )
+    assert 0 < reach < 1
+    beyond = color_match.mix(palette["background"], palette["neutral"], reach + 0.01)
+    assert color_match.contrast(palette["foreground"], beyond) < color_match.MIN_TEXT_CONTRAST
+
+
+def test_a_selected_title_short_of_body_contrast_is_set_bold() -> None:
+    palette = color_match.build_palette_map(TWO_MODE_PALETTE)["dark"]
+    assert color_match.contrast("#0f0f0f", "#007c9a") < color_match.MIN_TEXT_CONTRAST
+    assert patch_qutebrowser.tab_settings(palette)["c.fonts.tabs.selected"].startswith("bold ")
+
+    strong = {**TWO_MODE_PALETTE["dark"], "highlight": "#86bace"}
+    palette = color_match.build_palette_map({"dark": strong, "light": strong})["dark"]
+    assert "c.fonts.tabs.selected" not in patch_qutebrowser.tab_settings(palette)
+
+
+def test_the_load_stripe_ends_in_the_tokens_named_for_it() -> None:
+    drawn = tabs("dark")
+    assert drawn["indicator.stop"] == TWO_MODE_PALETTE["dark"]["success"]
+    assert drawn["indicator.error"] == TWO_MODE_PALETTE["dark"]["failure"]
+
+
+# A palette without the tokens the scheme is built from keeps the plain match, not a crash.
+def test_a_palette_without_the_scheme_tokens_falls_back_to_matching() -> None:
+    sparse = {"background": "#0f0f0f", "foreground": "#e3e3e3"}
+    palette = color_match.build_palette_map({"dark": sparse, "light": sparse})["dark"]
+    assert patch_qutebrowser.tab_settings(palette) == {}
+    assert tabs("dark", {"dark": sparse, "light": sparse})["bar.bg"] in sparse.values()
+
+
+# ----------------------------------------------------------------------- the reference match
+#
+# qutebrowser's stock chrome is a dark one: black statusbar, dark completion popup. Matching
+# it against the light palette preserves that lightness -- stock `black` lands on the light
+# *foreground* -- so light mode shipped a dark browser. The defaults are therefore matched
+# against the dark palette to decide the token, and written in the active mode's colours.
+
 
 
 def test_light_mode_inverts_the_stock_dark_chrome() -> None:
@@ -203,7 +333,11 @@ def test_every_light_value_comes_from_the_light_palette() -> None:
     """A dark hex in a light theme is the token lookup failing, not a theme choice."""
     configuration = {"state": {"theme": "light"}, "palette": TWO_MODE_PALETTE}
     palette = set(TWO_MODE_PALETTE["light"].values())
-    for name, value in patch_qutebrowser.theme_settings(configuration, "light").items():
+    settings = patch_qutebrowser.theme_settings(configuration, "light")
+    assert settings.pop("c.hints.border").split()[-1] in palette
+    for name, value in settings.items():
+        if name in DERIVED:
+            continue
         for entry in value if isinstance(value, list) else [value]:
             assert entry in palette, f"{name} = {entry!r} is not in the light palette"
 
@@ -219,7 +353,8 @@ def test_the_generated_module_is_valid_python(configuration: dict) -> None:
 def test_the_generated_module_sets_what_it_mapped(configuration: dict) -> None:
     module = patch_qutebrowser.theme_module(configuration, "dark")
     expected = len(patch_qutebrowser.theme_settings(configuration, "dark"))
-    assert sum(1 for line in module.splitlines() if line.startswith("c.colors.")) == expected
+    # `c.` rather than `c.colors.`: the hint border is a colour that lives under `c.hints`.
+    assert sum(1 for line in module.splitlines() if line.startswith("c.")) == expected
     assert "Generated by helper/patch_qutebrowser.py" in module
 
 

@@ -78,11 +78,11 @@ Furthest 8:
 | `list.dropBackground` | `#d6ebff` | `highlight` | 34.9 |
 | `list.focusBackground` | `#d6ebff` | `highlight` | 34.9 |
 
-#### qutebrowser — `dark` (84 colours)
+#### qutebrowser — `dark` (65 colours)
 
 | median | p90 | p99 | max |
 | --- | --- | --- | --- |
-| 9.6 | 23.2 | 32.5 | 32.5 |
+| 10.7 | 24.6 | 32.5 | 32.5 |
 
 Furthest 8:
 
@@ -97,11 +97,11 @@ Furthest 8:
 | `c.colors.statusbar.insert.bg` | `darkgreen` | `success` | 25.2 |
 | `c.colors.statusbar.private.bg` | `#666666` | `background` | 23.6 |
 
-#### qutebrowser — `light` (84 colours)
+#### qutebrowser — `light` (65 colours)
 
 | median | p90 | p99 | max |
 | --- | --- | --- | --- |
-| 5.7 | 22.0 | 36.0 | 36.0 |
+| 8.9 | 23.5 | 36.0 | 36.0 |
 
 Furthest 8:
 

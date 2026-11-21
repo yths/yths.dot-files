@@ -76,12 +76,14 @@ def qutebrowser_replacements(palette: dict, mode: str) -> list[Replacement]:
     except OSError:
         return []
     candidates = color_match.build_palette_map(palette)[mode]
+    # The tabs are declared from the task list's scheme, not matched, so they moved by design.
+    declared = patch_qutebrowser.tab_settings(candidates)
     found = []
     for key, value in sorted(defaults.items()):
+        if key in declared:
+            continue
         for index, entry in enumerate(value if isinstance(value, list) else [value]):
-            match = color_match.nearest(
-                entry, color_match.filter_candidates(key, candidates)
-            )
+            match = color_match.nearest(entry, color_match.filter_candidates(key, candidates))
             if match is None:
                 continue
             name = f"{key}[{index}]" if isinstance(value, list) else key

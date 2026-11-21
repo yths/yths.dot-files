@@ -17,9 +17,17 @@ matched onto the same token as its sibling ``.bg`` is re-picked for contrast, so
 tab's title cannot vanish into the tab drawn under it.
 
 Not everything under ``c.colors`` is a colour. Two gradients, an ``rgba()``, eight ``None``s
-meaning "let Qt decide", and eleven enums, booleans and numbers are left exactly as
-qutebrowser shipped them; :func:`unmapped` names them, so a value that stops being recognised
-shows up as a report line rather than as a colour that quietly stayed stock.
+meaning "let Qt decide", and eleven enums, booleans and numbers have nothing to be matched
+from; :func:`unmapped` names them, so a value that stops being recognised shows up as a
+report line rather than as a colour that quietly stayed stock.
+
+Two surfaces are declared rather than matched. The tabs follow the qtile task list
+(:func:`tab_settings`), because they are the same thing one level down -- a row of cells, one
+of them active -- and matching their stock greys and greens gave a second, unrelated scheme
+right under the first. And the hints are declared outright (:func:`hint_settings`), because
+their stock background is one of the gradients: left alone it stayed qutebrowser's yellow
+while the text over it followed the palette, and in light mode that text was the light
+background colour.
 
 The output is ``~/.config/qutebrowser/theme.py``, which ``config.py`` sources. That directory
 is qutebrowser's own -- ``install.py`` symlinks the single file ``config.py`` into it rather
@@ -79,6 +87,126 @@ def mapped(value: Any, candidates: list, lookup: list | None = None) -> Any | No
     return color_match.replace(value, candidates, lookup)
 
 
+#: The kinds of tab that are not selected, in the order they move away from the bar's colour.
+INACTIVE_TABS = ("even", "odd", "pinned.even", "pinned.odd")
+
+#: The selected tab, in each of the places qutebrowser names it.
+ACTIVE_TABS = ("selected.even", "selected.odd", "pinned.selected.even", "pinned.selected.odd")
+
+#: The load stripe's two outcomes, and the palette token that already means each.
+INDICATORS = {"stop": "success", "error": "failure"}
+
+
+def legible_reach(surface: str, toward: str, text: str) -> float:
+    """How far ``surface`` can move toward ``toward`` before ``text`` stops reading on it.
+
+    A weight for :func:`color_match.mix`, found by walking the mix in hundredths until the
+    contrast drops under body text's. Zero when the text does not read on the surface itself.
+    """
+    reach = -1
+    for step in range(101):
+        blended = color_match.mix(surface, toward, step / 100)
+        if (color_match.contrast(text, blended) or 0) < color_match.MIN_TEXT_CONTRAST:
+            break
+        reach = step
+    return max(reach, 0) / 100
+
+
+def tab_settings(palette: list) -> dict[str, str]:
+    """The tabs, drawn the way the qtile task list draws windows.
+
+    The task list is the scheme: the bar is ``background``; the focused window is a
+    ``highlight`` block with ``background`` text; every other window is ``foreground`` text
+    on a block mixed from ``background`` toward ``neutral``. The selected tab and the tab bar
+    take the first two as they are.
+
+    The third needs extending, because the task list has one kind of unfocused cell with a
+    gap either side and qutebrowser has four kinds -- even and odd, pinned or not -- with no
+    gap at all, so neighbours must differ from each other and a pinned tab from a plain one.
+    All four stay on the same line from ``background`` toward ``neutral``, so none of them is
+    a colour. How far along is not chosen: the line is usable up to the point where
+    ``foreground`` stops reading on it (:func:`legible_reach`), and the four are spaced
+    evenly over that stretch, plain tabs nearest the bar and pinned ones furthest from it.
+
+    A pinned tab that is selected is the selected tab; qutebrowser's own defaults say the
+    same, and its shrunken width already says *pinned*. The selected title is set bold when
+    its pair falls short of body-text contrast, the allowance large text gets, and left alone
+    when it does not. The load stripe's finished and failed ends take the tokens named for
+    exactly that; its starting end has no such token and keeps its match.
+
+    Returns nothing when the palette lacks one of the four tokens or its text does not read
+    on its own background, which leaves the tabs to the plain match.
+    """
+    by_label = {candidate["label"]: candidate["hex"] for candidate in palette}
+    if not {"background", "foreground", "neutral", "highlight"} <= set(by_label):
+        return {}
+    bar, text, neutral = by_label["background"], by_label["foreground"], by_label["neutral"]
+    reach = legible_reach(bar, neutral, text)
+    if not reach:
+        return {}
+
+    settings = {"c.colors.tabs.bar.bg": bar}
+    for rung, kind in enumerate(INACTIVE_TABS, start=1):
+        surface = color_match.mix(bar, neutral, reach * rung / len(INACTIVE_TABS))
+        settings[f"c.colors.tabs.{kind}.bg"] = surface
+        settings[f"c.colors.tabs.{kind}.fg"] = text
+    for kind in ACTIVE_TABS:
+        settings[f"c.colors.tabs.{kind}.bg"] = by_label["highlight"]
+        settings[f"c.colors.tabs.{kind}.fg"] = bar
+    if (color_match.contrast(bar, by_label["highlight"]) or 0) < color_match.MIN_TEXT_CONTRAST:
+        settings["c.fonts.tabs.selected"] = "bold default_size default_family"
+    for end, token in INDICATORS.items():
+        if token in by_label:
+            settings[f"c.colors.tabs.indicator.{end}"] = by_label[token]
+    return settings
+
+
+#: Contrast that still reads for a hint's bold label when body-text contrast is not on offer.
+MIN_BOLD_CONTRAST = 3.0
+
+
+def hint_settings(defaults: dict[str, Any], palette: list) -> dict[str, str]:
+    """The link hints, as a pair chosen together: text, the plate under it, and its edge.
+
+    The plate is the grey that stands furthest from the theme's background, the text is that
+    background: the strongest pair the palette has, and the inverse of the chrome, so a hint
+    does not read as part of the page's own dark or light surface. The already-typed part of
+    a hint keeps a colour -- the one nearest qutebrowser's green that still reads on the
+    plate, at body-text contrast if any reaches it, else at the bold-text threshold, else
+    whichever contrasts most. The border is drawn in the text colour because a white plate
+    on a white page is otherwise only its letters.
+    """
+    by_label = {candidate["label"]: candidate for candidate in palette}
+    if "background" not in by_label:
+        return {}
+    text = by_label["background"]["hex"]
+    greys = [c for c in palette if c["label"] in color_match.TEXT_LABELS]
+    plate = max(greys, key=lambda c: color_match.contrast(c["hex"], text) or 0)["hex"]
+    if plate == text:
+        return {}
+
+    def reads(candidate: dict) -> float:
+        return color_match.contrast(candidate["hex"], plate) or 0
+
+    others = [c for c in palette if c["hex"] not in (text, plate)]
+    stock = defaults.get("c.colors.hints.match.fg", "green")
+    matched = text
+    for threshold in (color_match.MIN_TEXT_CONTRAST, MIN_BOLD_CONTRAST):
+        found = color_match.nearest(stock, [c for c in others if reads(c) >= threshold])
+        if found is not None:
+            matched = found.hex
+            break
+    else:
+        if others:
+            matched = max(others, key=reads)["hex"]
+    return {
+        "c.colors.hints.bg": plate,
+        "c.colors.hints.fg": text,
+        "c.colors.hints.match.fg": matched,
+        "c.hints.border": f"1px solid {text}",
+    }
+
+
 def stock_source() -> str:
     """The dump ``qutebrowser --config-py`` wrote, which carries the defaults."""
     with open(template_path("qutebrowser", "template_config.py")) as handle:
@@ -86,7 +214,7 @@ def stock_source() -> str:
 
 
 def theme_settings(configuration: dict[str, Any], mode: str) -> dict[str, str]:
-    """``c.colors.*`` name -> the colour this theme gives it.
+    """Setting name -> what this theme gives it: ``c.colors.*``, the hint border, a tab font.
 
     Matching each default against the active palette directly kept the chrome dark in light
     mode: qutebrowser's stock UI is dark -- black statusbar, dark completion popup -- and
@@ -104,10 +232,14 @@ def theme_settings(configuration: dict[str, Any], mode: str) -> dict[str, str]:
     defaults = stock_defaults(source)
     settings = {}
     for name, value in defaults.items():
-        replacement = mapped(value, color_match.filter_candidates(name, reference), lookup)
+        candidates = color_match.filter_candidates(name, reference)
+        replacement = mapped(value, candidates, lookup)
         if replacement is not None:
             settings[name] = replacement
-    return with_legible_text(settings, defaults, lookup)
+    settings = with_legible_text(settings, defaults, lookup)
+    settings.update(hint_settings(defaults, lookup))
+    settings.update(tab_settings(lookup))
+    return settings
 
 
 def with_legible_text(
@@ -160,7 +292,8 @@ def theme_module(configuration: dict[str, Any], mode: str) -> str:
         "# the dark palette -- which the stock theme resembles -- to decide which token it is,",
         f"# and written as the active {mode} palette's colour for that token. Settings whose",
         "# default is a gradient, an rgba() or not a colour at all are absent: qutebrowser",
-        "# keeps its own.",
+        "# keeps its own. The exceptions are the hints, which are declared as a pair, and",
+        "# the tabs, which are drawn the way the qtile task list draws windows.",
         "",
         "c = c  # noqa: F821 pylint: disable=E0602,C0103",
         "",
