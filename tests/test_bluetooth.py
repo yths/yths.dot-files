@@ -9,6 +9,7 @@ the mapping lives in the bundle next to the glyphs it refers to.
 import json
 import pathlib
 
+import bluetooth_icon
 import pytest
 import shared.stream
 import symbols
@@ -92,3 +93,61 @@ def test_migrating_takes_the_mapping_from_the_bundle(tmp_path: pathlib.Path) -> 
     )
     assert migrated["bluetooth_devices"] == {HEADPHONES: "bluetooth.headphones"}
     assert "refreshed bluetooth_devices" in changes
+
+
+# helper/bluetooth_icon.py: the command that writes the mapping, so nobody has to look up a
+# MAC and a codepoint by hand.
+def test_bluetoothctl_output_parses_to_upper_case_addresses() -> None:
+    output = "Device dd:f8:a4:c5:fe:5a MX Master 3\nnoise\nDevice 00:11:22:33:44:55 \n"
+    assert bluetooth_icon.parse_devices(output) == {
+        "DD:F8:A4:C5:FE:5A": "MX Master 3", HEADPHONES: HEADPHONES,
+    }
+
+
+def test_setting_a_mapping_replaces_the_same_address_in_any_case() -> None:
+    configuration = {"bluetooth_devices": {HEADPHONES.lower(): "x", UNKNOWN: "y"}}
+    bluetooth_icon.set_mapping(configuration, HEADPHONES, "z")
+    assert configuration["bluetooth_devices"] == {UNKNOWN: "y", HEADPHONES: "z"}
+    bluetooth_icon.set_mapping(configuration, HEADPHONES, None)
+    assert configuration["bluetooth_devices"] == {UNKNOWN: "y"}
+
+
+def test_a_choice_is_a_number_a_name_or_the_glyph_itself() -> None:
+    names = [bluetooth_icon.DEFAULT, *bluetooth_icon.COMMON]
+    assert bluetooth_icon.resolve_choice("0") is None
+    assert bluetooth_icon.resolve_choice("default") is None
+    assert bluetooth_icon.resolve_choice(str(names.index("mouse"))) == "\U000f037d"
+    assert bluetooth_icon.resolve_choice("headphones") == "bluetooth.headphones"
+    assert bluetooth_icon.resolve_choice("\U000f0297") == "\U000f0297"
+    with pytest.raises(ValueError, match="no entry"):
+        bluetooth_icon.resolve_choice(str(len(names)))
+
+
+# Every listed icon is either a key the vocabulary declares or a glyph, and no two entries
+# draw the same thing -- a duplicate would be a choice that makes no difference.
+def test_the_common_icons_resolve_and_are_distinct() -> None:
+    vocabulary, _ = symbols.resolve({})
+    for value in bluetooth_icon.COMMON.values():
+        assert value in vocabulary or not value.isascii()
+    assert len(set(bluetooth_icon.COMMON.values())) == len(bluetooth_icon.COMMON)
+    assert set(bluetooth_icon.SUGGESTIONS.values()) <= set(bluetooth_icon.COMMON)
+
+
+def test_writing_updates_the_bundle_and_the_installed_configuration(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bundle = tmp_path / "assets" / "theme" / "config.json"
+    bundle.parent.mkdir(parents=True)
+    bundle.write_text(json.dumps({"name": "theme"}, indent=4) + "\n", encoding="utf-8")
+    installed = tmp_path / "config.json"
+    installed.write_text(json.dumps({"name": "theme"}, indent=4), encoding="utf-8")
+    monkeypatch.setenv("DOTFILES_REPOSITORY_PATH", str(tmp_path))
+    monkeypatch.setattr(bluetooth_icon, "installed_path", lambda: str(installed))
+
+    bluetooth_icon.write({"name": "theme"}, UNKNOWN, "\U000f037d")
+
+    for path in (bundle, installed):
+        assert json.loads(path.read_text(encoding="utf-8"))["bluetooth_devices"] == {
+            UNKNOWN: "\U000f037d",
+        }
+    assert bundle.read_text(encoding="utf-8").endswith("}\n")
