@@ -342,6 +342,20 @@ def test_every_light_value_comes_from_the_light_palette() -> None:
             assert entry in palette, f"{name} = {entry!r} is not in the light palette"
 
 
+@pytest.mark.parametrize("mode", ["dark", "light"])
+def test_a_page_without_a_background_gets_the_light_one(mode: str) -> None:
+    """Such a page's text is the browser's black, so the surface under it must be light.
+
+    Matched like the rest, stock `white` came out as the light theme's darkest grey, and a
+    page that set no colours was black on near-black.
+    """
+    configuration = {"state": {"theme": mode}, "palette": TWO_MODE_PALETTE}
+    settings = patch_qutebrowser.theme_settings(configuration, mode)
+    surface = settings["c.colors.webpage.bg"]
+    assert surface == TWO_MODE_PALETTE["light"]["background"]
+    assert color_match.contrast("#000000", surface) >= color_match.MIN_TEXT_CONTRAST
+
+
 # ------------------------------------------------------------------------ the output
 
 

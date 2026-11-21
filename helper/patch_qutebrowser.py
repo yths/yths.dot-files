@@ -29,6 +29,11 @@ their stock background is one of the gradients: left alone it stayed qutebrowser
 while the text over it followed the palette, and in light mode that text was the light
 background colour.
 
+One more is declared for a different reason. ``colors.webpage.bg`` is what shows under a page
+that sets no background of its own, and such a page sets no text colour either: its text is
+black. Matched like the rest, stock ``white`` became the active palette's dark end in light
+mode, and those pages were black on near-black (:func:`page_settings`).
+
 The output is ``~/.config/qutebrowser/theme.py``, which ``config.py`` sources. That directory
 is qutebrowser's own -- ``install.py`` symlinks the single file ``config.py`` into it rather
 than the whole directory -- so unlike every other patcher's output this one lands outside the
@@ -207,6 +212,20 @@ def hint_settings(defaults: dict[str, Any], palette: list) -> dict[str, str]:
     }
 
 
+def page_settings(palette_map: dict[str, list]) -> dict[str, str]:
+    """The surface under a page that brings no background: the light one, in both modes.
+
+    A page that sets no background sets no text colour either, so what is drawn over this is
+    the browser's black, whatever the theme. The light palette's background is the one
+    surface that text reads on. In dark mode it is still right: ``config.py`` switches on
+    Chromium's dark mode there, which inverts the page -- surface and text together.
+    """
+    for candidate in palette_map.get("light", []):
+        if candidate["label"] == "background":
+            return {"c.colors.webpage.bg": candidate["hex"]}
+    return {}
+
+
 def stock_source() -> str:
     """The dump ``qutebrowser --config-py`` wrote, which carries the defaults."""
     with open(template_path("qutebrowser", "template_config.py")) as handle:
@@ -237,6 +256,7 @@ def theme_settings(configuration: dict[str, Any], mode: str) -> dict[str, str]:
         if replacement is not None:
             settings[name] = replacement
     settings = with_legible_text(settings, defaults, lookup)
+    settings.update(page_settings(palette_map))
     settings.update(hint_settings(defaults, lookup))
     settings.update(tab_settings(lookup))
     return settings
@@ -292,8 +312,9 @@ def theme_module(configuration: dict[str, Any], mode: str) -> str:
         "# the dark palette -- which the stock theme resembles -- to decide which token it is,",
         f"# and written as the active {mode} palette's colour for that token. Settings whose",
         "# default is a gradient, an rgba() or not a colour at all are absent: qutebrowser",
-        "# keeps its own. The exceptions are the hints, which are declared as a pair, and",
-        "# the tabs, which are drawn the way the qtile task list draws windows.",
+        "# keeps its own. The exceptions are the hints, which are declared as a pair, the",
+        "# tabs, which are drawn the way the qtile task list draws windows, and the surface",
+        "# under a page with no background, which is the light one in both modes.",
         "",
         "c = c  # noqa: F821 pylint: disable=E0602,C0103",
         "",
