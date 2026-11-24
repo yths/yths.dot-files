@@ -14,6 +14,7 @@ font size without also naming the family.
 import json
 import pathlib
 
+import list_symbols
 import pytest
 import symbols
 from utils import merge_overrides
@@ -143,3 +144,17 @@ def test_the_shipped_bundle_declares_nothing_the_vocabulary_has_not() -> None:
         bundle = json.loads(manifest.read_text())
         assert symbols.undeclared(bundle) == [], f"{manifest}: overrides nothing declares"
         assert symbols.malformed(bundle.get("symbols") or {}) == [], f"{manifest}: bad ramp"
+
+
+# The greeter spells its keys without the namespace, and `"brightness"` or `"session"` is
+# also a stream field in a bar widget. Counting that as a read of the greeter's key put the
+# widget in the greeter's row of docs/symbols.md.
+def test_a_bare_greeter_key_counts_only_in_the_greeters_own_sources() -> None:
+    sources = {
+        "configuration/qtile/widgets/backlight.py": 'state.get("brightness")',
+        "configuration/web-greeter/preview/panel/panel.js": "symbols['brightness']",
+    }
+    assert list_symbols.consumers(sources)["greeter.brightness"] == [
+        "configuration/web-greeter/preview/panel/panel.js",
+        "helper/patch_web_greeter.py",
+    ]

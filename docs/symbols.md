@@ -134,17 +134,17 @@ Every default is ASCII, so a machine whose font has no private use area still dr
 | `plymouth.throbber` | `o` | U+EB10 | `helper/patch_plymouth.py` |
 | `plymouth.keyboard` | `=` | U+F11C | `helper/patch_plymouth.py` |
 | `plymouth.lock` | `#` | U+F07F5 | `helper/patch_plymouth.py` |
-| `greeter.monitor` | `[]` | U+F0379 | `configuration/qtile/config.py`, `helper/patch_web_greeter.py` |
+| `greeter.monitor` | `[]` | U+F0379 | `helper/patch_web_greeter.py` |
 | `greeter.password_prompt` | `#` | U+F07F5 | `helper/patch_web_greeter.py` |
 | `greeter.submit` | `>` | U+203A | `helper/patch_web_greeter.py` |
 | `greeter.shutdown` | `off` | U+F0425 | `configuration/web-greeter/preview/panel/panel.js`, `helper/patch_web_greeter.py` |
-| `greeter.restart` | `re` | U+F0709 | `configuration/web-greeter/preview/panel/panel.js`, `helper/patch_configurations.py`, `helper/patch_web_greeter.py` |
+| `greeter.restart` | `re` | U+F0709 | `configuration/web-greeter/preview/panel/panel.js`, `helper/patch_web_greeter.py` |
 | `greeter.suspend` | `zzz` | U+F04B2 | `helper/patch_web_greeter.py` |
 | `greeter.hibernate` | `hib` | U+F186 | `helper/patch_web_greeter.py` |
-| `greeter.brightness` | `*` | U+F00DE | `configuration/qtile/widgets/backlight.py`, `helper/capture_tour.py`, `helper/patch_web_greeter.py` |
+| `greeter.brightness` | `*` | U+F00DE | `helper/patch_web_greeter.py` |
 | `greeter.battery_charging` | `+` | U+F0084 | `helper/patch_web_greeter.py` |
 | `greeter.battery_discharging` | `=` | U+F0079 | `helper/patch_web_greeter.py` |
-| `greeter.updates` | `upd` | U+F06B0 | `configuration/qtile/widgets/updates.py`, `helper/capture_tour.py`, `helper/patch_web_greeter.py` |
+| `greeter.updates` | `upd` | U+F06B0 | `helper/patch_web_greeter.py` |
 | `greeter.vpn_on` | `vpn` | U+F06F3 | `helper/patch_web_greeter.py` |
 | `greeter.vpn_off` | `!vpn` | U+F0C9D | `helper/patch_web_greeter.py` |
 | `greeter.summary_prefix` | `>` | U+EB10 | `helper/patch_web_greeter.py` |
@@ -174,7 +174,7 @@ The boot splash's messages are the ones worth knowing about: they were the only 
 | `plymouth.system_reset.title` | `Restarting System...` | _the default_ | `helper/patch_plymouth.py` |
 | `plymouth.system_reset.subtitle` | `If you are going through hell, keep going.` | _the default_ | `helper/patch_plymouth.py` |
 | `greeter.welcome` | `username` | _the default_ | `helper/patch_web_greeter.py` |
-| `greeter.session` | `session` | _the default_ | `configuration/qtile/widgets/claude_usage.py`, `helper/capture_tour.py`, `helper/patch_web_greeter.py` |
+| `greeter.session` | `session` | _the default_ | `helper/patch_web_greeter.py` |
 | `greeter.auth_failed` | `authentication failed` | _the default_ | `helper/patch_web_greeter.py` |
 | `greeter.shutdown_title` | `shutdown` | _the default_ | `helper/patch_web_greeter.py` |
 | `greeter.restart_title` | `restart` | _the default_ | `helper/patch_web_greeter.py` |

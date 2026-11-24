@@ -76,18 +76,29 @@ NAMESPACE_CONSUMERS = {
 }
 
 
+#: Where the greeter's un-namespaced keys are read: its own scripts, never a bar widget.
+GREETER_SOURCES = "configuration/web-greeter/"
+
+
+def _quoted(needle: str, body: str) -> bool:
+    return re.search(rf"""['"]{re.escape(needle)}['"]""", body) is not None
+
+
 def consumers(sources: dict[str, str] | None = None) -> dict[str, list[str]]:
     """Which files read each key, by grepping for the quoted key."""
     sources = sources if sources is not None else _sources()
     found: dict[str, list[str]] = {}
     for key in list(symbols.SYMBOLS) + list(symbols.STRINGS):
         # The greeter spells its keys without the namespace, because its theme.json always
-        # has; patch_web_greeter strips the prefix on the way out.
-        needles = {key, key.removeprefix("greeter.")} if key.startswith("greeter.") else {key}
+        # has; patch_web_greeter strips the prefix on the way out. The bare spelling counts
+        # only in the greeter's own sources: elsewhere ``"brightness"`` or ``"session"`` is
+        # a stream field or a mode name, and matching it there credited unrelated files.
+        bare = key.removeprefix("greeter.") if key.startswith("greeter.") else None
         paths = {
             path
             for path, body in sources.items()
-            if any(re.search(rf"""['"]{re.escape(n)}['"]""", body) for n in needles)
+            if _quoted(key, body)
+            or (bare is not None and path.startswith(GREETER_SOURCES) and _quoted(bare, body))
         }
         paths.update(
             path
