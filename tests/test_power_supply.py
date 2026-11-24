@@ -38,9 +38,17 @@ def cell(measurement: dict[str, Any] | None, expanded: bool = False) -> WidgetPo
     return widget
 
 
-def test_the_compact_cell_is_unchanged() -> None:
+def test_the_compact_cell_is_one_glyph_per_battery() -> None:
     discharging = symbols.SYMBOLS["battery.discharging"]
-    assert cell(MEASUREMENT)._render() == f"{discharging[8]} {discharging[6]}"
+    # The trailing space is room for the last glyph's ink, which overruns its advance. The
+    # cell takes the bar's default padding, so the space on its two sides matches its
+    # neighbours'; a wider padding in config.py left the cell before it off-centre.
+    assert cell(MEASUREMENT)._render() == f"{discharging[8]} {discharging[6]} "
+    assert cell({**MEASUREMENT, "grid": True})._render().startswith(symbols.SYMBOLS["battery.grid"])
+
+
+def test_a_cell_with_nothing_to_show_is_empty_not_a_lone_space() -> None:
+    assert cell({"grid": False, "batteries": {}})._render() == ""
 
 
 def test_hovering_adds_charge_draw_time_left_and_profile() -> None:

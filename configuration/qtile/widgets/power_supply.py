@@ -133,7 +133,10 @@ class WidgetPowerSupply(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
             symbol = self._symbol(capacity, state.get("status") == "Charging")
             output.append(f"{symbol} {capacity:.0f}%" if self.expanded else symbol)
         if not self.expanded:
-            return " ".join(output)
+            # The compact cell ends in a glyph, and a nerd-font glyph's ink overruns its
+            # advance; see vpn.py. The trailing space gives it room on the one side that
+            # needs it, where padding would widen the cell on both.
+            return " ".join(output) + " " if output else ""
 
         draw = self._draw(batteries)
         if draw is not None:
