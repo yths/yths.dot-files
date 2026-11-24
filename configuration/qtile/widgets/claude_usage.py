@@ -2,7 +2,9 @@
 
 Reads the latest entry from the ``claude_usage`` Redis stream and renders a robot glyph
 followed by two block bars — the five-hour session window and the overall weekly window —
-each coloured by the severity the backend service already computed. Hovering expands the
+each coloured by the severity the backend service already computed: ``notification_color``
+for a limit worth knowing about, ``highlight_color`` for one about to be hit. A sign-in that
+has stopped working is drawn in ``warning_color``, the one state here that is an error. Hovering expands the
 cell to percentages and reset countdowns; right-click sends the full breakdown to dunst.
 Polls every few seconds rather than every second like its siblings, because the producer
 only publishes every 30 seconds. ``BackgroundPoll`` based.
@@ -38,8 +40,9 @@ class WidgetClaudeUsage(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
     def __init__(
         self,
         r: redis.Redis | None,
-        warning_color: str = "#ff0000",
         notification_color: str = "#ff0000",
+        highlight_color: str = "#ff0000",
+        warning_color: str = "#ff0000",
         warning_threshold: float = 75,
         critical_threshold: float = 90,
         symbols: dict[str, Any] | None = None,
@@ -53,8 +56,9 @@ class WidgetClaudeUsage(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
         self.symbols = symbols or vocabulary.SYMBOLS
         self.strings = strings or vocabulary.STRINGS
 
-        self.warning_color = warning_color
         self.notification_color = notification_color
+        self.highlight_color = highlight_color
+        self.warning_color = warning_color
         # Consulted only when a payload arrives without its own precomputed severity.
         self.warning_threshold = warning_threshold
         self.critical_threshold = critical_threshold
@@ -150,10 +154,16 @@ class WidgetClaudeUsage(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
         }
 
     def _colorize(self, text: str, severity: str) -> str:
+        """``text`` in the colour of a severity, which is the backend's word and not a token.
+
+        Its ``warning`` is a limit three quarters used: worth knowing, nothing to do yet, so
+        ``notification``. Its ``critical`` is one about to be hit, which is what ``highlight``
+        is for. Neither is the palette's ``warning``: nothing has failed.
+        """
         if severity == "critical":
-            return f"<span color='{self.notification_color}'>{text}</span>"
+            return f"<span color='{self.highlight_color}'>{text}</span>"
         if severity == "warning":
-            return f"<span color='{self.warning_color}'>{text}</span>"
+            return f"<span color='{self.notification_color}'>{text}</span>"
         return text
 
     def _scoped(self, measurement: dict[str, Any]) -> dict[str, Any] | None:
@@ -180,11 +190,13 @@ class WidgetClaudeUsage(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
         if not measurement.get("available"):
             reason = measurement.get("reason") or self.strings["claude.unavailable"]
             if reason in self.AUTH_FAILURES:
-                # Full opacity, unlike the transient states below: this one needs acting
-                # on, and the dim "no data right now" treatment would bury it.
+                # Full opacity and the error colour, unlike the transient states below: this
+                # one stays broken until somebody signs in again, and the dim "no data right
+                # now" treatment would bury it.
+                body = self._icon_only(self.symbols['claude.dead'])
                 if self.expanded:
-                    return f"{self.symbols['claude.dead']}{self.ICON_GAP}{reason}"
-                return self._icon_only(self.symbols['claude.dead'])
+                    body = f"{self.symbols['claude.dead']}{self.ICON_GAP}{reason}"
+                return f"<span color='{self.warning_color}'>{body}</span>"
             body = self._icon_only(self.symbols['claude.icon'])
             if self.expanded:
                 body = f"{self.symbols['claude.icon']}{self.ICON_GAP}{reason}"

@@ -197,3 +197,74 @@ def test_a_chromatic_token_is_never_picked_for_text() -> None:
 def test_when_nothing_reaches_the_threshold_the_most_contrasting_wins() -> None:
     greys = color_match.build_palette_map({"m": {"neutral": "#777777", "foreground": "#888888"}})["m"]
     assert color_match.legible("#808080", "#7a7a7a", greys) == "#888888"
+
+
+# ----------------------------------------------------------------- the surface greys
+#
+# `surface` and `surface_variant` sit a step off the background so that a wash can be seen
+# without being a colour. Matched freely they were the nearest token for half a stock theme:
+# a git-ignored file's grey label became a surface grey, a step off the side bar it is drawn
+# on, and a selected row lost its colour to one.
+
+GREYS = color_match.build_palette_map({"light": {
+    "background": "#e3e3e3", "surface": "#c6c6c6", "surface_variant": "#aaaaaa",
+    "neutral": "#717171", "foreground_muted": "#404040", "foreground": "#0f0f0f",
+    "highlight": "#007c9a",
+}})["light"]
+
+
+def _labels(key: str) -> set[str]:
+    return {candidate["label"] for candidate in color_match.filter_candidates(key, GREYS)}
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["gitDecoration.ignoredResourceForeground", "sideBar.foreground", "foreground",
+     "c.colors.tabs.even.fg", "editorLineNumber.foreground"],
+)
+def test_text_is_never_matched_to_a_surface_grey(key: str) -> None:
+    assert not _labels(key) & color_match.SURFACE_LABELS
+    found = color_match.nearest("#aaaaaa", color_match.filter_candidates(key, GREYS))
+    assert found.label not in color_match.SURFACE_LABELS, "#aaaaaa is surface_variant itself"
+
+
+# A side bar a step off the editor is a different design from the flat one this palette draws.
+@pytest.mark.parametrize("key", ["sideBar.background", "statusBar.background", "editor.background"])
+def test_a_structural_background_is_never_matched_to_a_surface_grey(key: str) -> None:
+    assert not _labels(key) & color_match.SURFACE_LABELS
+    assert color_match.nearest("#d0d0d0", color_match.filter_candidates(key, GREYS)).label == "background"
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["list.hoverBackground", "list.inactiveSelectionBackground", "list.focusBackground",
+     "editor.lineHighlightBackground", "editor.inactiveSelectionBackground"],
+)
+def test_a_wash_may_be_a_surface_grey_and_not_the_background(key: str) -> None:
+    labels = _labels(key)
+    assert labels >= color_match.SURFACE_LABELS
+    assert "background" not in labels
+    assert color_match.nearest("#e8e8e8", color_match.filter_candidates(key, GREYS)).label == "surface"
+
+
+# What is selected, where the selecting is happening, is the focal accent -- the same block
+# the focused window and the chosen launcher entry get -- and stays a colour.
+@pytest.mark.parametrize(
+    "key",
+    ["list.activeSelectionBackground", "editor.selectionBackground", "selection.background",
+     "menu.selectionBackground"],
+)
+def test_a_live_selection_is_neither_the_background_nor_a_surface_grey(key: str) -> None:
+    assert color_match.is_selection(key)
+    assert not _labels(key) & (color_match.SURFACE_LABELS | {"background"})
+
+
+def test_a_selection_that_lost_focus_is_a_wash_again() -> None:
+    assert not color_match.is_selection("list.inactiveSelectionBackground")
+    assert not color_match.is_selection("list.hoverBackground")
+    assert not color_match.is_selection(None)
+
+
+def test_muted_text_is_a_grey_text_may_be_re_picked_from() -> None:
+    assert "foreground_muted" in color_match.TEXT_LABELS
+    assert color_match.legible("#616161", "#e3e3e3", GREYS) == "#404040"

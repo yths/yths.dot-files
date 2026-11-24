@@ -90,6 +90,7 @@ except ImportError:
 except redis.exceptions.ConnectionError:
     r = None
 
+import palette_tokens
 import shared.hover_bar
 import shared.idle_guard
 import shared.launcher
@@ -117,6 +118,12 @@ except FileNotFoundError:
     }
 
 theme = configuration["state"]["theme"]
+
+# A configuration installed before the palette gained its surface greys has no `surface`
+# for the task list to read. Completed here rather than left to raise, because this file
+# runs from the working tree: the code is updated by a pull and the configuration only by
+# `install.py --migrate`, and between the two a KeyError would drop qtile to its defaults.
+configuration["palette"] = palette_tokens.complete(configuration["palette"])
 
 FOCUS_BORDER_WIDTH = 3 if len(configuration["monitors"]) > 1 else 0
 FOCUS_BORDER_ACTIVE = configuration["palette"][theme]["highlight"]
@@ -721,13 +728,18 @@ def task_list_for_monitor(monitor: str) -> shared.task_list.CentredTaskList:
         highlight_method="block",
         borderwidth=0,
         border=configuration["palette"][theme]["highlight"],
-        urgent_border=configuration["palette"][theme]["notification"],
         markup_focused="<span foreground='" + configuration["palette"][theme]["background"] + "'>{}</span>",
         # Inactive windows get a block of their own, a step off the bar's colour, so each
         # one's extent is visible; their text is `foreground` because `neutral` -- legible
         # on the bar itself -- drops under 3:1 on that block.
-        unfocused_border=shared.task_list.inactive_task_colour(
-            configuration["palette"][theme]["background"], configuration["palette"][theme]["neutral"]
+        unfocused_border=configuration["palette"][theme]["surface"],
+        # A window asking for attention stays an inactive cell and its title takes the
+        # accent. Filling the block as well would draw it exactly like the focused window,
+        # and with no window borders that block is the only thing saying where focus is.
+        urgent_border=configuration["palette"][theme]["surface"],
+        markup_urgent=(
+            "<span foreground='" + configuration["palette"][theme]["highlight"]
+            + "' weight='bold'>{}</span>"
         ),
         foreground=configuration["palette"][theme]["foreground"],
         fontsize=round(configuration["monitors"][monitor]["scaling_factor"] * configuration["font"]["size"]),
@@ -755,8 +767,7 @@ screens = [
                 widgets.broadcast.WidgetBroadcast(
                     symbols=SYMBOLS,
                     r=r,
-                    notification_color=configuration["palette"][theme]["notification"],
-                    warning_color=configuration["palette"][theme]["warning"],
+                    highlight_color=configuration["palette"][theme]["highlight"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -771,7 +782,9 @@ screens = [
                 ),
                 widget.GroupBox(
                     highlight_method="text",
-                    urgent_alert_method="text",
+                    # Outlined, not recoloured: the group on screen is already the one
+                    # label drawn in `highlight`, and a second would not say which is which.
+                    urgent_alert_method="border",
                     hide_unused=False,
                     markup=True,
                     fontsize=round(
@@ -794,8 +807,7 @@ screens = [
                     this_current_screen_border=configuration["palette"][theme][
                         "highlight"
                     ],
-                    urgent_text=configuration["palette"][theme]["notification"],
-                    urgent_border=configuration["palette"][theme]["notification"],
+                    urgent_border=configuration["palette"][theme]["highlight"],
                 ),
                 widget.Spacer(
                     length=round(
@@ -814,7 +826,7 @@ screens = [
                     chords_colors={
                         "launch": (
                             configuration["palette"][theme]["highlight"],
-                            configuration["palette"][theme]["foreground"],
+                            configuration["palette"][theme]["background"],
                         ),
                     },
                     name_transform=lambda name: name.upper(),
@@ -854,8 +866,9 @@ screens = [
                     symbols=SYMBOLS,
                     strings=STRINGS,
                     r=r,
-                    warning_color=configuration["palette"][theme]["warning"],
                     notification_color=configuration["palette"][theme]["notification"],
+                    highlight_color=configuration["palette"][theme]["highlight"],
+                    warning_color=configuration["palette"][theme]["warning"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -888,7 +901,7 @@ screens = [
                     symbols=SYMBOLS,
                     r=r,
                     devices=vocabulary.bluetooth_devices(configuration, SYMBOLS),
-                    warning_color=configuration["palette"][theme]["warning"],
+                    highlight_color=configuration["palette"][theme]["highlight"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -904,8 +917,8 @@ screens = [
                 widgets.updates.WidgetUpdates(
                     symbols=SYMBOLS,
                     r=r,
-                    notification_color=configuration["palette"][theme]["highlight"],
-                    warning_color=configuration["palette"][theme]["notification"],
+                    notification_color=configuration["palette"][theme]["notification"],
+                    highlight_color=configuration["palette"][theme]["highlight"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -922,7 +935,7 @@ screens = [
                     symbols=SYMBOLS,
                     strings=STRINGS,
                     r=r,
-                    warning_color=configuration["palette"][theme]["warning"],
+                    highlight_color=configuration["palette"][theme]["highlight"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -942,7 +955,7 @@ screens = [
                 widgets.location.WidgetLocation(
                     symbols=SYMBOLS,
                     r=r,
-                    notification_color=configuration["palette"][theme]["highlight"],
+                    notification_color=configuration["palette"][theme]["notification"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]
@@ -958,7 +971,7 @@ screens = [
                 widgets.vpn.WidgetVPN(
                     symbols=SYMBOLS,
                     r=r,
-                    warning_color=configuration["palette"][theme]["warning"],
+                    notification_color=configuration["palette"][theme]["notification"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]

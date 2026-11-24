@@ -20,7 +20,7 @@ finalization stops it without calling native teardown inside Qtile.
 
 ## Anatomy of a Widget
 
-`vpn.py` is the canonical minimal example: 46 lines that inherit from `BackgroundPoll`, read one stream, and return a string. Every convention below is visible in it. Use it as the structural template for a new widget. The pattern, abstracted:
+`vpn.py` is the canonical minimal example: 50 lines that inherit from `BackgroundPoll`, read one stream, and return a string. Every convention below is visible in it. Use it as the structural template for a new widget. The pattern, abstracted:
 
 ```python
 """Qtile widget: <one-line description>."""
@@ -54,7 +54,8 @@ Conventions:
 - `poll()` must never raise. An exception escaping it stops qtile rescheduling the cell for the rest of the session — permanently, and with only a single log line. `BackgroundPoll` drops the reschedule; `InLoopPollText` is worse still, because `timer_setup` only re-arms the timer *after* `tick()` returns. Return `""` instead.
 - Type-annotate new code; `ruff check .` enforces it via the `ANN` rules.
 - Use `pangocstr` markup (`<span color="#hex">...</span>`) to colour the rendered glyph; pull colours from the active palette in `~/.config/config.json` rather than hardcoding hex.
-- Symbols come from the active vocabulary, not from the widget. Take a `symbols` keyword from [../config.py](../config.py) the way you take `warning_color`, and read `self.symbols["<key>"]`; declare the key with an ASCII default in [../../../helper/symbols.py](../../../helper/symbols.py) and override it with a glyph in `assets/default/config.json`. This is why no widget here holds a codepoint any more: an inlined glyph is invisible in editors, diffs and terminals without the font, so anything that rewrote the line silently dropped it — which is how the two examples that used to sit in this sentence were lost — and a hardcoded one cannot be themed or fall back. See [../../../docs/symbols.md](../../../docs/symbols.md).
+- A cell that asks for attention says which kind, and takes the colour under that name: `highlight_color` for what wants looking at now (a battery about to run out, being on air), `notification_color` for what is worth knowing and nothing to act on (updates, a tunnel being up, a muted output), `warning_color` for an error state and nothing else (the backend is down, a sign-in is broken). A level is never a warning. The keyword is the token's name plus `_color`, and [../config.py](../config.py) passes that token under it — `tests/test_widget_roles.py` refuses `notification_color=...["highlight"]`, which read as correct at the call and was wrong in the widget. The meanings are in [../../../docs/palette-semantics.md](../../../docs/palette-semantics.md#the-attention-tokens).
+- Symbols come from the active vocabulary, not from the widget. Take a `symbols` keyword from [../config.py](../config.py) the way you take a colour, and read `self.symbols["<key>"]`; declare the key with an ASCII default in [../../../helper/symbols.py](../../../helper/symbols.py) and override it with a glyph in `assets/default/config.json`. This is why no widget here holds a codepoint any more: an inlined glyph is invisible in editors, diffs and terminals without the font, so anything that rewrote the line silently dropped it — which is how the two examples that used to sit in this sentence were lost — and a hardcoded one cannot be themed or fall back. See [../../../docs/symbols.md](../../../docs/symbols.md).
 
 ## The One That Reads No Stream
 
@@ -74,7 +75,7 @@ when the thing being reported is the backend, or Redis.
 1. Pick the Redis stream the widget will read; add it to the backend service if it doesn't exist yet.
 2. Create `<name>.py` in this directory. Inherit from `BackgroundPoll`. Add a module docstring (one line, for `gendocs.py`).
 3. Wire it into `configuration/qtile/config.py`: import it next to the existing widget imports, and add a `widgets.<name>.WidgetX(...)` entry in the bar's widget list. Pass the shared Redis client `r` in.
-4. If the widget needs a palette colour, pull it from `configuration["palette"][theme][<token>]` — do not hardcode.
+4. If the widget needs a palette colour, pull it from `configuration["palette"][theme][<token>]` — do not hardcode — and name the keyword for the token, as above.
 5. Run `python helper/gendocs.py`; commit the regenerated WIDGETS block in `docs/notes.md` along with the new widget.
 
 ## What Belongs Here

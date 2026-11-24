@@ -12,6 +12,7 @@ import re
 import sys
 
 import color_match
+import palette_tokens
 from utils import logger, template_path
 
 
@@ -188,9 +189,10 @@ def build_themes(
         theme["name"] = f"{name} ({mode})"
         lookup = palette_map["dark"] if method == "reference" and mode == "light" else None
         themes[mode] = dict_replace_value(theme, palette_map[mode], lookup)
-        themes[mode]["colors"] = with_legible_text(
-            themes[mode].get("colors", {}), theme.get("colors", {}),
-            lookup if lookup is not None else palette_map[mode],
+        candidates = lookup if lookup is not None else palette_map[mode]
+        themes[mode]["colors"] = with_legible_rows(
+            with_legible_text(themes[mode].get("colors", {}), theme.get("colors", {}), candidates),
+            candidates,
         )
     return themes
 
@@ -226,6 +228,79 @@ def with_legible_text(colors: dict, originals: dict, candidates: list) -> dict:
         replacement = color_match.legible(originals.get(key, value), surface, candidates)
         if replacement is not None:
             legible[key] = replacement
+    return legible
+
+
+#: The washes a list or tree draws under a row whose label keeps its own colour. A row that
+#: is selected in the list holding focus is absent: there VSCode drops the label's colour for
+#: ``list.activeSelectionForeground``, which :func:`with_legible_text` already pairs up.
+ROW_WASHES = (
+    "list.hoverBackground",
+    "list.focusBackground",
+    "list.inactiveSelectionBackground",
+    "list.inactiveFocusBackground",
+    "list.dropBackground",
+)
+
+#: The colours a label in such a row may be drawn in, besides the ``gitDecoration.*`` ones:
+#: the plain label, and the states a tree marks by recolouring it.
+ROW_LABELS = (
+    "foreground",
+    "sideBar.foreground",
+    "list.hoverForeground",
+    "list.focusForeground",
+    "list.inactiveSelectionForeground",
+    "list.errorForeground",
+    "list.warningForeground",
+    "list.deemphasizedForeground",
+    "list.highlightForeground",
+    "list.invalidItemForeground",
+)
+
+#: What a label must keep against the wash under it. WCAG's floor for large text and
+#: interface components rather than body text's: an ignored file is drawn dim on purpose,
+#: and no wash can give it more than the bare side bar already does.
+MIN_ROW_CONTRAST = 3.0
+
+
+def _opaque(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("#") and len(value) == 7
+
+
+def row_labels(colors: dict) -> dict[str, str]:
+    """Every opaque colour a list row's label may take, by the key that sets it."""
+    keys = [*ROW_LABELS, *(key for key in colors if key.startswith("gitDecoration."))]
+    return {key: colors[key] for key in keys if _opaque(colors.get(key))}
+
+
+def with_legible_rows(colors: dict, candidates: list) -> dict:
+    """``colors`` with every row wash that swallowed a label moved to a surface grey.
+
+    A label in the explorer is paired with no background by name: a file git ignores is
+    drawn in ``gitDecoration.ignoredResourceForeground`` on the side bar, and on
+    ``list.hoverBackground`` once the pointer is over it. Each was matched on its own, so the
+    grey meant for the label and the grey meant for the wash could be one token -- the file's
+    name then vanished exactly while it was pointed at. A wash that leaves any label under
+    ``MIN_ROW_CONTRAST`` is replaced by whichever surface grey leaves the worst-off label best
+    off, if that is an improvement. Translucent washes are left alone, as in
+    :func:`with_legible_text`.
+    """
+    labels = row_labels(colors)
+    surfaces = [c["hex"] for c in candidates if c["label"] in color_match.SURFACE_LABELS]
+    if not labels or not surfaces:
+        return colors
+
+    def worst(wash: str) -> float:
+        return min(color_match.contrast(label, wash) or 0 for label in labels.values())
+
+    legible = dict(colors)
+    for key in ROW_WASHES:
+        wash = colors.get(key)
+        if not _opaque(wash) or worst(wash) >= MIN_ROW_CONTRAST:
+            continue
+        best = max(surfaces, key=worst)
+        if worst(best) > worst(wash):
+            legible[key] = best
     return legible
 
 
@@ -384,7 +459,9 @@ def main(argv: list[str] | None = None) -> int:
     arguments = parse_arguments(argv)
 
     with open(os.path.expanduser(arguments.palette_path), encoding="utf-8") as handle:
-        palette = json.load(handle)
+        # Completed, because this reads the bundle's own file rather than the configuration
+        # install.py wrote: a bundle from before the surface greys has no wash to match onto.
+        palette = palette_tokens.complete(json.load(handle))
 
     palette_map = build_palette_map(palette)
     bases = {mode: base_theme(mode) for mode in MODES}

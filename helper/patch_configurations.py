@@ -17,6 +17,7 @@ import sys
 from collections.abc import Callable
 from typing import Any
 
+import palette_tokens
 from patch_dunst import patch_dunst
 from patch_gtk import patch_gtk
 from patch_kitty import patch_kitty
@@ -140,6 +141,14 @@ def patch_all(configuration: dict[str, Any]) -> list[str]:
     broken app must not block the others. Nothing is swallowed: each failure is logged with
     its traceback and named in the return value.
     """
+    # A configuration installed before the palette gained its surface greys lacks tokens
+    # the patchers now read, and this runs unattended at every sunrise and sunset: without
+    # the stand-ins each patcher would raise KeyError until somebody ran `--migrate`.
+    # One with no palette at all is left for the patchers to report, each under its own name.
+    if isinstance(configuration.get("palette"), dict):
+        configuration = {
+            **configuration, "palette": palette_tokens.complete(configuration["palette"])
+        }
     failed = []
     for name, patch in PATCHERS:
         try:

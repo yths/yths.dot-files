@@ -700,7 +700,9 @@ def _vsc_section(config: dict) -> str:
         "Every colour in the stock theme is matched against the active palette in CAM16-UCS "
         "and replaced by the nearest token, so these are resolved rather than declared. "
         "`background` is excluded as a candidate for selection, highlight, hover, focus, "
-        "drop, match and range backgrounds, which would otherwise become invisible."
+        "drop, match and range backgrounds, which would otherwise become invisible. "
+        "`surface` and `surface_variant` are candidates for those washes only -- and not "
+        "for a live selection, which stays a colour."
     )
     for mode, rows in matches.items():
         lines += ["", f"#### `{mode}` — {len(rows)} keys "

@@ -23,6 +23,7 @@ import re
 import shutil
 
 import list_palette
+import palette_tokens
 import patch_dunst
 import patch_gtk
 import patch_kitty
@@ -41,18 +42,13 @@ from utils import read_setup
 #: The shipped palettes reuse a hex across tokens (`red_variant` and `failure` are the same
 #: colour), which would make every cross-check below ambiguous.
 PALETTE = {
-    token: f"#{index:02x}00{index:02x}"
-    for index, token in enumerate(
-        (
-            "background", "foreground", "foreground_variant", "neutral", "highlight",
-            "notification", "warning", "success", "failure",
-            "red", "green", "yellow", "blue", "magenta", "cyan",
-            "red_variant", "green_variant", "yellow_variant", "blue_variant",
-            "magenta_variant", "cyan_variant",
-        ),
-        start=1,
-    )
+    token: f"#{index:02x}00{index:02x}" for index, token in enumerate(palette_tokens.TOKENS, start=1)
 }
+
+#: Tokens no patcher names: they reach an application only through the two that resolve
+#: their colours, VSCode and qutebrowser, which take whichever token is nearest. The second
+#: surface grey is the stronger of the two washes, and nothing declared draws a wash on a wash.
+MATCHED_ONLY = {"surface_variant"}
 
 MONITORS = {"HDMI-0": {"diagonal_dpi": 160.0, "width": 3840, "scaling_factor": 1.6}}
 
@@ -324,10 +320,23 @@ def test_the_patchers_that_declare_no_token_really_declare_none() -> None:
 def test_every_palette_token_reaches_at_least_one_consumer() -> None:
     used = {r.value.removeprefix("palette.") for r in list_palette.usages()
             if r.value.startswith("palette.")}
-    assert set(PALETTE) == used, (
-        f"tokens no consumer reads: {sorted(set(PALETTE) - used)}; "
+    assert set(PALETTE) - MATCHED_ONLY == used, (
+        f"tokens no consumer reads: {sorted(set(PALETTE) - MATCHED_ONLY - used)}; "
         f"consumed but not in the vocabulary: {sorted(used - set(PALETTE))}"
     )
+
+
+@pytest.mark.skipif(not list_palette._HAVE_COLOUR, reason="needs the colour library")
+def test_a_token_no_patcher_names_is_still_one_the_matchers_use() -> None:
+    """Otherwise ``MATCHED_ONLY`` is a place to park a token nothing reads at all."""
+    bundle = pathlib.Path(list_palette.REPO_ROOT) / "assets" / read_setup()["desktop"]["theme"]
+    palette = json.loads((bundle / "palette.json").read_text(encoding="utf-8"))
+    matched = {
+        token
+        for rows in list_palette._vsc_matches({"palette": palette}).values()
+        for _, token, _ in rows
+    }
+    assert matched >= MATCHED_ONLY
 
 
 # What justifies registering this block with gendocs at all: if any of it varied per machine,

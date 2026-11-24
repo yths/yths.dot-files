@@ -1,5 +1,5 @@
 {
-    "inputs": "688eff674d8bb8e05e11a059197a51465a1cbd3ac49add0b5ea121235129dfc4",
+    "inputs": "f324c2e69448502ac90667ac84668e6a432fccbfb30cd217b3a981ba9397ceab",
     "files": {
         "boot-passphrase.webp": {
             "sha256": "5353b0e976ffe09d779a2cd867e860b6600c4c38fb609d3db21bad4e18535fe9",
@@ -14,40 +14,40 @@
             "bytes": 57380
         },
         "desktop-dark.webp": {
-            "sha256": "4c723f35e7c86c95ed1608b934e922f497577a2588fbfb536eb26649901490ce",
-            "bytes": 129748
+            "sha256": "2857a3aa9290d4b9a569ed0d65de90b49b4cd43213b1df67e3c3213a18a1f2d1",
+            "bytes": 129906
         },
         "desktop-dual.webp": {
-            "sha256": "c23c8d2ab3099db75f51f7b800fcd93f98b795bfd930efc960351ec2222c26d1",
-            "bytes": 91404
+            "sha256": "b0b58b834950b4c6c0f45103ab7253fe932b7ed8081c476582b24dec8b5585d8",
+            "bytes": 91618
         },
         "desktop-light.webp": {
-            "sha256": "13d54c84c16831fe9c06cb138d1ef972849c49eda215397b2b093aba93f5a3de",
-            "bytes": 136302
+            "sha256": "98052f3f2e7649c224310483fcb55b549a26eccf949641283a07819ef2bd5fec",
+            "bytes": 136336
         },
         "editor.webp": {
-            "sha256": "92c9e556bdb2bd920e3d31e8827eb0abf0896bef1313a90885a46c45118c4212",
-            "bytes": 68186
+            "sha256": "6c8549c54785a1ac69514f53fd8360574dd1d8268aa8c7587e480f832989b2c1",
+            "bytes": 68232
         },
         "launcher.webp": {
-            "sha256": "c73dddf56a07b2d0b15d30854da48abaf0280bc25988b46a8caabd294f7dd05b",
-            "bytes": 70786
+            "sha256": "5c821b7039d1ba9ddb8c4f84dda0789d9680081e2e49d1be698ed90314073d20",
+            "bytes": 70780
         },
         "lock.webp": {
-            "sha256": "d0b624bf34708a4e0c4ddd72de284ac9613cfde484fb3e820f8d4ea4638dffc2",
+            "sha256": "e6fe45d9857e904d258e393bbb3832df4420f4229ab29ea41de54f81da5f9715",
             "bytes": 2892
         },
         "login.webp": {
-            "sha256": "dbd8517cd02eda64580131f1aa5d391638640d9f842e228a079aab54611db77d",
-            "bytes": 84884
+            "sha256": "85406df24d17fc4f8dd2baa537cb8e1f89454e68f1b77e514544110f3c69782c",
+            "bytes": 84988
         },
         "notification.webp": {
-            "sha256": "b23deda63c84eae323a175c8efa5f52d9743d13a130890d9f0257bcb56a724ae",
-            "bytes": 31580
+            "sha256": "50b56b3ee5e75ce163e9e3f1848bcdcdede1322e6c9e4d42cfdfb4be2b5a1481",
+            "bytes": 31622
         },
         "terminal.webp": {
-            "sha256": "72ec9b687f3f2234939210978e09e09bc1c10194620054e0d722dd54504bd3e9",
-            "bytes": 42318
+            "sha256": "356bd82d5d3747c3c58ce102c96cb2e091152b936bf37173ec01148365874a7f",
+            "bytes": 42396
         }
     }
 }

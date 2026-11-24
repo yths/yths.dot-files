@@ -31,6 +31,16 @@ Open work only. An item is deleted when it is done; the commit that closes it sa
     - (2026-09-08) qtile reads `IconPixmap`, `AttentionIconPixmap` and `OverlayIconPixmap` from every StatusNotifier item. `inhibit-bridge` implements the first and answers the other two with a D-Bus error carrying no message body; `dbus_fast.errors.DBusError._from_message` reads `msg.body[0]` unconditionally and raises `IndexError`, which qtile reports as "Error starting StatusNotifierItem" and drops the item.
     - (2026-09-08) an error reply with no body is legal D-Bus, so the fix belongs in `dbus-fast`. qtile catching a non-`DBusError` around the optional icons would also do it. Nothing in this repository can close it.
 
+- [ ] `yths.themes` still holds the twenty-one-token vocabulary
+    - (2026-11-23) the palette gained `surface`, `surface_variant` and `foreground_muted`,
+      which chromalytica writes and `helper/palette_tokens.py` names. `ColorToken` in
+      yths.themes lists the previous twenty-one, and its contract test reads this
+      repository's `assets/default/palette.json`, so it fails until the enum carries the
+      three. A bundle it exports without them still installs, on stand-ins.
+    - (2026-11-23) `assets/default/` is such a bundle: its three newest greys are the
+      stand-ins, written into the file. Regenerating it from chromalytica replaces them, and
+      needs its four wallpapers redrawn for the new background.
+
 - [ ] The VSCode light template is an export of classic Light+, not Light Modern
     - (2026-10-04) both templates come from the classic themes, while the patcher pins the
       Modern ones underneath. Light+ drew the activity bar dark in light mode, now worked

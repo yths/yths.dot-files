@@ -21,6 +21,7 @@ The Python modules that back `install.py`, patch per-app configurations from the
 - **list_symbols** — List the symbol and string vocabulary, what falls back to what, and who reads each entry.
 - **list_themes** — List every theme bundle under ``assets/``.
 - **list_tour** — List the screenshots the README shows, in the order a boot shows them.
+- **palette_tokens** — The palette's vocabulary: the tokens a theme sets, in the order ``palette.json`` holds them.
 - **patch_configurations** — Orchestrate the per-app patchers from the active theme.
 - **patch_dunst** — Patch dunst: notification colours, font, offset and per-urgency formats.
 - **patch_gtk** — Patch GTK: what GTK 3 and GTK 4 applications draw with, and how their file chooser opens.

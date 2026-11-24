@@ -2,7 +2,8 @@
 
 Reads the newest entry of the ``location`` Redis stream that was not looked up through the
 VPN -- behind one, the IP geolocates to the exit server -- and surfaces the day/night
-transition that drives the automatic theme switch. It also moves the system timezone to that
+transition that drives the automatic theme switch, with the next one in
+``notification_color``. It also moves the system timezone to that
 location's, through ``shared.timezone``; see ``configuration/timezone/README.md``.
 ``InLoopPollText`` based, so ``poll()`` must never raise: ``timer_setup``
 reschedules only after ``tick()`` returns, and one escaped exception freezes the cell — and

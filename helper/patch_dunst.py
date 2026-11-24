@@ -2,6 +2,11 @@
 
 Rewrites ``~/.config/dunst/dunstrc`` in place via ``configparser``. Only the offset
 needs monitor geometry, so a machine without any still gets themed notifications.
+
+The three urgencies are the palette's three registers, title by title: a critical one is
+urgent, so ``highlight``; a normal one is worth knowing, so ``notification``; a low one is
+drawn as muted text. ``warning`` is absent on purpose -- urgency says how soon something
+wants reading, not that anything has failed.
 """
 
 import configparser
@@ -49,12 +54,12 @@ def patch_dunst(configuration: dict[str, Any]) -> None:
 
     dunst_configuration["urgency_critical"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_critical"]["format"] = (
-        f"\"{prefix} <span foreground='{configuration["palette"][theme]["warning"]}'>%s</span>\\n  %b\""
+        f"\"{prefix} <span foreground='{configuration["palette"][theme]["highlight"]}'>%s</span>\\n  %b\""
     )
 
     dunst_configuration["urgency_low"]["foreground"] = f'"{configuration["palette"][theme]["foreground"]}"'
     dunst_configuration["urgency_low"]["format"] = (
-        f"\"{prefix} <span foreground='{configuration["palette"][theme]["neutral"]}'>%s</span>\\n  %b\""
+        f"\"{prefix} <span foreground='{configuration["palette"][theme]["foreground_muted"]}'>%s</span>\\n  %b\""
     )
 
     with open(configuration_path, "w") as output_handle:

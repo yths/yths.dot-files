@@ -24,7 +24,7 @@ from patch_configurations import PATCHERS
 PALETTE = {
     "background": "#322f2f", "foreground": "#d5d1d1", "neutral": "#afabab",
     "highlight": "#4d91c7", "warning": "#c07726", "failure": "#cd6869",
-    "success": "#569c67",
+    "success": "#569c67", "foreground_muted": "#c2bebe",
 }
 LIGHT = {**PALETTE, "background": "#fffbfb", "foreground": "#4f4c4c"}
 
@@ -42,7 +42,7 @@ def configuration() -> dict:
 
 def test_every_role_resolves_to_a_palette_colour(configuration: dict) -> None:
     roles = patch_gtk.gtk_roles(configuration)
-    assert roles["surface"] == PALETTE["background"]
+    assert roles["base"] == PALETTE["background"]
     assert roles["accent"] == PALETTE["highlight"]
     assert set(roles) == set(patch_gtk.ROLES)
 
@@ -50,7 +50,7 @@ def test_every_role_resolves_to_a_palette_colour(configuration: dict) -> None:
 def test_switching_theme_switches_the_surfaces(configuration: dict) -> None:
     dark = patch_gtk.gtk_roles(configuration)
     configuration["state"]["theme"] = "light"
-    assert patch_gtk.gtk_roles(configuration)["surface"] != dark["surface"]
+    assert patch_gtk.gtk_roles(configuration)["base"] != dark["base"]
 
 
 def test_the_stylesheet_carries_the_palette_in_rules_not_only_definitions(

@@ -1,7 +1,8 @@
 """Qtile widget: outstanding pacman updates count.
 
 Reads the latest entry from the ``updates`` Redis stream (``outstanding_updates`` int) and
-renders it next to a package glyph. The count refreshes hourly under the backend service
+renders it next to a package glyph: in ``notification_color`` while any are outstanding, and
+in ``highlight_color`` once more than ``threshold`` have piled up. The count refreshes hourly under the backend service
 and immediately after every pacman transaction (via the post-transaction hook).
 ``BackgroundPoll`` based.
 """
@@ -19,7 +20,7 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
         self,
         r: redis.Redis | None,
         notification_color: str = "#00ff00",
-        warning_color: str = "#ff0000",
+        highlight_color: str = "#ff0000",
         threshold: int = 32,
         symbols: dict[str, Any] | None = None,
         **config: Any,
@@ -27,8 +28,8 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
-        self.warning_color = warning_color
         self.notification_color = notification_color
+        self.highlight_color = highlight_color
         self.threshold = threshold
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws something.
@@ -44,7 +45,7 @@ class WidgetUpdates(libqtile.widget.base.BackgroundPoll):
 
         icon = self.symbols["updates.available"]
         if outstanding_updates > self.threshold:
-            colour = self.warning_color
+            colour = self.highlight_color
         elif outstanding_updates > 0:
             colour = self.notification_color
         else:

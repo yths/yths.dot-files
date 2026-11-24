@@ -23,11 +23,13 @@ refuses a commit over it. The numbers are evidence to read when a surface looks 
 
 Two patterns worth knowing how to read:
 
-- **The largest distances cluster on keys where `background` is excluded.** Selection, hover,
-  drop, focus, match and range backgrounds may not match the `background` token, because a
-  selection painted in the colour it is selecting against is invisible. Stock themes make those surfaces a near-background grey, so with
-  the one plausible token withheld they land far away. A large ΔE there is the exclusion
-  working, not the palette failing.
+- **The largest distances cluster on live selections.** A selection may match neither the
+  `background` token, because a selection painted in the colour it is selecting against is
+  invisible, nor the two surface greys, because what is selected is the focal accent and stays
+  a colour. Stock themes make it a dark or pale blue, so with the near tokens withheld it lands
+  on `highlight`, some way off. A large ΔE there is the exclusion working, not the palette
+  failing. The other washes — hover, focus, a selection that lost focus — do take a surface
+  grey, and land close.
 - **One token absorbing every outlier** is the palette's real gap: the stock theme needs a
   colour in a region the palette has nothing in.
 
@@ -44,39 +46,39 @@ Measured against the `default` bundle's palette, in CAM16-UCS. A ΔE of about 2 
 
 | median | p90 | p99 | max |
 | --- | --- | --- | --- |
-| 9.0 | 23.5 | 40.4 | 48.1 |
+| 8.6 | 22.0 | 27.8 | 30.0 |
 
 Furthest 8:
 
 | Field | Stock colour | Replaced by | ΔE |
 | --- | --- | --- | --- |
-| `editorHoverWidget.background` | `#252526` | `cyan_variant` | 48.1 |
-| `list.hoverBackground` | `#2a2d2e` | `cyan_variant` | 44.5 |
-| `list.focusBackground` | `#062f4a` | `highlight` | 40.6 |
-| `list.inactiveSelectionBackground` | `#37373d` | `highlight` | 40.2 |
-| `dropdown.background` | `#3c3c3c` | `cyan_variant` | 39.5 |
-| `list.dropBackground` | `#383b3d` | `cyan_variant` | 39.2 |
-| `sideBar.dropBackground` | `#383b3d` | `cyan_variant` | 39.2 |
-| `editor.findRangeHighlightBackground` | `#3a3d4166` | `highlight` | 38.1 |
+| `list.activeSelectionBackground` | `#094771` | `highlight` | 30.0 |
+| `menu.selectionBackground` | `#094771` | `highlight` | 30.0 |
+| `statusBar.noFolderBackground` | `#68217a` | `magenta_variant` | 29.0 |
+| `editor.selectionBackground` | `#264f78` | `highlight` | 26.3 |
+| `editorGutter.deletedBackground` | `#94151b` | `failure` | 26.3 |
+| `minimapGutter.deletedBackground` | `#94151b` | `failure` | 26.3 |
+| `editorBracketMatch.background` | `#0064001a` | `success` | 25.2 |
+| `terminal.ansiBrightYellow` | `#f5f543` | `green` | 24.3 |
 
 #### vscode — `light` (246 colours)
 
 | median | p90 | p99 | max |
 | --- | --- | --- | --- |
-| 9.9 | 22.0 | 39.9 | 39.9 |
+| 8.4 | 22.0 | 26.7 | 36.6 |
 
 Furthest 8:
 
 | Field | Stock colour | Replaced by | ΔE |
 | --- | --- | --- | --- |
-| `dropdown.background` | `#ffffff` | `neutral` | 39.9 |
-| `editor.lineHighlightBackground` | `#ffffff0A` | `neutral` | 39.9 |
-| `settings.focusedRowBackground` | `#ffffff07` | `neutral` | 39.9 |
-| `statusBarItem.hoverBackground` | `#ffffff1f` | `neutral` | 39.9 |
-| `editor.rangeHighlightBackground` | `#fdff0033` | `warning` | 38.3 |
-| `editorHoverWidget.background` | `#f3f3f3` | `neutral` | 36.4 |
-| `list.dropBackground` | `#d6ebff` | `highlight` | 34.9 |
-| `list.focusBackground` | `#d6ebff` | `highlight` | 34.9 |
+| `editor.rangeHighlightBackground` | `#fdff0033` | `surface` | 36.6 |
+| `peekViewEditor.matchHighlightBackground` | `#f5d802de` | `warning` | 28.8 |
+| `selection.background` | `#b0daff` | `highlight` | 27.2 |
+| `editor.selectionBackground` | `#add6ff` | `highlight` | 26.0 |
+| `editor.selectionHighlightBackground` | `#add6ff80` | `highlight` | 26.0 |
+| `editorLink.activeForeground` | `#0000ff` | `blue` | 24.1 |
+| `merge.incomingHeaderBackground` | `#A6CFFF` | `highlight` | 23.9 |
+| `terminal.ansiBrightGreen` | `#14ce14` | `success` | 22.4 |
 
 #### qutebrowser — `dark` (65 colours)
 
@@ -101,7 +103,7 @@ Furthest 8:
 
 | median | p90 | p99 | max |
 | --- | --- | --- | --- |
-| 8.9 | 23.5 | 36.0 | 36.0 |
+| 5.7 | 23.5 | 36.0 | 36.0 |
 
 Furthest 8:
 

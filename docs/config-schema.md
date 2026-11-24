@@ -21,8 +21,8 @@ The single configuration file that every downstream consumer (qtile, the patcher
     "family": "Iosevka NF"
   },
   "palette": {
-    "light": { "background": "#ebebeb", "foreground": "#787878", "neutral": "...", "highlight": "...", "notification": "...", "warning": "..." },
-    "dark":  { "background": "#636363", "foreground": "#d3d3d3", "neutral": "...", "highlight": "...", "notification": "...", "warning": "..." }
+    "light": { "background": "#fffaf9", "foreground": "#535151", "highlight": "...", "notification": "...", "warning": "...", "surface": "..." },
+    "dark":  { "background": "#141313", "foreground": "#d5d1d0", "highlight": "...", "notification": "...", "warning": "...", "surface": "..." }
   },
   "wallpapers": {
     "light":           "~/.config/qtile/wallpaper-light.png",
@@ -46,7 +46,7 @@ The single configuration file that every downstream consumer (qtile, the patcher
 | `name` | string | bundle `config.json#name` | nothing functional; informational |
 | `monitors` | object | `helper/screen_configuration.py` | qtile (bar geometry, per-monitor scaling) |
 | `font` | object | bundle `config.json#font`, or `setup.toml`'s `[desktop] fallback_font_family` at the bundle's size when fontconfig lacks the family (`helper/fonts.py`) | qtile, web-greeter (via `font_overrides`) |
-| `palette` | object | bundle `palette.json` | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
+| `palette` | object | bundle `palette.json`, with stand-ins for any token the bundle predates (`helper/palette_tokens.py`) | qtile widgets, patchers reading by semantic role (e.g. `success`, `failure`) |
 | `wallpapers` | object | rewritten by `install.py` to installed paths | qtile, web-greeter (via `wallpaper_key`) |
 | `state` | object | initialised by `install.py`; mutated at runtime | qtile, patchers — drives the active light/dark variant |
 | `symbols` | object | `helper/symbols.py` ASCII defaults, with the bundle's `config.json#symbols` merged over them | qtile widgets, plymouth, dunst, rofi, starship, web-greeter — see [symbols.md](symbols.md) |
@@ -75,7 +75,7 @@ block does not name is drawn as `bluetooth.device`.
 
 ## Palette
 
-`palette` is the only colour vocabulary downstream consumers read. Both `light` and `dark` keys are required; each maps to a dict of token name → hex string. The token set is bundle-defined, but a minimum subset is required by the qtile widgets — see [palette-semantics.md](palette-semantics.md) for the contract.
+`palette` is the only colour vocabulary downstream consumers read. Both `light` and `dark` keys are required; each maps to a dict of token name → hex string. The token set is closed — twenty-four names, the same in both modes — see [palette-semantics.md](palette-semantics.md) for the contract and what each token means.
 
 ## `state` Subfields
 
@@ -106,7 +106,7 @@ One key per output (e.g. `HDMI-0`, `eDP-1`). Values mirror what `screeninfo` exp
 
 A new field should:
 
-1. Be added to the bundle's `config.json` (so `yths.themes` produces it).
+1. Be added to the bundle's `config.json` (so `yths.themes` produces it). A new colour is not a field here: it is a palette token, and [palette-semantics.md](palette-semantics.md#adding-a-new-token) has its own steps.
 2. Be passed through `install.py` (which loads the bundle's config and writes it to `~/.config/config.json`). For runtime-detected values, add a step in `install.py` that fills the field after loading the bundle.
 3. Be documented here, with a `Read by` row in the top-level table.
 

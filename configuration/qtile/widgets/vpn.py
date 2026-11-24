@@ -1,7 +1,8 @@
 """Qtile widget: VPN connection state with country/city.
 
 Reads the latest entry from the ``vpn`` Redis stream (``connected``, ``country``, ``city``)
-and surfaces an indicator plus a short location label when a tunnel is up.
+and surfaces an indicator plus a short location label when a tunnel is up. The indicator
+takes ``notification_color``: a tunnel is worth knowing about and nothing to act on.
 ``BackgroundPoll`` based.
 """
 
@@ -17,14 +18,14 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
     def __init__(
         self,
         r: redis.Redis | None,
-        warning_color: str = "#ff0000",
+        notification_color: str = "#ff0000",
         symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
-        self.warning_color = warning_color
+        self.notification_color = notification_color
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws something.
         self.symbols = symbols or vocabulary.SYMBOLS
@@ -39,7 +40,7 @@ class WidgetVPN(libqtile.widget.base.BackgroundPoll):
             # nerd-font glyph's ink runs past its advance, so a lone icon needs a trailing
             # space or its right edge is cut off. Harmless for an ASCII stand-in.
             return f"{self.symbols['vpn.off']} "
-        output = [f"<span color='{self.warning_color}'>{self.symbols['vpn.on']}</span>"]
+        output = [f"<span color='{self.notification_color}'>{self.symbols['vpn.on']}</span>"]
         country = measurement.get("country")
         city = measurement.get("city")
         if country:

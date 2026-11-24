@@ -20,13 +20,14 @@ import symbols as vocabulary
 
 
 class WidgetPowerSupply(shared.hover.HoverExpand, libqtile.widget.base.BackgroundPoll):
-    #: Below this the discharging symbol is tinted with ``warning_color``.
-    WARNING_CAPACITY = 20
+    #: Below this the discharging symbol is tinted with ``highlight_color``: the machine
+    #: needs its charger soon. Not ``warning``, which is for something that has gone wrong.
+    LOW_CAPACITY = 20
 
     def __init__(
         self,
         r: redis.Redis | None,
-        warning_color: str = "#ff0000",
+        highlight_color: str = "#ff0000",
         symbols: dict[str, Any] | None = None,
         strings: dict[str, str] | None = None,
         **config: Any,
@@ -34,7 +35,7 @@ class WidgetPowerSupply(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
-        self.warning_color = warning_color
+        self.highlight_color = highlight_color
         #: The active vocabulary, from ~/.config/config.json via config.py -- the same route
         #: the colours take. Falls back to the ASCII defaults so a widget built without one
         #: still draws something.
@@ -56,8 +57,8 @@ class WidgetPowerSupply(shared.hover.HoverExpand, libqtile.widget.base.Backgroun
         capacity = min(max(capacity, 0), 100)
         key = "battery.charging" if charging else "battery.discharging"
         symbol = self.symbols[key][int(capacity) // 10]
-        if not charging and capacity < self.WARNING_CAPACITY:
-            return f"<span color='{self.warning_color}'>{symbol}</span>"
+        if not charging and capacity < self.LOW_CAPACITY:
+            return f"<span color='{self.highlight_color}'>{symbol}</span>"
         return symbol
 
     @staticmethod

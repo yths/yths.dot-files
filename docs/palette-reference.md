@@ -68,6 +68,9 @@ regenerate it to match the active theme.
 | `yellow_variant` | `#c07726` | `#c07726` |
 | `neutral` | `#8d8989` | `#afabab` |
 | `foreground_variant` | `#322f2f` | `#fffbfb` |
+| `surface` | `#e2dede` | `#514e4e` |
+| `surface_variant` | `#c6c2c2` | `#706d6d` |
+| `foreground_muted` | `#6e6a6a` | `#c2bebe` |
 
 _The bundle `setup.toml` names, so this is the same on every clone. A machine running a different bundle draws different colours from the same tokens._
 
@@ -79,8 +82,8 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.font` | direct | `helper/patch_dunst.py:35` |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:124` |
+| dunst | `~/.config/dunst/dunstrc` | `global.font` | direct | `helper/patch_dunst.py:40` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | direct | `helper/patch_gtk.py:126` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_family` | direct | `helper/patch_kitty.py:52` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | embedded | `helper/patch_lock.py:80` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | direct, always dark | `helper/patch_plymouth.py:247` |
@@ -92,9 +95,9 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.font` | × 0.714 | `helper/patch_dunst.py:35` |
-| dunst | `~/.config/dunst/dunstrc` | `global.offset` | × average_scaling_factor, × 3, embedded | `helper/patch_dunst.py:43` |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:124` |
+| dunst | `~/.config/dunst/dunstrc` | `global.font` | × 0.714 | `helper/patch_dunst.py:40` |
+| dunst | `~/.config/dunst/dunstrc` | `global.offset` | × average_scaling_factor, × 3, embedded | `helper/patch_dunst.py:48` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-font-name` | × 0.714 | `helper/patch_gtk.py:126` |
 | kitty | `~/.config/kitty/kitty.conf` | `font_size` | × 0.714 | `helper/patch_kitty.py:53` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_FONT` | × 0.85, embedded | `helper/patch_lock.py:80` |
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.Font` | × 1.25, always dark | `helper/patch_plymouth.py:247` |
@@ -106,22 +109,22 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.background` | direct | `helper/patch_dunst.py:28` |
-| dunst | `~/.config/dunst/dunstrc` | `global.separator_color` | direct | `helper/patch_dunst.py:32` |
+| dunst | `~/.config/dunst/dunstrc` | `global.background` | direct | `helper/patch_dunst.py:33` |
+| dunst | `~/.config/dunst/dunstrc` | `global.separator_color` | direct | `helper/patch_dunst.py:37` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `*:selected, *:selected:focus { color }` | via role `on-accent` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color base` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color on-accent` | direct | `helper/patch_gtk.py:ROLES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color surface` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `accent_fg_color` | via role `on-accent` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `card_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `dialog_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `entry, textview, treeview, list, .view { background-color }` | via role `surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar, .titlebar { background-color }` | via role `surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `popover_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `sidebar_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `view_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { background-color }` | via role `surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_bg_color` | via role `surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `card_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `dialog_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `entry, textview, treeview, list, .view { background-color }` | via role `base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar, .titlebar { background-color }` | via role `base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `popover_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `sidebar_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `view_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { background-color }` | via role `base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_bg_color` | via role `base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | kitty | `~/.config/kitty/kitty.conf` | `background` | direct | `helper/patch_kitty.py:54` |
 | kitty | `~/.config/kitty/kitty.conf` | `color7` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | kitty | `~/.config/kitty/kitty.conf` | `selection_foreground` | direct | `helper/patch_kitty.py:57` |
@@ -132,11 +135,12 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogBackgroundColor` | direct, always dark | `helper/patch_plymouth.py:255` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `animation-001.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `entry.png` | rendered, always dark | `helper/patch_plymouth.py:SOLID_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:1036` |
-| qtile | `configuration/qtile/config.py` | `layout.Floating(border_normal=)` | direct | `configuration/qtile/config.py:1083` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.AdaptiveTaskBar(background=)` | direct | `configuration/qtile/config.py:1004` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(markup_focused=)` | direct | `configuration/qtile/config.py:725` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.SecondaryTaskBar(background=)` | direct | `configuration/qtile/config.py:1026` |
+| qtile | `configuration/qtile/config.py` | `Screen(background=)` | direct | `configuration/qtile/config.py:1049` |
+| qtile | `configuration/qtile/config.py` | `layout.Floating(border_normal=)` | direct | `configuration/qtile/config.py:1096` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.AdaptiveTaskBar(background=)` | direct | `configuration/qtile/config.py:1017` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(markup_focused=)` | direct | `configuration/qtile/config.py:731` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.SecondaryTaskBar(background=)` | direct | `configuration/qtile/config.py:1039` |
+| qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:829` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR0` | direct | `helper/patch_rofi.py:53` |
 | tmux | `~/.config/tmux/tmux.conf` | `color0` | direct | `helper/patch_tmux.py:33` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--background` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
@@ -181,21 +185,21 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `global.foreground` | direct | `helper/patch_dunst.py:27` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.foreground` | direct | `helper/patch_dunst.py:50` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_low.foreground` | direct | `helper/patch_dunst.py:55` |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.foreground` | direct | `helper/patch_dunst.py:45` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color on-surface` | direct | `helper/patch_gtk.py:ROLES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `card_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `dialog_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `entry, textview, treeview, list, .view { color }` | via role `on-surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar, .titlebar { color }` | via role `on-surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `popover_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `sidebar_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `view_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { color }` | via role `on-surface` | `helper/patch_gtk.py:RULES` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_fg_color` | via role `on-surface` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| dunst | `~/.config/dunst/dunstrc` | `global.foreground` | direct | `helper/patch_dunst.py:32` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.foreground` | direct | `helper/patch_dunst.py:55` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_low.foreground` | direct | `helper/patch_dunst.py:60` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.foreground` | direct | `helper/patch_dunst.py:50` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color on-base` | direct | `helper/patch_gtk.py:ROLES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `card_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `dialog_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `entry, textview, treeview, list, .view { color }` | via role `on-base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar, .titlebar { color }` | via role `on-base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `headerbar_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `popover_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `sidebar_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `view_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window, dialog, .background, popover, popover > contents { color }` | via role `on-base` | `helper/patch_gtk.py:RULES` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `window_fg_color` | via role `on-base` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | kitty | `~/.config/kitty/kitty.conf` | `color8` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | kitty | `~/.config/kitty/kitty.conf` | `foreground` | direct | `helper/patch_kitty.py:55` |
 | kitty | `~/.config/kitty/kitty.conf` | `selection_background` | direct | `helper/patch_kitty.py:56` |
@@ -203,17 +207,23 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | plymouth | `/usr/share/plymouth/themes/<preset>.plymouth` | `script.ConsoleLogTextColor` | direct, always dark | `helper/patch_plymouth.py:254` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `bullet.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-01.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus_stack=)` | direct | `configuration/qtile/config.py:621` |
-| qtile | `configuration/qtile/config.py` | `layout.Columns(border_normal_stack=)` | direct | `configuration/qtile/config.py:619` |
-| qtile | `configuration/qtile/config.py` | `layout.Max(border_focus=)` | direct | `configuration/qtile/config.py:640` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(foreground=)` | direct | `configuration/qtile/config.py:732` |
-| qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:817` |
-| qtile | `configuration/qtile/config.py` | `widget.GroupBox(active=)` | direct | `configuration/qtile/config.py:792` |
+| qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus_stack=)` | direct | `configuration/qtile/config.py:628` |
+| qtile | `configuration/qtile/config.py` | `layout.Columns(border_normal_stack=)` | direct | `configuration/qtile/config.py:626` |
+| qtile | `configuration/qtile/config.py` | `layout.Max(border_focus=)` | direct | `configuration/qtile/config.py:647` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(foreground=)` | direct | `configuration/qtile/config.py:744` |
+| qtile | `configuration/qtile/config.py` | `widget.GroupBox(active=)` | direct | `configuration/qtile/config.py:805` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR3` | direct | `helper/patch_rofi.py:56` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `MATCH` | embedded | `helper/patch_rofi.py:60` |
 | starship | `~/.config/starship.toml` | `palettes.theme.color0` | direct | `helper/patch_starship.py:24` |
 | tmux | `~/.config/tmux/tmux.conf` | `color3` | direct | `helper/patch_tmux.py:36` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--foreground` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
+
+#### `palette.foreground_muted`
+
+| App | Target | Field | How | Declared |
+| --- | --- | --- | --- | --- |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_low.format` | embedded | `helper/patch_dunst.py:62` |
+| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color muted` | direct | `helper/patch_gtk.py:ROLES` |
 
 #### `palette.foreground_variant`
 
@@ -240,17 +250,23 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.format` | embedded | `helper/patch_dunst.py:57` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `*:selected, *:selected:focus { background-color }` | via role `accent` | `helper/patch_gtk.py:RULES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color accent` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `accent_bg_color` | via role `accent` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `accent_color` | via role `accent` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `capslock.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `layout.Floating(border_focus=)` | direct | `configuration/qtile/config.py:1082` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(border=)` | direct | `configuration/qtile/config.py:723` |
-| qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:816` |
-| qtile | `configuration/qtile/config.py` | `widget.GroupBox(this_current_screen_border=)` | direct | `configuration/qtile/config.py:794` |
-| qtile | `configuration/qtile/config.py` | `widgets.location.WidgetLocation(notification_color=)` | direct | `configuration/qtile/config.py:945` |
-| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(notification_color=)` | direct | `configuration/qtile/config.py:907` |
+| qtile | `configuration/qtile/config.py` | `layout.Floating(border_focus=)` | direct | `configuration/qtile/config.py:1095` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(border=)` | direct | `configuration/qtile/config.py:730` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(markup_urgent=)` | direct | `configuration/qtile/config.py:741` |
+| qtile | `configuration/qtile/config.py` | `widget.Chord(chords_colors=)` | direct | `configuration/qtile/config.py:828` |
+| qtile | `configuration/qtile/config.py` | `widget.GroupBox(this_current_screen_border=)` | direct | `configuration/qtile/config.py:807` |
+| qtile | `configuration/qtile/config.py` | `widget.GroupBox(urgent_border=)` | direct | `configuration/qtile/config.py:810` |
+| qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(highlight_color=)` | direct | `configuration/qtile/config.py:904` |
+| qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(highlight_color=)` | direct | `configuration/qtile/config.py:770` |
+| qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(highlight_color=)` | direct | `configuration/qtile/config.py:870` |
+| qtile | `configuration/qtile/config.py` | `widgets.power_supply.WidgetPowerSupply(highlight_color=)` | direct | `configuration/qtile/config.py:938` |
+| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(highlight_color=)` | direct | `configuration/qtile/config.py:921` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR4` | direct | `helper/patch_rofi.py:57` |
 | starship | `~/.config/starship.toml` | `palettes.theme.color4` | direct | `helper/patch_starship.py:28` |
 | tmux | `~/.config/tmux/tmux.conf` | `color2` | direct | `helper/patch_tmux.py:35` |
@@ -272,16 +288,14 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_low.format` | embedded | `helper/patch_dunst.py:57` |
-| gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color muted` | direct | `helper/patch_gtk.py:ROLES` |
 | kitty | `~/.config/kitty/kitty.conf` | `color15` | direct | `helper/patch_kitty.py:ANSI_SLOTS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `keyboard.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `lock.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
 | plymouth | `/usr/share/plymouth/themes/<preset>/*.png` | `throbber-02.png` | rendered, always dark | `helper/patch_plymouth.py:GLYPH_ASSETS` |
-| qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus=)` | direct | `configuration/qtile/config.py:620` |
-| qtile | `configuration/qtile/config.py` | `layout.Columns(border_normal=)` | direct | `configuration/qtile/config.py:618` |
-| qtile | `configuration/qtile/config.py` | `layout.Max(border_normal=)` | direct | `configuration/qtile/config.py:639` |
-| qtile | `configuration/qtile/config.py` | `widget.GroupBox(inactive=)` | direct | `configuration/qtile/config.py:793` |
+| qtile | `configuration/qtile/config.py` | `layout.Columns(border_focus=)` | direct | `configuration/qtile/config.py:627` |
+| qtile | `configuration/qtile/config.py` | `layout.Columns(border_normal=)` | direct | `configuration/qtile/config.py:625` |
+| qtile | `configuration/qtile/config.py` | `layout.Max(border_normal=)` | direct | `configuration/qtile/config.py:646` |
+| qtile | `configuration/qtile/config.py` | `widget.GroupBox(inactive=)` | direct | `configuration/qtile/config.py:806` |
 | rofi | `~/.config/rofi/theme_config.rasi` | `COLOR1` | direct | `helper/patch_rofi.py:54` |
 | tmux | `~/.config/tmux/tmux.conf` | `color1` | direct | `helper/patch_tmux.py:34` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--neutral` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
@@ -290,14 +304,12 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.format` | embedded | `helper/patch_dunst.py:47` |
-| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(urgent_border=)` | direct | `configuration/qtile/config.py:724` |
-| qtile | `configuration/qtile/config.py` | `widget.GroupBox(urgent_border=)` | direct | `configuration/qtile/config.py:798` |
-| qtile | `configuration/qtile/config.py` | `widget.GroupBox(urgent_text=)` | direct | `configuration/qtile/config.py:797` |
-| qtile | `configuration/qtile/config.py` | `widgets.audio.WidgetAudio(notification_color=)` | direct | `configuration/qtile/config.py:874` |
-| qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(notification_color=)` | direct | `configuration/qtile/config.py:758` |
-| qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(notification_color=)` | direct | `configuration/qtile/config.py:858` |
-| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(warning_color=)` | direct | `configuration/qtile/config.py:908` |
+| dunst | `~/.config/dunst/dunstrc` | `urgency_normal.format` | embedded | `helper/patch_dunst.py:52` |
+| qtile | `configuration/qtile/config.py` | `widgets.audio.WidgetAudio(notification_color=)` | direct | `configuration/qtile/config.py:887` |
+| qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(notification_color=)` | direct | `configuration/qtile/config.py:869` |
+| qtile | `configuration/qtile/config.py` | `widgets.location.WidgetLocation(notification_color=)` | direct | `configuration/qtile/config.py:958` |
+| qtile | `configuration/qtile/config.py` | `widgets.updates.WidgetUpdates(notification_color=)` | direct | `configuration/qtile/config.py:920` |
+| qtile | `configuration/qtile/config.py` | `widgets.vpn.WidgetVPN(notification_color=)` | direct | `configuration/qtile/config.py:974` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--notification` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.red`
@@ -321,20 +333,22 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 | starship | `~/.config/starship.toml` | `palettes.theme.color2` | direct | `helper/patch_starship.py:26` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--success` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
+#### `palette.surface`
+
+| App | Target | Field | How | Declared |
+| --- | --- | --- | --- | --- |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(unfocused_border=)` | direct | `configuration/qtile/config.py:735` |
+| qtile | `configuration/qtile/config.py` | `shared.task_list.CentredTaskList(urgent_border=)` | direct | `configuration/qtile/config.py:739` |
+
 #### `palette.warning`
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| dunst | `~/.config/dunst/dunstrc` | `urgency_critical.format` | embedded | `helper/patch_dunst.py:52` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `@define-color warning` | direct | `helper/patch_gtk.py:ROLES` |
 | gtk | `~/.config/gtk-{3,4}.0/gtk.css` | `warning_color` | via role `warning` | `helper/patch_gtk.py:ADWAITA_COLOURS` |
 | lock | `~/.config/lock/environment` | `XSECURELOCK_AUTH_WARNING_COLOR` | direct | `helper/patch_lock.py:79` |
-| qtile | `configuration/qtile/config.py` | `widgets.bluetooth.WidgetBluetooth(warning_color=)` | direct | `configuration/qtile/config.py:891` |
-| qtile | `configuration/qtile/config.py` | `widgets.broadcast.WidgetBroadcast(warning_color=)` | direct | `configuration/qtile/config.py:759` |
-| qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | direct | `configuration/qtile/config.py:857` |
-| qtile | `configuration/qtile/config.py` | `widgets.power_supply.WidgetPowerSupply(warning_color=)` | direct | `configuration/qtile/config.py:925` |
-| qtile | `configuration/qtile/config.py` | `widgets.service_state.WidgetServiceState(warning_color=)` | direct | `configuration/qtile/config.py:990` |
-| qtile | `configuration/qtile/config.py` | `widgets.vpn.WidgetVPN(warning_color=)` | direct | `configuration/qtile/config.py:961` |
+| qtile | `configuration/qtile/config.py` | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | direct | `configuration/qtile/config.py:871` |
+| qtile | `configuration/qtile/config.py` | `widgets.service_state.WidgetServiceState(warning_color=)` | direct | `configuration/qtile/config.py:1003` |
 | web-greeter | `configuration/web-greeter/themes/standard/theme.css` | `--warning` | direct | `configuration/web-greeter/themes/standard/theme.json#role_map` |
 
 #### `palette.yellow`
@@ -353,7 +367,7 @@ What a theme sets, and every field that carries it. `xorg` is absent because it 
 
 | App | Target | Field | How | Declared |
 | --- | --- | --- | --- | --- |
-| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-application-prefer-dark-theme` | selects | `helper/patch_gtk.py:122` |
+| gtk | `~/.config/gtk-{3,4}.0/settings.ini` | `gtk-application-prefer-dark-theme` | selects | `helper/patch_gtk.py:124` |
 
 #### `wallpapers.dark`
 
@@ -408,27 +422,28 @@ The same records, keyed by the file each value lands in.
 | `shared.task_list.CentredTaskList(border=)` | `palette.highlight` | direct |
 | `shared.task_list.CentredTaskList(foreground=)` | `palette.foreground` | direct |
 | `shared.task_list.CentredTaskList(markup_focused=)` | `palette.background` | direct |
-| `shared.task_list.CentredTaskList(urgent_border=)` | `palette.notification` | direct |
+| `shared.task_list.CentredTaskList(markup_urgent=)` | `palette.highlight` | direct |
+| `shared.task_list.CentredTaskList(unfocused_border=)` | `palette.surface` | direct |
+| `shared.task_list.CentredTaskList(urgent_border=)` | `palette.surface` | direct |
 | `shared.task_list.SecondaryTaskBar(background=)` | `palette.background` | direct |
-| `widget.Chord(chords_colors=)` | `palette.foreground` | direct |
+| `widget.Chord(chords_colors=)` | `palette.background` | direct |
 | `widget.Chord(chords_colors=)` | `palette.highlight` | direct |
 | `widget.GroupBox(active=)` | `palette.foreground` | direct |
 | `widget.GroupBox(inactive=)` | `palette.neutral` | direct |
 | `widget.GroupBox(this_current_screen_border=)` | `palette.highlight` | direct |
-| `widget.GroupBox(urgent_border=)` | `palette.notification` | direct |
-| `widget.GroupBox(urgent_text=)` | `palette.notification` | direct |
+| `widget.GroupBox(urgent_border=)` | `palette.highlight` | direct |
 | `widgets.audio.WidgetAudio(notification_color=)` | `palette.notification` | direct |
-| `widgets.bluetooth.WidgetBluetooth(warning_color=)` | `palette.warning` | direct |
-| `widgets.broadcast.WidgetBroadcast(notification_color=)` | `palette.notification` | direct |
-| `widgets.broadcast.WidgetBroadcast(warning_color=)` | `palette.warning` | direct |
+| `widgets.bluetooth.WidgetBluetooth(highlight_color=)` | `palette.highlight` | direct |
+| `widgets.broadcast.WidgetBroadcast(highlight_color=)` | `palette.highlight` | direct |
+| `widgets.claude_usage.WidgetClaudeUsage(highlight_color=)` | `palette.highlight` | direct |
 | `widgets.claude_usage.WidgetClaudeUsage(notification_color=)` | `palette.notification` | direct |
 | `widgets.claude_usage.WidgetClaudeUsage(warning_color=)` | `palette.warning` | direct |
-| `widgets.location.WidgetLocation(notification_color=)` | `palette.highlight` | direct |
-| `widgets.power_supply.WidgetPowerSupply(warning_color=)` | `palette.warning` | direct |
+| `widgets.location.WidgetLocation(notification_color=)` | `palette.notification` | direct |
+| `widgets.power_supply.WidgetPowerSupply(highlight_color=)` | `palette.highlight` | direct |
 | `widgets.service_state.WidgetServiceState(warning_color=)` | `palette.warning` | direct |
-| `widgets.updates.WidgetUpdates(notification_color=)` | `palette.highlight` | direct |
-| `widgets.updates.WidgetUpdates(warning_color=)` | `palette.notification` | direct |
-| `widgets.vpn.WidgetVPN(warning_color=)` | `palette.warning` | direct |
+| `widgets.updates.WidgetUpdates(highlight_color=)` | `palette.highlight` | direct |
+| `widgets.updates.WidgetUpdates(notification_color=)` | `palette.notification` | direct |
+| `widgets.vpn.WidgetVPN(notification_color=)` | `palette.notification` | direct |
 
 #### `configuration/web-greeter/themes/standard/theme.css` (web-greeter)
 
@@ -458,9 +473,9 @@ The same records, keyed by the file each value lands in.
 | `global.offset` | `font.size` | × average_scaling_factor, × 3, embedded |
 | `global.separator_color` | `palette.background` | direct |
 | `urgency_critical.foreground` | `palette.foreground` | direct |
-| `urgency_critical.format` | `palette.warning` | embedded |
+| `urgency_critical.format` | `palette.highlight` | embedded |
 | `urgency_low.foreground` | `palette.foreground` | direct |
-| `urgency_low.format` | `palette.neutral` | embedded |
+| `urgency_low.format` | `palette.foreground_muted` | embedded |
 | `urgency_normal.foreground` | `palette.foreground` | direct |
 | `urgency_normal.format` | `palette.notification` | embedded |
 
@@ -471,41 +486,41 @@ The same records, keyed by the file each value lands in.
 | `*:selected, *:selected:focus { background-color }` | `palette.highlight` | via role `accent` |
 | `*:selected, *:selected:focus { color }` | `palette.background` | via role `on-accent` |
 | `@define-color accent` | `palette.highlight` | direct |
+| `@define-color base` | `palette.background` | direct |
 | `@define-color error` | `palette.failure` | direct |
-| `@define-color muted` | `palette.neutral` | direct |
+| `@define-color muted` | `palette.foreground_muted` | direct |
 | `@define-color on-accent` | `palette.background` | direct |
-| `@define-color on-surface` | `palette.foreground` | direct |
+| `@define-color on-base` | `palette.foreground` | direct |
 | `@define-color success` | `palette.success` | direct |
-| `@define-color surface` | `palette.background` | direct |
 | `@define-color warning` | `palette.warning` | direct |
 | `accent_bg_color` | `palette.highlight` | via role `accent` |
 | `accent_color` | `palette.highlight` | via role `accent` |
 | `accent_fg_color` | `palette.background` | via role `on-accent` |
-| `card_bg_color` | `palette.background` | via role `surface` |
-| `card_fg_color` | `palette.foreground` | via role `on-surface` |
+| `card_bg_color` | `palette.background` | via role `base` |
+| `card_fg_color` | `palette.foreground` | via role `on-base` |
 | `destructive_bg_color` | `palette.failure` | via role `error` |
 | `destructive_color` | `palette.failure` | via role `error` |
-| `dialog_bg_color` | `palette.background` | via role `surface` |
-| `dialog_fg_color` | `palette.foreground` | via role `on-surface` |
-| `entry, textview, treeview, list, .view { background-color }` | `palette.background` | via role `surface` |
-| `entry, textview, treeview, list, .view { color }` | `palette.foreground` | via role `on-surface` |
+| `dialog_bg_color` | `palette.background` | via role `base` |
+| `dialog_fg_color` | `palette.foreground` | via role `on-base` |
+| `entry, textview, treeview, list, .view { background-color }` | `palette.background` | via role `base` |
+| `entry, textview, treeview, list, .view { color }` | `palette.foreground` | via role `on-base` |
 | `error_color` | `palette.failure` | via role `error` |
-| `headerbar, .titlebar { background-color }` | `palette.background` | via role `surface` |
-| `headerbar, .titlebar { color }` | `palette.foreground` | via role `on-surface` |
-| `headerbar_bg_color` | `palette.background` | via role `surface` |
-| `headerbar_fg_color` | `palette.foreground` | via role `on-surface` |
-| `popover_bg_color` | `palette.background` | via role `surface` |
-| `popover_fg_color` | `palette.foreground` | via role `on-surface` |
-| `sidebar_bg_color` | `palette.background` | via role `surface` |
-| `sidebar_fg_color` | `palette.foreground` | via role `on-surface` |
+| `headerbar, .titlebar { background-color }` | `palette.background` | via role `base` |
+| `headerbar, .titlebar { color }` | `palette.foreground` | via role `on-base` |
+| `headerbar_bg_color` | `palette.background` | via role `base` |
+| `headerbar_fg_color` | `palette.foreground` | via role `on-base` |
+| `popover_bg_color` | `palette.background` | via role `base` |
+| `popover_fg_color` | `palette.foreground` | via role `on-base` |
+| `sidebar_bg_color` | `palette.background` | via role `base` |
+| `sidebar_fg_color` | `palette.foreground` | via role `on-base` |
 | `success_color` | `palette.success` | via role `success` |
-| `view_bg_color` | `palette.background` | via role `surface` |
-| `view_fg_color` | `palette.foreground` | via role `on-surface` |
+| `view_bg_color` | `palette.background` | via role `base` |
+| `view_fg_color` | `palette.foreground` | via role `on-base` |
 | `warning_color` | `palette.warning` | via role `warning` |
-| `window, dialog, .background, popover, popover > contents { background-color }` | `palette.background` | via role `surface` |
-| `window, dialog, .background, popover, popover > contents { color }` | `palette.foreground` | via role `on-surface` |
-| `window_bg_color` | `palette.background` | via role `surface` |
-| `window_fg_color` | `palette.foreground` | via role `on-surface` |
+| `window, dialog, .background, popover, popover > contents { background-color }` | `palette.background` | via role `base` |
+| `window, dialog, .background, popover, popover > contents { color }` | `palette.foreground` | via role `on-base` |
+| `window_bg_color` | `palette.background` | via role `base` |
+| `window_fg_color` | `palette.foreground` | via role `on-base` |
 
 #### `~/.config/gtk-{3,4}.0/settings.ini` (gtk)
 
@@ -588,7 +603,7 @@ The same records, keyed by the file each value lands in.
 
 ### vscode — perceptual nearest match (`helper/patch_vsc.py`)
 
-Every colour in the stock theme is matched against the active palette in CAM16-UCS and replaced by the nearest token, so these are resolved rather than declared. `background` is excluded as a candidate for selection, highlight, hover, focus, drop, match and range backgrounds, which would otherwise become invisible.
+Every colour in the stock theme is matched against the active palette in CAM16-UCS and replaced by the nearest token, so these are resolved rather than declared. `background` is excluded as a candidate for selection, highlight, hover, focus, drop, match and range backgrounds, which would otherwise become invisible. `surface` and `surface_variant` are candidates for those washes only -- and not for a live selection, which stays a colour.
 
 #### `dark` — 246 keys (`workbench.colorCustomizations` in `settings.json`)
 
@@ -610,7 +625,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `button.hoverBackground` | `highlight` | 10.7 |
 | `button.secondaryBackground` | `background` | 7.1 |
 | `button.secondaryForeground` | `foreground_variant` | 2.0 |
-| `button.secondaryHoverBackground` | `highlight` | 33.4 |
+| `button.secondaryHoverBackground` | `surface` | 5.5 |
 | `checkbox.background` | `background` | 5.6 |
 | `checkbox.border` | `background` | 22.0 |
 | `checkbox.foreground` | `foreground` | 2.7 |
@@ -621,20 +636,20 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `diffEditor.border` | `background` | 9.0 |
 | `diffEditor.insertedTextBackground` | `warning` | 15.0 |
 | `diffEditor.removedTextBackground` | `failure` | 21.6 |
-| `dropdown.background` | `cyan_variant` | 39.5 |
+| `dropdown.background` | `surface` | 8.3 |
 | `dropdown.border` | `background` | 22.0 |
 | `dropdown.foreground` | `foreground` | 2.7 |
 | `editor.background` | `background` | 7.7 |
-| `editor.findMatchBackground` | `highlight` | 24.3 |
+| `editor.findMatchBackground` | `surface` | 10.7 |
 | `editor.findMatchBorder` | `highlight` | 10.8 |
 | `editor.findMatchHighlightBackground` | `notification` | 15.3 |
 | `editor.findMatchHighlightBorder` | `foreground_variant` | 2.0 |
-| `editor.findRangeHighlightBackground` | `highlight` | 38.1 |
+| `editor.findRangeHighlightBackground` | `surface` | 8.9 |
 | `editor.findRangeHighlightBorder` | `foreground_variant` | 2.0 |
 | `editor.foldBackground` | `background` | 23.4 |
 | `editor.foreground` | `foreground` | 2.0 |
-| `editor.hoverHighlightBackground` | `highlight` | 26.3 |
-| `editor.inactiveSelectionBackground` | `highlight` | 38.1 |
+| `editor.hoverHighlightBackground` | `surface` | 19.7 |
+| `editor.inactiveSelectionBackground` | `surface` | 8.9 |
 | `editor.lineHighlightBackground` | `foreground_variant` | 2.0 |
 | `editor.lineHighlightBorder` | `background` | 3.7 |
 | `editor.rangeHighlightBackground` | `foreground_variant` | 2.0 |
@@ -642,8 +657,8 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editor.selectionBackground` | `highlight` | 26.3 |
 | `editor.selectionHighlightBackground` | `blue` | 4.5 |
 | `editor.selectionHighlightBorder` | `highlight` | 21.2 |
-| `editor.wordHighlightBackground` | `cyan_variant` | 30.3 |
-| `editor.wordHighlightStrongBackground` | `highlight` | 29.5 |
+| `editor.wordHighlightBackground` | `surface` | 4.0 |
+| `editor.wordHighlightStrongBackground` | `surface` | 21.5 |
 | `editorBracketMatch.background` | `success` | 25.2 |
 | `editorBracketMatch.border` | `neutral` | 13.8 |
 | `editorCodeLens.foreground` | `neutral` | 7.3 |
@@ -657,11 +672,11 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editorGroupHeader.tabsBackground` | `background` | 4.9 |
 | `editorGutter.addedBackground` | `warning` | 15.4 |
 | `editorGutter.background` | `background` | 7.7 |
-| `editorGutter.commentRangeForeground` | `foreground` | 4.7 |
+| `editorGutter.commentRangeForeground` | `foreground_muted` | 2.9 |
 | `editorGutter.deletedBackground` | `failure` | 26.3 |
-| `editorGutter.foldingControlForeground` | `foreground` | 4.7 |
+| `editorGutter.foldingControlForeground` | `foreground_muted` | 2.9 |
 | `editorGutter.modifiedBackground` | `highlight` | 13.0 |
-| `editorHoverWidget.background` | `cyan_variant` | 48.1 |
+| `editorHoverWidget.background` | `surface` | 18.1 |
 | `editorHoverWidget.border` | `background` | 9.4 |
 | `editorHoverWidget.foreground` | `foreground` | 2.7 |
 | `editorIndentGuide.activeBackground` | `neutral` | 23.5 |
@@ -669,7 +684,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editorInfo.background` | `highlight` | 2.8 |
 | `editorInfo.border` | `highlight` | 2.8 |
 | `editorInfo.foreground` | `blue` | 6.8 |
-| `editorLineNumber.activeForeground` | `foreground` | 4.4 |
+| `editorLineNumber.activeForeground` | `foreground_muted` | 3.1 |
 | `editorLineNumber.foreground` | `neutral` | 15.0 |
 | `editorLink.activeForeground` | `highlight` | 1.5 |
 | `editorMarkerNavigation.background` | `background` | 3.0 |
@@ -712,13 +727,13 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `inputOption.activeForeground` | `foreground_variant` | 2.0 |
 | `list.activeSelectionBackground` | `highlight` | 30.0 |
 | `list.activeSelectionForeground` | `foreground_variant` | 2.0 |
-| `list.dropBackground` | `cyan_variant` | 39.2 |
-| `list.focusBackground` | `highlight` | 40.6 |
+| `list.dropBackground` | `surface` | 9.5 |
+| `list.focusBackground` | `surface` | 22.4 |
 | `list.focusForeground` | `foreground` | 2.7 |
 | `list.highlightForeground` | `highlight` | 9.0 |
-| `list.hoverBackground` | `cyan_variant` | 44.5 |
+| `list.hoverBackground` | `surface` | 15.3 |
 | `list.hoverForeground` | `foreground` | 2.7 |
-| `list.inactiveSelectionBackground` | `highlight` | 40.2 |
+| `list.inactiveSelectionBackground` | `surface` | 10.9 |
 | `list.inactiveSelectionForeground` | `foreground` | 2.7 |
 | `listFilterWidget.background` | `background` | 17.9 |
 | `listFilterWidget.noMatchesOutline` | `failure` | 22.1 |
@@ -729,7 +744,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `menu.selectionBackground` | `highlight` | 30.0 |
 | `menu.selectionBorder` | `background` | 22.0 |
 | `menu.selectionForeground` | `foreground_variant` | 2.0 |
-| `menu.separatorBackground` | `neutral` | 5.7 |
+| `menu.separatorBackground` | `foreground_muted` | 2.4 |
 | `menubar.selectionBackground` | `foreground_variant` | 2.0 |
 | `menubar.selectionForeground` | `foreground` | 2.7 |
 | `merge.commonContentBackground` | `background` | 3.7 |
@@ -769,7 +784,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `peekViewEditorGutter.background` | `background` | 16.6 |
 | `peekViewResult.background` | `background` | 4.9 |
 | `peekViewResult.fileForeground` | `foreground_variant` | 2.0 |
-| `peekViewResult.lineForeground` | `neutral` | 5.7 |
+| `peekViewResult.lineForeground` | `foreground_muted` | 2.4 |
 | `peekViewResult.matchHighlightBackground` | `notification` | 15.3 |
 | `peekViewResult.selectionBackground` | `highlight` | 10.0 |
 | `peekViewResult.selectionForeground` | `foreground_variant` | 2.0 |
@@ -780,19 +795,19 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `pickerGroup.foreground` | `highlight` | 10.5 |
 | `progressBar.background` | `highlight` | 13.3 |
 | `scrollbar.shadow` | `background` | 22.0 |
-| `scrollbarSlider.activeBackground` | `foreground` | 6.6 |
+| `scrollbarSlider.activeBackground` | `foreground_muted` | 2.0 |
 | `scrollbarSlider.background` | `neutral` | 19.8 |
-| `scrollbarSlider.hoverBackground` | `cyan_variant` | 26.6 |
+| `scrollbarSlider.hoverBackground` | `surface_variant` | 4.4 |
 | `selection.background` | `highlight` | 15.1 |
 | `settings.focusedRowBackground` | `foreground_variant` | 2.0 |
 | `settings.headerForeground` | `foreground` | 2.7 |
 | `sideBar.background` | `background` | 4.9 |
-| `sideBar.dropBackground` | `cyan_variant` | 39.2 |
+| `sideBar.dropBackground` | `surface` | 9.5 |
 | `sideBar.foreground` | `foreground` | 2.7 |
 | `sideBarSectionHeader.background` | `background` | 22.0 |
 | `sideBarSectionHeader.border` | `foreground` | 2.7 |
 | `sideBarSectionHeader.foreground` | `foreground` | 2.7 |
-| `sideBarTitle.foreground` | `neutral` | 5.7 |
+| `sideBarTitle.foreground` | `foreground_muted` | 2.4 |
 | `statusBar.background` | `highlight` | 10.2 |
 | `statusBar.debuggingBackground` | `notification` | 9.6 |
 | `statusBar.debuggingForeground` | `foreground_variant` | 2.0 |
@@ -855,16 +870,16 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `breadcrumb.activeSelectionForeground` | `foreground` | 1.8 |
 | `breadcrumb.background` | `background` | 2.0 |
 | `breadcrumb.focusForeground` | `foreground` | 1.8 |
-| `breadcrumb.foreground` | `foreground` | 8.9 |
+| `breadcrumb.foreground` | `foreground_muted` | 4.7 |
 | `button.background` | `highlight` | 10.2 |
 | `button.foreground` | `background` | 2.0 |
 | `button.hoverBackground` | `blue` | 5.2 |
-| `button.secondaryBackground` | `foreground` | 15.4 |
+| `button.secondaryBackground` | `foreground_muted` | 9.7 |
 | `button.secondaryForeground` | `background` | 2.0 |
 | `button.secondaryHoverBackground` | `foreground` | 9.0 |
 | `checkbox.background` | `background` | 2.0 |
 | `checkbox.border` | `foreground_variant` | 22.0 |
-| `checkbox.foreground` | `foreground` | 8.9 |
+| `checkbox.foreground` | `foreground_muted` | 4.7 |
 | `debugExceptionWidget.background` | `background` | 3.1 |
 | `debugExceptionWidget.border` | `background` | 12.1 |
 | `debugToolBar.background` | `background` | 3.1 |
@@ -872,23 +887,23 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `diffEditor.border` | `background` | 11.4 |
 | `diffEditor.insertedTextBackground` | `warning` | 15.0 |
 | `diffEditor.removedTextBackground` | `failure` | 21.6 |
-| `dropdown.background` | `neutral` | 39.9 |
+| `dropdown.background` | `surface` | 9.8 |
 | `dropdown.border` | `foreground_variant` | 22.0 |
-| `dropdown.foreground` | `foreground` | 8.9 |
+| `dropdown.foreground` | `foreground_muted` | 4.7 |
 | `editor.background` | `background` | 2.0 |
-| `editor.findMatchBackground` | `neutral` | 14.6 |
+| `editor.findMatchBackground` | `surface_variant` | 12.6 |
 | `editor.findMatchBorder` | `neutral` | 10.3 |
 | `editor.findMatchHighlightBackground` | `notification` | 15.3 |
 | `editor.findMatchHighlightBorder` | `background` | 2.0 |
-| `editor.findRangeHighlightBackground` | `neutral` | 15.9 |
+| `editor.findRangeHighlightBackground` | `surface_variant` | 5.6 |
 | `editor.findRangeHighlightBorder` | `background` | 2.0 |
 | `editor.foldBackground` | `background` | 22.3 |
 | `editor.foreground` | `foreground_variant` | 22.0 |
-| `editor.hoverHighlightBackground` | `highlight` | 26.0 |
-| `editor.inactiveSelectionBackground` | `neutral` | 34.0 |
-| `editor.lineHighlightBackground` | `neutral` | 39.9 |
+| `editor.hoverHighlightBackground` | `surface` | 18.6 |
+| `editor.inactiveSelectionBackground` | `surface` | 6.0 |
+| `editor.lineHighlightBackground` | `surface` | 9.8 |
 | `editor.lineHighlightBorder` | `background` | 4.5 |
-| `editor.rangeHighlightBackground` | `warning` | 38.3 |
+| `editor.rangeHighlightBackground` | `surface` | 36.6 |
 | `editor.rangeHighlightBorder` | `background` | 2.0 |
 | `editor.selectionBackground` | `highlight` | 26.0 |
 | `editor.selectionHighlightBackground` | `highlight` | 26.0 |
@@ -912,9 +927,9 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editorGutter.deletedBackground` | `failure` | 8.4 |
 | `editorGutter.foldingControlForeground` | `foreground` | 5.0 |
 | `editorGutter.modifiedBackground` | `highlight` | 10.9 |
-| `editorHoverWidget.background` | `neutral` | 36.4 |
+| `editorHoverWidget.background` | `surface` | 6.4 |
 | `editorHoverWidget.border` | `background` | 16.3 |
-| `editorHoverWidget.foreground` | `foreground` | 8.9 |
+| `editorHoverWidget.foreground` | `foreground_muted` | 4.7 |
 | `editorIndentGuide.activeBackground` | `neutral` | 4.1 |
 | `editorIndentGuide.background` | `background` | 12.7 |
 | `editorInfo.background` | `highlight` | 2.8 |
@@ -940,10 +955,10 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `editorWarning.foreground` | `notification` | 18.4 |
 | `editorWhitespace.foreground` | `foreground_variant` | 2.3 |
 | `editorWidget.background` | `background` | 3.1 |
-| `editorWidget.foreground` | `foreground` | 8.9 |
+| `editorWidget.foreground` | `foreground_muted` | 4.7 |
 | `editorWidget.resizeBorder` | `background` | 16.7 |
 | `focusBorder` | `highlight` | 8.1 |
-| `foreground` | `foreground` | 8.9 |
+| `foreground` | `foreground_muted` | 4.7 |
 | `gitDecoration.addedResourceForeground` | `green` | 12.0 |
 | `gitDecoration.conflictingResourceForeground` | `highlight` | 18.4 |
 | `gitDecoration.deletedResourceForeground` | `red` | 14.6 |
@@ -953,30 +968,30 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `gitDecoration.stageModifiedResourceForeground` | `yellow` | 6.5 |
 | `gitDecoration.submoduleResourceForeground` | `blue` | 7.4 |
 | `gitDecoration.untrackedResourceForeground` | `green` | 12.2 |
-| `icon.foreground` | `foreground` | 8.9 |
+| `icon.foreground` | `foreground_muted` | 4.7 |
 | `input.background` | `background` | 2.0 |
 | `input.border` | `foreground_variant` | 22.0 |
-| `input.foreground` | `foreground` | 8.9 |
-| `input.placeholderForeground` | `neutral` | 8.3 |
+| `input.foreground` | `foreground_muted` | 4.7 |
+| `input.placeholderForeground` | `foreground_muted` | 5.1 |
 | `inputOption.activeBackground` | `highlight` | 8.1 |
 | `inputOption.activeBorder` | `highlight` | 10.2 |
 | `inputOption.activeForeground` | `foreground_variant` | 22.0 |
 | `list.activeSelectionBackground` | `blue` | 11.0 |
 | `list.activeSelectionForeground` | `background` | 2.0 |
-| `list.dropBackground` | `highlight` | 34.9 |
-| `list.focusBackground` | `highlight` | 34.9 |
-| `list.focusForeground` | `foreground` | 8.9 |
+| `list.dropBackground` | `surface` | 11.5 |
+| `list.focusBackground` | `surface` | 11.5 |
+| `list.focusForeground` | `foreground_muted` | 4.7 |
 | `list.highlightForeground` | `blue` | 10.8 |
-| `list.hoverBackground` | `neutral` | 33.0 |
-| `list.hoverForeground` | `foreground` | 8.9 |
-| `list.inactiveSelectionBackground` | `neutral` | 33.0 |
-| `list.inactiveSelectionForeground` | `foreground` | 8.9 |
+| `list.hoverBackground` | `surface` | 3.4 |
+| `list.hoverForeground` | `foreground_muted` | 4.7 |
+| `list.inactiveSelectionBackground` | `surface` | 5.9 |
+| `list.inactiveSelectionForeground` | `foreground_muted` | 4.7 |
 | `listFilterWidget.background` | `background` | 19.1 |
 | `listFilterWidget.noMatchesOutline` | `red` | 17.3 |
 | `listFilterWidget.outline` | `foreground_variant` | 22.0 |
 | `menu.background` | `background` | 2.0 |
 | `menu.border` | `foreground_variant` | 22.0 |
-| `menu.foreground` | `foreground` | 8.9 |
+| `menu.foreground` | `foreground_muted` | 4.7 |
 | `menu.selectionBackground` | `blue` | 11.0 |
 | `menu.selectionBorder` | `foreground_variant` | 22.0 |
 | `menu.selectionForeground` | `background` | 2.0 |
@@ -999,11 +1014,11 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `minimapGutter.modifiedBackground` | `highlight` | 10.9 |
 | `notificationCenter.border` | `background` | 12.1 |
 | `notificationCenterHeader.background` | `background` | 6.5 |
-| `notificationCenterHeader.foreground` | `foreground` | 8.9 |
+| `notificationCenterHeader.foreground` | `foreground_muted` | 4.7 |
 | `notificationToast.border` | `background` | 12.1 |
 | `notifications.background` | `background` | 3.1 |
 | `notifications.border` | `background` | 6.5 |
-| `notifications.foreground` | `foreground` | 8.9 |
+| `notifications.foreground` | `foreground_muted` | 4.7 |
 | `notificationsErrorIcon.foreground` | `failure` | 20.1 |
 | `notificationsInfoIcon.foreground` | `highlight` | 16.7 |
 | `notificationsWarningIcon.foreground` | `notification` | 18.4 |
@@ -1020,30 +1035,30 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `peekViewEditorGutter.background` | `background` | 4.5 |
 | `peekViewResult.background` | `background` | 3.1 |
 | `peekViewResult.fileForeground` | `foreground_variant` | 7.7 |
-| `peekViewResult.lineForeground` | `foreground` | 10.2 |
+| `peekViewResult.lineForeground` | `foreground_muted` | 3.7 |
 | `peekViewResult.matchHighlightBackground` | `notification` | 15.3 |
 | `peekViewResult.selectionBackground` | `highlight` | 10.0 |
-| `peekViewResult.selectionForeground` | `neutral` | 12.4 |
+| `peekViewResult.selectionForeground` | `foreground_muted` | 2.2 |
 | `peekViewTitle.background` | `background` | 2.0 |
-| `peekViewTitleDescription.foreground` | `foreground` | 8.9 |
+| `peekViewTitleDescription.foreground` | `foreground_muted` | 4.7 |
 | `peekViewTitleLabel.foreground` | `foreground_variant` | 2.3 |
 | `pickerGroup.border` | `background` | 15.3 |
 | `pickerGroup.foreground` | `blue` | 10.8 |
 | `progressBar.background` | `blue` | 12.0 |
 | `scrollbar.shadow` | `background` | 9.5 |
 | `scrollbarSlider.activeBackground` | `foreground_variant` | 22.0 |
-| `scrollbarSlider.background` | `foreground` | 10.2 |
-| `scrollbarSlider.hoverBackground` | `foreground` | 10.2 |
+| `scrollbarSlider.background` | `foreground_muted` | 3.6 |
+| `scrollbarSlider.hoverBackground` | `foreground_muted` | 3.6 |
 | `selection.background` | `highlight` | 27.2 |
-| `settings.focusedRowBackground` | `neutral` | 39.9 |
-| `settings.headerForeground` | `foreground` | 8.9 |
+| `settings.focusedRowBackground` | `surface` | 9.8 |
+| `settings.headerForeground` | `foreground_muted` | 4.7 |
 | `sideBar.background` | `background` | 3.1 |
-| `sideBar.dropBackground` | `highlight` | 34.9 |
-| `sideBar.foreground` | `foreground` | 8.9 |
+| `sideBar.dropBackground` | `surface` | 11.5 |
+| `sideBar.foreground` | `foreground_muted` | 4.7 |
 | `sideBarSectionHeader.background` | `foreground_variant` | 22.0 |
-| `sideBarSectionHeader.border` | `foreground` | 8.9 |
-| `sideBarSectionHeader.foreground` | `foreground` | 8.9 |
-| `sideBarTitle.foreground` | `neutral` | 11.1 |
+| `sideBarSectionHeader.border` | `foreground_muted` | 4.7 |
+| `sideBarSectionHeader.foreground` | `foreground_muted` | 4.7 |
+| `sideBarTitle.foreground` | `foreground_muted` | 2.7 |
 | `statusBar.background` | `highlight` | 10.2 |
 | `statusBar.debuggingBackground` | `notification` | 9.6 |
 | `statusBar.debuggingForeground` | `background` | 2.0 |
@@ -1051,7 +1066,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `statusBar.noFolderBackground` | `magenta` | 8.8 |
 | `statusBar.noFolderForeground` | `background` | 2.0 |
 | `statusBarItem.activeBackground` | `background` | 2.0 |
-| `statusBarItem.hoverBackground` | `neutral` | 39.9 |
+| `statusBarItem.hoverBackground` | `surface` | 9.8 |
 | `statusBarItem.remoteBackground` | `green` | 5.6 |
 | `statusBarItem.remoteForeground` | `background` | 2.0 |
 | `tab.activeBackground` | `background` | 2.0 |
@@ -1063,7 +1078,7 @@ Every colour in the stock theme is matched against the active palette in CAM16-U
 | `tab.inactiveForeground` | `foreground_variant` | 2.3 |
 | `terminal.ansiBlack` | `foreground_variant` | 22.0 |
 | `terminal.ansiBlue` | `blue` | 8.4 |
-| `terminal.ansiBrightBlack` | `foreground` | 11.0 |
+| `terminal.ansiBrightBlack` | `foreground_muted` | 3.0 |
 | `terminal.ansiBrightBlue` | `blue` | 8.4 |
 | `terminal.ansiBrightCyan` | `highlight` | 9.3 |
 | `terminal.ansiBrightGreen` | `success` | 22.4 |

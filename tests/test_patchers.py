@@ -37,6 +37,7 @@ PALETTE = {
     "magenta": "#f9a8ee", "cyan": "#71dbe0", "red_variant": "#cd6869",
     "green_variant": "#569c67", "yellow_variant": "#c07726", "blue_variant": "#4d91c7",
     "magenta_variant": "#b66cac", "cyan_variant": "#229ca0",
+    "surface": "#514e4e", "surface_variant": "#706d6d", "foreground_muted": "#c2bebe",
 }
 
 #: Two monitors with different DPI, so an average is distinguishable from either one.
@@ -224,8 +225,15 @@ def test_dunst_colours_each_urgency_from_its_own_token(
     patch_dunst.patch_dunst(configuration)
     written = _dunstrc(home)
     assert PALETTE["notification"] in written["urgency_normal"]["format"]
-    assert PALETTE["warning"] in written["urgency_critical"]["format"]
-    assert PALETTE["neutral"] in written["urgency_low"]["format"]
+    assert PALETTE["highlight"] in written["urgency_critical"]["format"]
+    assert PALETTE["foreground_muted"] in written["urgency_low"]["format"]
+
+
+def test_dunst_keeps_warning_for_errors(configuration: dict, home: pathlib.Path) -> None:
+    """Urgency is how soon something wants reading, not that anything failed: no urgency is
+    drawn in `warning`, which would make every critical notification look like an error."""
+    patch_dunst.patch_dunst(configuration)
+    assert PALETTE["warning"] not in (home / ".config" / "dunst" / "dunstrc").read_text()
 
 
 def test_dunst_still_themes_without_geometry(configuration: dict, home: pathlib.Path) -> None:
@@ -304,7 +312,7 @@ def test_each_urgency_still_gets_its_own_colour(
     configuration: dict, home: pathlib.Path
 ) -> None:
     """The per-urgency `format` survives all of that -- verified by rendering the three
-    notifications and reading the titles back: critical olive, normal orange, low grey."""
+    notifications and reading the titles back, each in a colour of its own."""
     patch_dunst.patch_dunst(configuration)
     written = _dunstrc(home)
     colours = {

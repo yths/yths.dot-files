@@ -1,8 +1,9 @@
 """Qtile widget: indicator that toggles when a systemd user unit is active.
 
 Polls ``systemctl --user is-active <service>`` (default service: ``backend.service``).
-Renders a blinking dot when the service is up, an empty cell otherwise, and applies
-``warning_color`` if the service has failed. ``BackgroundPoll`` based.
+Renders a blinking dot when the service is up and, in ``warning_color``, a marker when it is
+not: a backend that is down is an error state, which is the one thing that colour is for.
+``BackgroundPoll`` based.
 """
 
 import subprocess

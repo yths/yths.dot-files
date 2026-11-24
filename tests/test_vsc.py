@@ -11,6 +11,7 @@ import json
 import pathlib
 
 import color_match
+import palette_tokens
 import patch_vsc
 import pytest
 
@@ -203,6 +204,104 @@ def test_a_label_that_vanished_into_its_selection_is_made_legible() -> None:
     assert fixed["list.inactiveSelectionForeground"] == "#000000"
     assert fixed["list.inactiveSelectionBackground"] == "#717171", "only the text moves"
     assert fixed["editorOverviewRuler.foreground"] == "#71717166", "translucent is left alone"
+
+
+# --------------------------------------------------------------------------- list rows
+#
+# Measured in the explorer with the light palette (background #e3e3e3, neutral #717171): a
+# file git ignores is labelled in `gitDecoration.ignoredResourceForeground`, and the row under
+# the pointer is washed in `list.hoverBackground`. The two are paired by nothing in their
+# names, each matched `neutral` on its own, and the file's name vanished while pointed at.
+
+ROWS = patch_vsc.build_palette_map({"light": {
+    "background": "#e3e3e3", "surface": "#c6c6c6", "surface_variant": "#aaaaaa",
+    "neutral": "#717171", "foreground": "#0f0f0f", "success": "#567e3f",
+}})["light"]
+
+
+def test_a_hover_that_swallowed_an_ignored_files_name_is_moved_to_a_surface() -> None:
+    colors = {
+        "sideBar.background": "#e3e3e3",
+        "sideBar.foreground": "#0f0f0f",
+        "gitDecoration.ignoredResourceForeground": "#717171",
+        "gitDecoration.untrackedResourceForeground": "#567e3f",
+        "list.hoverBackground": "#717171",
+    }
+    fixed = patch_vsc.with_legible_rows(colors, ROWS)
+    assert fixed["list.hoverBackground"] == "#c6c6c6"
+    assert fixed["gitDecoration.ignoredResourceForeground"] == "#717171", "only the wash moves"
+    # The dim label cannot reach the floor on any wash -- it has 3.8:1 on the bare side bar --
+    # so the wash that costs it least is the one taken.
+    ignored = color_match.contrast("#717171", fixed["list.hoverBackground"])
+    assert ignored > color_match.contrast("#717171", "#aaaaaa") > 1
+    assert ignored > 2.5
+
+
+def test_every_row_wash_is_checked_and_not_only_the_hover() -> None:
+    colors = {"gitDecoration.ignoredResourceForeground": "#717171"}
+    colors.update(dict.fromkeys(patch_vsc.ROW_WASHES, "#717171"))
+    fixed = patch_vsc.with_legible_rows(colors, ROWS)
+    assert {fixed[key] for key in patch_vsc.ROW_WASHES} == {"#c6c6c6"}
+
+
+def test_a_wash_every_label_reads_on_is_kept() -> None:
+    colors = {"sideBar.foreground": "#0f0f0f", "list.hoverBackground": "#aaaaaa"}
+    assert patch_vsc.with_legible_rows(colors, ROWS) == colors
+
+
+# The selected row of the focused list is not a wash under a label that keeps its colour:
+# VSCode draws every label there in `list.activeSelectionForeground`.
+def test_the_active_selection_is_left_to_its_own_pair() -> None:
+    colors = {
+        "gitDecoration.ignoredResourceForeground": "#717171",
+        "list.activeSelectionBackground": "#717171",
+    }
+    assert patch_vsc.with_legible_rows(colors, ROWS) == colors
+
+
+def test_a_translucent_wash_is_left_alone() -> None:
+    colors = {
+        "gitDecoration.ignoredResourceForeground": "#717171",
+        "list.hoverBackground": "#71717180",
+    }
+    assert patch_vsc.with_legible_rows(colors, ROWS) == colors
+
+
+def test_a_palette_without_surface_greys_keeps_its_match() -> None:
+    bare = patch_vsc.build_palette_map({"light": {"background": "#e3e3e3", "neutral": "#717171"}})
+    colors = {
+        "gitDecoration.ignoredResourceForeground": "#717171",
+        "list.hoverBackground": "#717171",
+    }
+    assert patch_vsc.with_legible_rows(colors, bare["light"]) == colors
+
+
+def _bundles() -> list[tuple[str, dict]]:
+    """Every bundle on this machine, completed the way ``main`` completes it."""
+    assets = pathlib.Path(patch_vsc.__file__).resolve().parent.parent / "assets"
+    return [
+        (path.parent.name, palette_tokens.complete(json.loads(path.read_text(encoding="utf-8"))))
+        for path in sorted(assets.glob("*/palette.json"))
+    ]
+
+
+# The whole path, against the real templates: whatever a bundle's colours are, no label in a
+# list is left in or near the colour of the row it sits on.
+@pytest.mark.parametrize(("name", "palette"), _bundles(), ids=lambda value: str(value)[:16])
+def test_no_bundle_hides_a_label_in_its_own_row(name: str, palette: dict) -> None:
+    directory = pathlib.Path(patch_vsc.__file__).resolve().parent.parent / "configuration" / "vscode"
+    themes = patch_vsc.build_themes(
+        patch_vsc.load_default_themes(str(directory)),
+        patch_vsc.build_palette_map(palette), "nearest_neighbor",
+    )
+    for mode, theme in themes.items():
+        colors = theme["colors"]
+        for wash in patch_vsc.ROW_WASHES:
+            if not patch_vsc._opaque(colors.get(wash)):
+                continue
+            for key, label in patch_vsc.row_labels(colors).items():
+                ratio = color_match.contrast(label, colors[wash])
+                assert ratio >= 2, f"{name} {mode}: {key} is {ratio:.2f}:1 on {wash}"
 
 
 # ------------------------------------------------------------------------- the keyring

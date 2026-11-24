@@ -1,8 +1,9 @@
 """Qtile widget: OBS broadcast and recording state.
 
 Reads the latest entry from the ``broadcast`` Redis stream (``streaming``, ``obs``
-booleans) and renders a recording dot when OBS is live, switching every screen to the
-highlight wallpaper while broadcasting. ``InLoopPollText`` based, so ``poll()`` must never
+booleans) and renders a recording dot when OBS is running -- in ``highlight_color`` while it
+is live, since being on air is the one thing here worth looking at now -- switching every
+screen to the highlight wallpaper while broadcasting. ``InLoopPollText`` based, so ``poll()`` must never
 raise.
 
 Named ``broadcast`` rather than ``stream`` because every other widget's module name is its
@@ -25,8 +26,7 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
     def __init__(
         self,
         r: redis.Redis | None,
-        notification_color: str = "#00ff00",
-        warning_color: str = "#ff0000",
+        highlight_color: str = "#ff0000",
         configuration_file_path: str | None = None,
         symbols: dict[str, Any] | None = None,
         **config: Any,
@@ -34,8 +34,7 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
         libqtile.widget.base.InLoopPollText.__init__(self, **config)
         self.r = r
 
-        self.warning_color = warning_color
-        self.notification_color = notification_color
+        self.highlight_color = highlight_color
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws something.
         self.symbols = symbols or vocabulary.SYMBOLS
@@ -86,7 +85,7 @@ class WidgetBroadcast(libqtile.widget.base.InLoopPollText):
         if streaming:
             if self.condition != "urgent":
                 self._apply_condition("urgent")
-            return f"<span color='{self.warning_color}'>{icon}</span>"
+            return f"<span color='{self.highlight_color}'>{icon}</span>"
 
         if self.condition != "normal":
             self._apply_condition("normal")

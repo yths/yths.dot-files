@@ -20,7 +20,10 @@
         "magenta_variant": "#b66cac",
         "yellow_variant": "#c07726",
         "neutral": "#8d8989",
-        "foreground_variant": "#322f2f"
+        "foreground_variant": "#322f2f",
+        "surface": "#e2dede",
+        "surface_variant": "#c6c2c2",
+        "foreground_muted": "#6e6a6a"
     },
     "dark": {
         "background": "#322f2f",
@@ -43,6 +46,9 @@
         "magenta_variant": "#b66cac",
         "yellow_variant": "#c07726",
         "neutral": "#afabab",
-        "foreground_variant": "#fffbfb"
+        "foreground_variant": "#fffbfb",
+        "surface": "#514e4e",
+        "surface_variant": "#706d6d",
+        "foreground_muted": "#c2bebe"
     }
 }

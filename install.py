@@ -44,6 +44,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "he
 
 import apply_icc
 import fonts
+import palette_tokens
 import patch_configurations
 import screen_configuration
 import symbols
@@ -274,6 +275,25 @@ def install_palette(bundle_path: str) -> None:
         logger.info(f"Removed the obsolete {legacy} link.")
 
 
+def read_palette(path: str) -> dict[str, dict[str, str]]:
+    """A bundle's palette, with the tokens it predates derived from the ones it has.
+
+    The vocabulary grew three greys -- ``surface``, ``surface_variant``, ``foreground_muted``
+    -- and a bundle exported before them is still a theme somebody uses. It gets stand-ins
+    mixed from its own greys, and a line saying so: they are an approximation of what the
+    generator would choose, and exporting the theme again is what replaces them.
+    """
+    with open(path, encoding="utf-8") as handle:
+        palette = json.load(handle)
+    stand_ins = palette_tokens.derived(palette)
+    if stand_ins:
+        logger.info(
+            f"{path} predates {', '.join(stand_ins)}; derived them from its other greys. "
+            "Export the theme again to have them chosen by the generator."
+        )
+    return palette_tokens.complete(palette)
+
+
 def install_wallpapers(bundle_path: str) -> dict[str, str]:
     """Link the bundle's wallpapers into place and return the `wallpapers` block for them."""
     wallpapers = {}
@@ -304,10 +324,9 @@ def assemble_configuration(bundle_path: str, wallpapers: dict[str, str]) -> dict
     configuration.pop("colors", None)
 
     configuration["monitors"] = screen_configuration.get()
-    with open(
-        os.path.expanduser(os.path.join("~", ".config", "palette.json")), encoding="utf-8"
-    ) as handle:
-        configuration["palette"] = json.load(handle)
+    configuration["palette"] = read_palette(
+        os.path.expanduser(os.path.join("~", ".config", "palette.json"))
+    )
 
     configuration["wallpapers"] = wallpapers
     # The bundle's font, if this machine has it; setup.toml's fallback at the bundle's size
@@ -368,8 +387,7 @@ def migrate_configuration(
     # bundle was installed last, so reading it made ``--migrate --theme other`` produce a
     # configuration named for one theme wearing another's colours -- silently, because both are
     # valid palettes and nothing downstream can tell which it asked for.
-    with open(os.path.join(bundle_path, "palette.json"), encoding="utf-8") as handle:
-        migrated["palette"] = json.load(handle)
+    migrated["palette"] = read_palette(os.path.join(bundle_path, "palette.json"))
     migrated["font"] = fonts.resolve(bundle.get("font"), SETUP)
     migrated.update(theme_vocabulary(bundle))
 

@@ -31,10 +31,12 @@ GTK_DIRECTORIES = ("gtk-3.0", "gtk-4.0")
 #: The palette tokens the stylesheet is built from, under the names it refers to them by.
 #: Naming the roles rather than the tokens keeps the CSS readable and means a rule says what
 #: it is for rather than which colour it happens to use.
+#: ``base`` rather than ``surface``, which is a palette token of its own -- the grey a step
+#: off the background -- and not what a window is filled with.
 ROLES = {
-    "surface": "background",
-    "on-surface": "foreground",
-    "muted": "neutral",
+    "base": "background",
+    "on-base": "foreground",
+    "muted": "foreground_muted",
     "accent": "highlight",
     "on-accent": "background",
     "warning": "warning",
@@ -46,20 +48,20 @@ ROLES = {
 #: ``@define-color`` reaches anything, and the only supported way to recolour libadwaita
 #: without shipping a whole theme.
 ADWAITA_COLOURS = {
-    "window_bg_color": "surface",
-    "window_fg_color": "on-surface",
-    "view_bg_color": "surface",
-    "view_fg_color": "on-surface",
-    "headerbar_bg_color": "surface",
-    "headerbar_fg_color": "on-surface",
-    "popover_bg_color": "surface",
-    "popover_fg_color": "on-surface",
-    "dialog_bg_color": "surface",
-    "dialog_fg_color": "on-surface",
-    "card_bg_color": "surface",
-    "card_fg_color": "on-surface",
-    "sidebar_bg_color": "surface",
-    "sidebar_fg_color": "on-surface",
+    "window_bg_color": "base",
+    "window_fg_color": "on-base",
+    "view_bg_color": "base",
+    "view_fg_color": "on-base",
+    "headerbar_bg_color": "base",
+    "headerbar_fg_color": "on-base",
+    "popover_bg_color": "base",
+    "popover_fg_color": "on-base",
+    "dialog_bg_color": "base",
+    "dialog_fg_color": "on-base",
+    "card_bg_color": "base",
+    "card_fg_color": "on-base",
+    "sidebar_bg_color": "base",
+    "sidebar_fg_color": "on-base",
     "accent_bg_color": "accent",
     "accent_fg_color": "on-accent",
     "accent_color": "accent",
@@ -75,9 +77,9 @@ ADWAITA_COLOURS = {
 #: is a chance to break an application's layout in a way nothing here would notice. These
 #: cover the surfaces a window is mostly made of and stop.
 RULES = (
-    ("window, dialog, .background, popover, popover > contents", "surface", "on-surface"),
-    ("headerbar, .titlebar", "surface", "on-surface"),
-    ("entry, textview, treeview, list, .view", "surface", "on-surface"),
+    ("window, dialog, .background, popover, popover > contents", "base", "on-base"),
+    ("headerbar, .titlebar", "base", "on-base"),
+    ("entry, textview, treeview, list, .view", "base", "on-base"),
     ("*:selected, *:selected:focus", "accent", "on-accent"),
 )
 

@@ -32,7 +32,7 @@ MEASUREMENT: dict[str, Any] = {
 def cell(measurement: dict[str, Any] | None, expanded: bool = False) -> WidgetPowerSupply:
     widget = WidgetPowerSupply.__new__(WidgetPowerSupply)
     widget.symbols, widget.strings = symbols.SYMBOLS, symbols.STRINGS
-    widget.warning_color = "#ff0000"
+    widget.highlight_color = "#ff0000"
     widget.measurement = measurement
     widget.expanded = expanded
     return widget

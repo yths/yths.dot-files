@@ -4,7 +4,7 @@ Long-lived concepts. For the whole-system picture, start with [architecture.md](
 
 ## Theme System
 
-A theme is a bundle under `assets/<name>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.json`, and four wallpapers. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
+A theme is a bundle under `assets/<name>/` produced by the [yths.themes](https://github.com/yths/yths.themes) orchestrator, shipping a `config.json` manifest, a `palette.json`, and four wallpapers. The palette is not yths.themes' own: [chromalytica](https://github.com/yths/chromalytica) generates it, and the bundle carries the file as chromalytica wrote it. [architecture.md](architecture.md#the-theme-bundle-lifecycle) traces what happens to one from export through to a running desktop; the contract below is the layout a bundle has to satisfy for that to work.
 
 One bundle is tracked: `assets/default/`, which ships with this repository. Every other one is somebody's own — exported beside it and gitignored, so `git status` stays clean while `install.py --theme <name>` treats it exactly like the tracked one. Discovery is by the presence of a `config.json`, not by the directory being committed.
 
@@ -44,9 +44,16 @@ machine that has no theme generator installed, so anything needing a library to 
 unreadable here. It is JSON rather than the pickle it once was because bundles arrive from
 another tool, and unpickling a file runs whatever code it holds; a bundle exported before the
 change converts once with `python helper/convert_palette.py assets/<name>`, which refuses any
-pickle that is more than plain data. The token vocabulary is in
-[palette-semantics.md](palette-semantics.md); `yths.themes` holds the same list as an enum and
-has a contract test asserting the two agree against this repository's tracked bundle.
+pickle that is more than plain data.
+
+The file is chromalytica's `out/palette.json`, unchanged: twenty-four tokens, in a fixed
+order, the same in both modes. The vocabulary is in
+[palette-semantics.md](palette-semantics.md) and in
+[`helper/palette_tokens.py`](../helper/palette_tokens.py); chromalytica holds the same tuple
+and has a contract test that reads this repository's tracked bundle, and
+`tests/test_palette_tokens.py` holds that bundle to the tuple from this side. A bundle
+exported before the newest three tokens is given stand-ins for them at install time rather
+than refused.
 
 Of the manifest, `install.py` consumes `name` and — since the symbol vocabulary — the
 optional `symbols` and `strings` blocks, which it merges over the ASCII defaults in
@@ -98,13 +105,23 @@ For the widget-development pattern, see [../configuration/qtile/widgets/README.m
 
 ## Palette Design
 
-Lightness and colorfulness correlate with perceptual saliency: the colours that should draw
-the eye are both lighter and more saturated than the ones that should recede, so the
-hierarchy survives being seen out of the corner of an eye at the edge of a bar.
+A colour draws the eye by how far it stands from what surrounds it, which on this desktop is
+the background and the text. That distance is the palette's one hierarchy: `highlight`
+stands furthest from both, the outcome tokens next, then `warning`, then `notification`, and
+plain text not at all — so what a colour means and how hard it pulls agree, and the order
+survives being seen out of the corner of an eye at the edge of a bar.
+[palette-semantics.md](palette-semantics.md) says what each of those tokens is for;
+chromalytica's report shows the distances it chose them by.
 
-The dark variant is the photonegative reflection of the light one. Corresponding tokens swap
-lightness rather than re-picking a new colour, which is what keeps a token recognisable
-across a theme switch — the same role stays the same hue.
+The two modes are mirror images. A token keeps its role and its hue across a theme switch
+and stands as far from the dark background as it did from the light one, which is what keeps
+it recognisable.
+
+The shipped `default` bundle predates that generator. Its colours come from the one before
+it, which related the two modes photonegatively — a token swaps its lightness and several
+keep one colour in both modes — and its three newest greys are mixes of the greys it already
+had. It follows the vocabulary and the meanings above; a bundle generated now also follows
+the distances.
 
 The visual reference, with swatches and sRGB values for every token in both modes, is at
 [palettes/default/README.md](palettes/default/README.md).

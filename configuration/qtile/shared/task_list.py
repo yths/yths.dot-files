@@ -18,22 +18,8 @@ The highlight block grows with it and stays symmetric about the centre.
 
 from typing import Any
 
-import color_match
 from libqtile import widget
 from shared.hover_bar import HoverBar
-
-
-def inactive_task_colour(background: str, neutral: str, weight: float = 0.25) -> str:
-    """The block behind a window that is not focused: the bar's colour, a step toward neutral.
-
-    Drawn on the bar's own background, the inactive titles ran together -- nothing showed
-    where one window's cell ended and the next began. The palette has no token for a raised
-    surface, so this mixes one from the two it does have. A quarter of the way to ``neutral``
-    is enough to see the cell's edges against the bar and little enough that ``foreground``
-    text stays above the 4.5:1 that body text needs; and because it starts from ``background`` it
-    lightens a dark variant and darkens a light one without knowing which it was given.
-    """
-    return color_match.mix(background, neutral, weight)
 
 
 def use_secondary_bar(available: int, minimum: int, secondary: bool) -> bool:
@@ -42,8 +28,15 @@ def use_secondary_bar(available: int, minimum: int, secondary: bool) -> bool:
 
 
 class CentredTaskList(widget.TaskList):
-    def __init__(self, **config: Any) -> None:
+    """``markup_urgent`` wraps the title of a window that asks for attention, the way
+    ``markup_focused`` wraps the focused one's. ``TaskList`` has no such option: with
+    ``highlight_method="block"`` it draws every title in ``foreground`` and says *urgent*
+    with the block alone, which leaves no way to mark one without filling its cell.
+    """
+
+    def __init__(self, markup_urgent: str | None = None, **config: Any) -> None:
         super().__init__(**config)
+        self.markup_urgent = markup_urgent
         self.titles_hidden = False
 
     def _configure(self, qtile: Any, bar: Any) -> None:
@@ -53,8 +46,8 @@ class CentredTaskList(widget.TaskList):
 
     def get_taskname(self, window: Any) -> str:
         name = super().get_taskname(window)
-        if window is not None and window.urgent and self.markup_focused:
-            return self.markup_focused.format(name)
+        if window is not None and window.urgent and self.markup_urgent:
+            return self.markup_urgent.format(name)
         return name
 
     def draw(self) -> None:

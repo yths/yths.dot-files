@@ -122,8 +122,8 @@ def tab_settings(palette: list) -> dict[str, str]:
 
     The task list is the scheme: the bar is ``background``; the focused window is a
     ``highlight`` block with ``background`` text; every other window is ``foreground`` text
-    on a block mixed from ``background`` toward ``neutral``. The selected tab and the tab bar
-    take the first two as they are.
+    on ``surface``, a step from ``background`` toward ``neutral``. The selected tab and the
+    tab bar take the first two as they are.
 
     The third needs extending, because the task list has one kind of unfocused cell with a
     gap either side and qutebrowser has four kinds -- even and odd, pinned or not -- with no

@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import color_match
+import palette_tokens
 import pytest
 import shared.task_list
 from libqtile import bar, widget
@@ -51,9 +52,15 @@ def test_a_line_taller_than_the_bar_gets_no_negative_padding(
     assert _configured(monkeypatch, bar=20, line=40).padding_y == 0
 
 
+# An urgent window's title is wrapped in its own markup, whatever state the window is in,
+# and the name inside is escaped first -- it is the window's to choose, and a title with a
+# `<` in it would otherwise be parsed as markup and blank the cell.
 @pytest.mark.parametrize("state", ["normal", "floating", "minimized", "maximized"])
-def test_urgent_titles_use_the_focused_text_colour(state: str) -> None:
-    task = shared.task_list.CentredTaskList(markup_focused="<span foreground='#123456'>{}</span>")
+def test_urgent_titles_take_the_urgent_markup(state: str) -> None:
+    task = shared.task_list.CentredTaskList(
+        markup_focused="<span foreground='#123456'>{}</span>",
+        markup_urgent="<span foreground='#abcdef' weight='bold'>{}</span>",
+    )
     task.markup = True
     window = types.SimpleNamespace(
         name="Window <title>",
@@ -65,14 +72,19 @@ def test_urgent_titles_use_the_focused_text_colour(state: str) -> None:
     )
 
     urgent = task.get_taskname(window)
-    assert urgent.startswith("<span foreground='#123456'>")
+    assert urgent.startswith("<span foreground='#abcdef' weight='bold'>")
     assert "Window &lt;title&gt;" in urgent
     window.urgent = False
-    assert urgent == task.markup_focused.format(task.get_taskname(window))
+    assert urgent == task.markup_urgent.format(task.get_taskname(window))
 
 
-def test_urgent_and_focused_titles_match_without_changing_normal_titles() -> None:
-    task = shared.task_list.CentredTaskList(markup_focused="<span foreground='#123456'>{}</span>")
+# The focused window is a filled block and an urgent one is not: with no window borders the
+# block is the only thing saying where focus is, so the two must not be drawn alike.
+def test_an_urgent_title_is_not_drawn_like_the_focused_one() -> None:
+    task = shared.task_list.CentredTaskList(
+        markup_focused="<span foreground='#123456'>{}</span>",
+        markup_urgent="<span foreground='#abcdef' weight='bold'>{}</span>",
+    )
     task.markup = True
     window = types.SimpleNamespace(
         name="Window", urgent=False, minimized=False, maximized=False, floating=False,
@@ -83,7 +95,17 @@ def test_urgent_and_focused_titles_match_without_changing_normal_titles() -> Non
     focused = task.get_taskname(window)
     window.group.current_window = None
     window.urgent = True
-    assert task.get_taskname(window) == focused
+    assert task.get_taskname(window) != focused
+
+
+def test_without_urgent_markup_an_urgent_title_is_left_alone() -> None:
+    task = shared.task_list.CentredTaskList(markup_focused="<span foreground='#123456'>{}</span>")
+    task.markup = True
+    window = types.SimpleNamespace(
+        name="Window", urgent=True, minimized=False, maximized=False, floating=False,
+        group=types.SimpleNamespace(current_window=None),
+    )
+    assert task.get_taskname(window) == "Window"
 
 
 @pytest.mark.parametrize(
@@ -210,7 +232,7 @@ def test_screen_outline_depends_on_monitor_count(tmp_path: Path, monitor_count: 
     }
     configuration["palette"] = {
         configuration["state"]["theme"]: dict.fromkeys(
-            ["background", "foreground", "neutral", "highlight", "notification", "warning"], "#111111"
+            palette_tokens.TOKENS, "#111111"
         )
     }
     config_directory = tmp_path / ".config"
@@ -243,27 +265,33 @@ for screen in config['screens']:
 
 
 def _bundle_palettes() -> list[tuple[str, dict[str, str]]]:
+    """Every bundle on this machine, as the installer hands it to qtile: completed, so one
+    exported before the surface greys is held to the stand-ins it would actually get."""
     assets = Path(__file__).resolve().parent.parent / "assets"
     found = []
     for path in sorted(assets.glob("*/palette.json")):
-        palette = json.loads(path.read_text(encoding="utf-8"))
+        palette = palette_tokens.complete(json.loads(path.read_text(encoding="utf-8")))
         found += [(f"{path.parent.name}-{variant}", palette[variant]) for variant in ("dark", "light")]
     return found
 
 
-# The inactive block has to be told apart from the bar without competing with the focused
-# window, and the title on it has to stay readable -- in both variants of every bundle.
+# The inactive block is `surface`. It has to be told apart from the bar without competing
+# with the focused window, and the title on it has to stay readable -- in both variants of
+# every bundle.
 @pytest.mark.parametrize(("name", "palette"), _bundle_palettes(), ids=lambda value: str(value)[:24])
 def test_inactive_tasks_are_distinct_from_the_bar_and_legible(
     name: str, palette: dict[str, str]
 ) -> None:
-    block = shared.task_list.inactive_task_colour(palette["background"], palette["neutral"])
+    block = palette["surface"]
     assert block != palette["background"], name
     separation = color_match.contrast(block, palette["background"])
     assert 1.2 <= separation <= 2, f"{name}: the block is {separation:.2f}:1 against the bar"
     assert color_match.contrast(palette["foreground"], block) >= 4.5, name
 
 
-def test_the_inactive_colour_is_a_weighted_mix() -> None:
-    assert shared.task_list.inactive_task_colour("#000000", "#ffffff", 0.5) == "#808080"
-    assert shared.task_list.inactive_task_colour("#102030", "#102030") == "#102030"
+# An urgent title is `highlight` on that block, in bold: large-text contrast is what it has
+# to reach, and a palette whose accent sinks into its own surface would hide the one title
+# that is asking to be read.
+@pytest.mark.parametrize(("name", "palette"), _bundle_palettes(), ids=lambda value: str(value)[:24])
+def test_urgent_titles_read_on_the_inactive_block(name: str, palette: dict[str, str]) -> None:
+    assert color_match.contrast(palette["highlight"], palette["surface"]) >= 2.4, name

@@ -2,7 +2,7 @@
 
 Two patchers resolve colours rather than being told which token to use: VSCode recolours a
 stock theme, and qutebrowser recolours its stock defaults. Both ask the same question -- of
-the twenty-one colours this theme has, which is this one closest to? -- and "closest" means
+the colours this theme has, which is this one closest to? -- and "closest" means
 CAM16-UCS ΔE rather than anything in RGB, because RGB distance says a dark blue and a dark
 green are neighbours and the eye does not.
 
@@ -20,6 +20,7 @@ that would have to be kept true.
 from typing import Any, NamedTuple
 
 import colour
+import palette_tokens
 
 #: CSS/Qt colour names, lowercased. Qt's named colours are the SVG set, which is this one.
 NAMED: dict[str, str] = {
@@ -107,11 +108,34 @@ def excludes_background(key: str | None) -> bool:
     return any(marker in lowered for marker in HIGHLIGHT_KEY_MARKERS)
 
 
+def is_selection(key: str | None) -> bool:
+    """Whether this key names what is selected, where the selecting is happening.
+
+    That is the focal accent, not a wash: it takes ``highlight`` the way the focused window
+    and the selected launcher entry do. A selection left behind in a list that lost focus is
+    named ``inactiveSelection`` and is a wash again.
+    """
+    lowered = (key or "").lower()
+    return "selection" in lowered and "inactive" not in lowered
+
+
 def filter_candidates(key: str | None, candidates: list) -> list:
-    """The palette a key may be matched against."""
-    if excludes_background(key):
-        return [c for c in candidates if c["label"] not in HIGHLIGHT_EXCLUDED_LABELS]
-    return candidates
+    """The palette a key may be matched against.
+
+    A wash -- a hover, a match, a selection that lost focus -- may be anything but the
+    background it has to show against. Everything else may be anything but the two surface
+    greys: they sit a step off the background so a wash can be seen without being a colour,
+    which is exactly what makes them wrong for text, and a side bar or a status bar matched
+    onto one stops being part of the surface the editor is. A live selection is refused
+    both, so it stays a colour.
+    """
+    if not excludes_background(key):
+        excluded = SURFACE_LABELS
+    elif is_selection(key):
+        excluded = HIGHLIGHT_EXCLUDED_LABELS | SURFACE_LABELS
+    else:
+        excluded = HIGHLIGHT_EXCLUDED_LABELS
+    return [c for c in candidates if c["label"] not in excluded]
 
 
 def nearest(value: str, candidates: list, lookup: list | None = None) -> Match | None:
@@ -159,7 +183,10 @@ MIN_TEXT_CONTRAST = 4.5
 
 #: The palette tokens text may be re-picked from: the greys, per docs/palette-semantics.md.
 #: A chromatic token reads, but a side bar of teal file names is not what a grey label meant.
-TEXT_LABELS = frozenset({"foreground", "foreground_variant", "neutral", "background"})
+TEXT_LABELS = palette_tokens.TEXT_GREYS
+
+#: The tokens a row's wash may be re-picked from: the greys a step off the background.
+SURFACE_LABELS = palette_tokens.SURFACE_GREYS
 
 
 def _luminance(rgb: tuple[float, float, float]) -> float:
@@ -202,13 +229,7 @@ def legible(value: str, background: str, candidates: list) -> str | None:
 def mix(first: str, second: str, weight: float) -> str:
     """``first`` moved ``weight`` of the way to ``second``, channel by channel, as a hex.
 
-    For the surfaces a palette implies but does not name: a block a step off the bar's
-    colour, for a cell that should be visible without being a colour.
+    For a surface between two tokens that no token names: the rungs of qutebrowser's tab
+    ladder. A single step off the background is ``surface``, which a palette carries.
     """
-    start, end = (
-        [int(colour.lstrip("#")[index : index + 2], 16) for index in (0, 2, 4)]
-        for colour in (first, second)
-    )
-    return "#" + "".join(
-        f"{round(a + (b - a) * weight):02x}" for a, b in zip(start, end, strict=True)
-    )
+    return palette_tokens.mix(first, second, weight)

@@ -34,3 +34,6 @@ consumers read them), see [../../palette-semantics.md](../../palette-semantics.m
 | yellow_variant               | `#c07726` | `(0.753, 0.467, 0.149)` | ![#c07726](c07726.png) | ![#c07726](c07726.png) | `(0.753, 0.467, 0.149)` | `#c07726` |
 | neutral                      | `#8d8989` | `(0.553, 0.537, 0.537)` | ![#8d8989](8d8989.png) | ![#afabab](afabab.png) | `(0.686, 0.671, 0.671)` | `#afabab` |
 | foreground_variant           | `#322f2f` | `(0.196, 0.184, 0.184)` | ![#322f2f](322f2f.png) | ![#fffbfb](fffbfb.png) | `(1.000, 0.984, 0.984)` | `#fffbfb` |
+| surface                      | `#e2dede` | `(0.886, 0.871, 0.871)` | ![#e2dede](e2dede.png) | ![#514e4e](514e4e.png) | `(0.318, 0.306, 0.306)` | `#514e4e` |
+| surface_variant              | `#c6c2c2` | `(0.776, 0.761, 0.761)` | ![#c6c2c2](c6c2c2.png) | ![#706d6d](706d6d.png) | `(0.439, 0.427, 0.427)` | `#706d6d` |
+| foreground_muted             | `#6e6a6a` | `(0.431, 0.416, 0.416)` | ![#6e6a6a](6e6a6a.png) | ![#c2bebe](c2bebe.png) | `(0.761, 0.745, 0.745)` | `#c2bebe` |

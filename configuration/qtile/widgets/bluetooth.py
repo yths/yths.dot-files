@@ -3,7 +3,8 @@
 Reads the latest entry from the ``bluetooth`` Redis stream and renders one icon per
 connected device, followed by its battery level where the device reports one. A device the
 theme maps by MAC (``bluetooth_devices`` in ``config.json``) gets that icon; any other gets
-``bluetooth.device``. ``BackgroundPoll`` based.
+``bluetooth.device``. A battery on its last two rungs is drawn in ``highlight_color``: it
+wants charging soon, and nothing is broken yet. ``BackgroundPoll`` based.
 """
 
 from typing import Any
@@ -21,14 +22,14 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
         self,
         r: redis.Redis | None,
         devices: dict[str, str] | None = None,
-        warning_color: str = "#ff0000",
+        highlight_color: str = "#ff0000",
         symbols: dict[str, Any] | None = None,
         **config: Any,
     ) -> None:
         libqtile.widget.base.BackgroundPoll.__init__(self, "", **config)
         self.r = r
 
-        self.warning_color = warning_color
+        self.highlight_color = highlight_color
         #: The active vocabulary, passed down from config.py the same way the colours are.
         #: Defaults to ASCII so a widget built without one still draws something.
         self.symbols = symbols or vocabulary.SYMBOLS
@@ -71,7 +72,7 @@ class WidgetBluetooth(libqtile.widget.base.BackgroundPoll):
                 continue
             level = self.symbols["meter.ramp"][index]
             if index < 2:
-                output += f"<span color='{self.warning_color}'>{level}</span>"
+                output += f"<span color='{self.highlight_color}'>{level}</span>"
             else:
                 output += level
         return output
