@@ -43,6 +43,12 @@ Neither directory needs an `__init__.py`.
   different distance from each. This lays the icon out off screen with the bar's own Pango,
   reads where its ink ends, and scales the space so the clear distance is half a cell for
   every icon. The bluetooth widget uses it between a device's icon and its battery meter.
+- **`glyph_centre.py`** — the top of a line, placed so its ink is centred in the bar. qtile
+  centres the font's line box, and where a glyph sits inside that box differs per face: the
+  backend indicator's dot was 0.7px low in one font and 1.8px low in another. This lays the
+  text out off screen with the bar's own Pango, reads which rows its ink covers, and returns
+  the whole-pixel position that puts their middle on the bar's. The service-state widget
+  uses it, so its dot is centred for any font, size or symbol a theme picks.
 - **`task_list.py`** — `CentredTaskList`, the window-title cell. qtile's `TaskList` draws
   its text at a fixed padding from the top of the bar instead of centring it like every
   other cell, which left the titles seven pixels above the icons beside them. This derives
