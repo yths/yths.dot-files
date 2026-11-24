@@ -24,10 +24,10 @@ entry there and running `python helper/gendocs.py`; nothing else needs editing.
 | `cairo` | `python-cairo` | `helper/patch_plymouth.py` | draws the boot background |
 | `cairocffi` | `python-cairocffi` | `configuration/qtile/shared/glyph_gap.py` | measures an icon's ink off screen; qtile already requires it |
 | `colour` | `python-colour-science` **(AUR)** | `helper/color_match.py` | perceptual nearest-colour matching, sRGB → XYZ → ΔE |
-| `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/shared/` (4 files), `configuration/qtile/widgets/` (9 files), `helper/capture_tour.py` | the window manager package provides the library |
+| `libqtile` | `qtile` | `configuration/qtile/config.py`, `configuration/qtile/shared/` (4 files), `configuration/qtile/widgets/` (10 files), `helper/capture_tour.py` | the window manager package provides the library |
 | `loguru` | `python-loguru` | `helper/utils.py`, `install.py` | optional; `helper/utils.py` falls back to stdlib `logging` |
 | `numpy` | `python-numpy` | `configuration/qtile/shared/` (2 files), `configuration/qtile/widgets/audio.py`, `helper/preview_audio.py` | level-meter maths |
-| `redis` | `python-redis` | `configuration/qtile/config.py`, `configuration/qtile/shared/stream.py`, `configuration/qtile/widgets/` (8 files), `helper/capture_tour.py` | optional at run time; cells render empty if Redis is unreachable |
+| `redis` | `python-redis` | `configuration/qtile/config.py`, `configuration/qtile/shared/stream.py`, `configuration/qtile/widgets/` (9 files), `helper/capture_tour.py` | optional at run time; cells render empty if Redis is unreachable |
 | `screeninfo` | `python-screeninfo` **(AUR)** | `configuration/qtile/shared/monitors.py`, `helper/capture_tour.py` | detects monitor geometry, at install and on hotplug |
 | `toml` | `python-toml` | `helper/patch_starship.py` | reads and rewrites `~/.config/starship.toml` |
 | `websockets` | `python-websockets` | `configuration/web-greeter/preview/server.py` | live theme editing and reload broadcast |

@@ -17,6 +17,7 @@ import pytest
 import shared.stream
 import symbols
 import utils
+from widgets.backlight import WidgetBacklight
 from widgets.bluetooth import WidgetBluetooth
 from widgets.broadcast import WidgetBroadcast
 from widgets.claude_usage import WidgetClaudeUsage
@@ -97,6 +98,14 @@ def test_a_tunnel_being_up_is_news_and_not_an_error(monkeypatch: pytest.MonkeyPa
     _streamed(monkeypatch, {"connected": True, "country": "DE"})
     assert f"color='{NOTIFICATION}'" in widget.poll()
     _streamed(monkeypatch, {"connected": False})
+    assert "span" not in widget.poll()
+
+
+def test_a_backlight_off_calibration_is_news(monkeypatch: pytest.MonkeyPatch) -> None:
+    widget = WidgetBacklight(r=None, target=(None, 500), **_roles(WidgetBacklight))
+    _streamed(monkeypatch, {"devices": {"intel_backlight": {"brightness": 800, "max_brightness": 1000}}})
+    assert f"color='{NOTIFICATION}'" in widget.poll()
+    _streamed(monkeypatch, {"devices": {"intel_backlight": {"brightness": 500, "max_brightness": 1000}}})
     assert "span" not in widget.poll()
 
 

@@ -60,6 +60,7 @@ SYMBOLS: dict[str, str | tuple[str, ...]] = {
     "battery.charging": _BATTERY_RAMP,
     "battery.grid": "AC",
     # --- per-widget icons
+    "backlight.level": "*",
     "bluetooth.device": "bt",
     "bluetooth.headphones": "hp",
     "broadcast.on": "rec",

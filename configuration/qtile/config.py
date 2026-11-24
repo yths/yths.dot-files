@@ -100,6 +100,7 @@ import shared.session
 import shared.task_list
 import symbols as vocabulary
 import widgets.audio
+import widgets.backlight
 import widgets.bluetooth
 import widgets.broadcast
 import widgets.claude_usage
@@ -146,6 +147,13 @@ icons = {
     "monitor": f"{SYMBOLS['bar.monitor']} ",
     "group": f"{SYMBOLS['bar.group']} ",
 }
+
+
+#: This machine's calibrated backlight level, which the backlight cell measures against;
+#: per host, beside the ICC profiles it was calibrated with. See configuration/hardware/.
+BACKLIGHT_TARGET = widgets.backlight.read_target(
+    os.path.join(REPOSITORY_ROOT, "configuration", "hardware", "backlight.json")
+)
 
 
 #: The power menu's entries and actions, as a rofi script mode; see the script itself.
@@ -919,6 +927,23 @@ screens = [
                     r=r,
                     notification_color=configuration["palette"][theme]["notification"],
                     highlight_color=configuration["palette"][theme]["highlight"],
+                    fontsize=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    ),
+                    update_interval=1,
+                ),
+                widget.Spacer(
+                    length=round(
+                        configuration["monitors"][monitor]["scaling_factor"]
+                        * configuration["font"]["size"]
+                    )
+                ),
+                widgets.backlight.WidgetBacklight(
+                    symbols=SYMBOLS,
+                    r=r,
+                    target=BACKLIGHT_TARGET,
+                    notification_color=configuration["palette"][theme]["notification"],
                     fontsize=round(
                         configuration["monitors"][monitor]["scaling_factor"]
                         * configuration["font"]["size"]

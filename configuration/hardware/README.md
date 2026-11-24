@@ -36,6 +36,21 @@ touch ~/.config/icc/disabled               # run uncalibrated
 Replace these with your own profiles, or ignore them: an uncalibrated display changes
 nothing except how faithfully the palettes render.
 
+## `backlight.json`
+
+The raw backlight level each machine's panel was calibrated at -- the value that measured
+120 cd/m² in [Calibrating the Display](../../docs/install.md#calibrating-the-display) --
+as hostname to `{device: level}`, where the device is the directory name under
+`/sys/class/backlight/` or `"*"` for whichever one there is:
+
+```json
+{"eridu": {"intel_backlight": 549}}
+```
+
+The bar's backlight cell shows the icon alone at that level (±1 point) and the offset in
+percentage points of the range otherwise. A machine with no entry shows the plain level; one
+with no backlight, nothing. qtile reads the file at start, so restart it after an edit.
+
 ## `edid/`
 
 A corrected EDID dump for a monitor that reports its physical dimensions wrongly, which

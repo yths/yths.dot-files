@@ -83,6 +83,7 @@ EXTERNAL = ("HDMI-1", 1920, 1080, 527, 296, False)
 #: move the system clock.
 STREAMS: dict[str, dict[str, Any]] = {
     "audio": {"muted": False, "volume": 60, "active_sink": "speakers"},
+    "backlight": {"devices": {"intel_backlight": {"brightness": 549, "max_brightness": 1515}}},
     "bluetooth": {"headphones": {"capacity": "80"}},
     "broadcast": {"obs": False, "streaming": False},
     "claude_usage": {

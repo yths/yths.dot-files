@@ -55,6 +55,7 @@
             "\udb80\udc85"
         ],
         "battery.grid": "\udb81\udea5",
+        "backlight.level": "\udb80\udcde",
         "bluetooth.device": "\udb80\udcaf",
         "bluetooth.headphones": "\udb80\udece",
         "broadcast.on": "\udb85\udddd",

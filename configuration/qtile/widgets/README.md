@@ -1,6 +1,6 @@
 # Qtile Widgets
 
-One module per cell in the qtile bar. Each renders a short status segment — an icon, a level meter, a countdown — and eight of the nine get their data by reading the newest entry of one Redis stream. The ninth is the exception described below.
+One module per cell in the qtile bar. Each renders a short status segment — an icon, a level meter, a countdown — and nine of the ten get their data by reading the newest entry of one Redis stream. The tenth is the exception described below.
 
 A widget never collects system state itself. A separate service does that and publishes to Redis; a widget reads and renders. That is what keeps a slow or failing probe out of the bar's event loop.
 
